@@ -30,6 +30,10 @@ func Services(c context.Context) *ContextServices {
 	return c.Value(servicesKey).(*ContextServices)
 }
 
+func (h *ContextServices) SetTraceLevel(v TraceLevel) {
+	h.Client.Transport.(*traceableTransport).level = v
+}
+
 func (h *ContextServices) Do(ctx context.Context) (*Response, error) {
 	h.Request = h.Request.WithContext(ctx)
 

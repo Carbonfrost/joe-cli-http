@@ -212,6 +212,25 @@ func FlagsAndArgs() cli.Action {
 				Action:   listInterfaces(),
 				Category: networkOptions,
 			},
+			{
+				Name:     "verbose",
+				Aliases:  []string{"v"},
+				Value:    new(bool),
+				HelpText: "Display verbose output; can be used multiple times",
+				Action: func(c *cli.Context) {
+					switch c.Occurrences("") {
+					case 0:
+					case 1:
+						Services(c).SetTraceLevel(TraceOn)
+					case 2:
+						Services(c).SetTraceLevel(TraceVerbose)
+					case 3:
+						fallthrough
+					default:
+						Services(c).SetTraceLevel(TraceDebug)
+					}
+				},
+			},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -236,9 +255,11 @@ func newContextServices() *ContextServices {
 		},
 	}
 	h.Client = &http.Client{
-		Transport: &http.Transport{
-			DialContext:     h.Dialer.DialContext,
-			TLSClientConfig: &tls.Config{},
+		Transport: &traceableTransport{
+			Transport: &http.Transport{
+				DialContext:     h.Dialer.DialContext,
+				TLSClientConfig: &tls.Config{},
+			},
 		},
 	}
 	return h
