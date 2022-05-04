@@ -258,6 +258,7 @@ func newContextServices() *ContextServices {
 		Transport: &traceableTransport{
 			Transport: &http.Transport{
 				DialContext:     h.Dialer.DialContext,
+				DialTLSContext:  h.Dialer.DialContext,
 				TLSClientConfig: &tls.Config{},
 			},
 		},
