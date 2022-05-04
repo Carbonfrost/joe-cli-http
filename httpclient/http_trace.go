@@ -270,7 +270,7 @@ func (l *filteredTraceLogger) Wait100Continue() {
 }
 
 func (l *filteredTraceLogger) WroteHeaderField(key string, value []string) {
-	if !l.flags.connections() {
+	if !l.flags.requestHeaders() {
 		return
 	}
 	l.TraceLogger.WroteHeaderField(key, value)
@@ -405,15 +405,6 @@ func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error
 	req = req.WithContext(ctx)
 
 	return http.DefaultTransport.RoundTrip(req)
-}
-
-func indexTraceEnum(j TraceLevel) int {
-	for i, s := range traceEnum {
-		if s == j {
-			return i
-		}
-	}
-	return -1
 }
 
 func indexTraceString(j string) int {
