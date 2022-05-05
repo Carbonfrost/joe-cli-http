@@ -8,15 +8,13 @@ import (
 
 type Response struct {
 	*http.Response
-
-	IncludeHeaders bool
 }
 
-func (r *Response) CopyTo(w io.Writer) error {
+func (r *Response) CopyTo(w io.Writer, includeHeaders bool) error {
 	body := r.Response.Body
 	defer body.Close()
 
-	if r.IncludeHeaders {
+	if includeHeaders {
 		r.printHeaders()
 	}
 

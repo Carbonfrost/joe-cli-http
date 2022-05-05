@@ -42,8 +42,7 @@ func (h *ContextServices) Do(ctx context.Context) (*Response, error) {
 		return nil, err
 	}
 	return &Response{
-		Response:       resp,
-		IncludeHeaders: h.IncludeHeaders,
+		Response: resp,
 	}, nil
 }
 

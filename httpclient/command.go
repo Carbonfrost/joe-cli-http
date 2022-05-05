@@ -31,7 +31,7 @@ func FetchAndPrint() cli.Action {
 		if err != nil {
 			return err
 		}
-		return response.CopyTo(c.Stdout)
+		return response.CopyTo(c.Stdout, Services(c).IncludeHeaders)
 	})
 }
 
