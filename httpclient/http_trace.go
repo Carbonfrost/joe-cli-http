@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/Carbonfrost/joe-cli"
 )
@@ -42,7 +43,8 @@ type filteredTraceLogger struct {
 }
 
 type defaultTraceLogger struct {
-	out io.Writer
+	out      io.Writer
+	template *template.Template
 }
 
 type traceableTransport struct {
@@ -96,6 +98,52 @@ var (
 	}
 )
 
+var (
+	funcs = template.FuncMap{
+
+		// Stub color functions when used outside of Joe-cli
+		"Gray":       func(...string) string { return "" },
+		"Magenta":    func(...string) string { return "" },
+		"Blue":       func(...string) string { return "" },
+		"ResetColor": func(...string) string { return "" },
+		"Join":       strings.Join,
+	}
+	outputTemplate = template.Must(template.New("HTTPTrace").Funcs(funcs).Parse(outputTemplateText))
+)
+
+const (
+	// Design: blue for host names, magenta for HTTP header idioms
+	outputTemplateText = `
+{{- define "TLSHandshakeStart" -}}
+{{ Gray }}* Establishing TLS connection...{{ ResetColor }}
+{{ end -}}
+
+{{- define "Got1xxResponse" -}}
+{{ Gray }}< Got {{ .Code | Magenta }} {{.Header}}{{ ResetColor }}
+{{ end -}}
+
+{{- define "GetConn" -}}
+{{ Gray }}* Connecting to {{ .HostPort | Blue }}{{ ResetColor }}...
+{{ end -}}
+
+{{- define "DNSStart" -}}
+{{ Gray }}* Resolving name {{ .Host | Blue }}{{ResetColor}}...
+{{ end -}}
+
+{{- define "WroteHeaderField" -}}
+{{ Gray }}> {{ .Key | Magenta }}: {{ .Value | Join ", " | Gray }}{{ResetColor}}
+{{ end -}}
+
+{{- define "GotConn" -}}
+{{ Gray }}* Connected to {{ .Remote }} ({{ .LocalAddr }}{{ if .Reused }}, reused{{ end }}){{ResetColor}}
+{{ end -}}
+
+{{- define "DNSDone" -}}
+{{ Gray }}* Resolved to {{ .Addrs | Join ", " }}{{ResetColor}}
+{{ end -}}
+`
+)
+
 // WithTraceLevel provides filtering at the specified level
 func WithTraceLevel(l TraceLogger, v TraceLevel) TraceLogger {
 	if v == TraceOff {
@@ -105,6 +153,14 @@ func WithTraceLevel(l TraceLogger, v TraceLevel) TraceLogger {
 }
 
 func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
+	// Filter out pseudo-headers
+	wrote := func(key string, value []string) {
+		if strings.HasPrefix(key, ":") {
+			return
+		}
+		logger.WroteHeaderField(key, value)
+	}
+
 	return &httptrace.ClientTrace{
 		ConnectDone:       logger.ConnectDone,
 		ConnectStart:      logger.ConnectStart,
@@ -116,7 +172,7 @@ func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 		TLSHandshakeDone:  logger.TLSHandshakeDone,
 		TLSHandshakeStart: logger.TLSHandshakeStart,
 		Wait100Continue:   logger.Wait100Continue,
-		WroteHeaderField:  logger.WroteHeaderField,
+		WroteHeaderField:  wrote,
 		WroteRequest:      logger.WroteRequest,
 	}
 }
@@ -295,68 +351,81 @@ func (l *defaultTraceLogger) DNSDone(info httptrace.DNSDoneInfo) {
 		return
 	}
 
-	l.log("* Resolved to ")
-	for i, addr := range info.Addrs {
-		if i > 0 {
-			l.log(", ")
-		}
-		l.logf("%s", addr.String())
+	addrs := make([]string, 0, len(info.Addrs))
+	for _, addr := range info.Addrs {
+		addrs = append(addrs, addr.String())
 	}
-	l.logln()
+	l.render("DNSDone", struct {
+		Addrs []string
+	}{
+		Addrs: addrs,
+	})
 }
 
 func (l *defaultTraceLogger) DNSStart(info httptrace.DNSStartInfo) {
-	l.logf("* Resolving name %s...\n", info.Host)
+	l.render("DNSStart", struct {
+		Host string
+	}{
+		Host: info.Host,
+	})
 }
 
 func (l *defaultTraceLogger) GetConn(hostPort string) {
-	l.logf("* Connecting to %s...\n", hostPort)
+	l.render("GetConn", struct {
+		HostPort string
+	}{
+		HostPort: hostPort,
+	})
 }
 
 func (l *defaultTraceLogger) Got1xxResponse(code int, header textproto.MIMEHeader) (err error) {
-	l.logf("< Got %d %s", code, header)
+	l.render("Got1xxResponse", struct {
+		Code   int
+		Header textproto.MIMEHeader
+	}{
+		Code:   code,
+		Header: header,
+	})
 	return nil
 }
 
 func (l *defaultTraceLogger) GotConn(info httptrace.GotConnInfo) {
-	remote := info.Conn.RemoteAddr()
-	res := make([]string, 0)
-
-	res = append(res, "on "+info.Conn.LocalAddr().String())
-	if info.Reused {
-		res = append(res, "reused")
-	}
-
-	l.logf("* Connected to %s (%s)\n", remote.String(), strings.Join(res, ", "))
+	l.render("GotConn", struct {
+		Remote    string
+		LocalAddr string
+		Reused    bool
+	}{
+		Remote:    info.Conn.RemoteAddr().String(),
+		LocalAddr: info.Conn.LocalAddr().String(),
+		Reused:    info.Reused,
+	})
 }
 
 func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err error) {
 }
 
 func (l *defaultTraceLogger) TLSHandshakeStart() {
-	l.logln("* Establishing TLS connection...")
+	l.render("TLSHandshakeStart", nil)
 }
 
 func (l *defaultTraceLogger) Wait100Continue() {
 }
 
 func (l *defaultTraceLogger) WroteHeaderField(key string, value []string) {
-	l.logf("> %s: %s\n", key, strings.Join(value, " "))
+	l.render("WroteHeaderField", struct {
+		Key   string
+		Value []string
+	}{
+		Key:   key,
+		Value: value,
+	})
 }
 
 func (l *defaultTraceLogger) WroteRequest(info httptrace.WroteRequestInfo) {
 }
 
-func (l *defaultTraceLogger) logf(format string, a ...interface{}) {
-	fmt.Fprintf(l.out, format, a...)
-}
-
-func (l *defaultTraceLogger) logln(s ...interface{}) {
-	fmt.Fprintln(l.out, s...)
-}
-
-func (l *defaultTraceLogger) log(s string) {
-	fmt.Fprint(l.out, s)
+func (l *defaultTraceLogger) render(fn string, data interface{}) {
+	l.template.ExecuteTemplate(l.out, fn, data)
 }
 
 func (nopTraceLogger) ConnectDone(network, addr string, err error) {
@@ -397,10 +466,24 @@ func (nopTraceLogger) WroteRequest(httptrace.WroteRequestInfo) {
 }
 
 func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	logger := WithTraceLevel(
-		&defaultTraceLogger{out: os.Stderr}, t.level,
-	)
 	ctx := req.Context()
+
+	var tt *template.Template
+	if c, ok := ctx.(*cli.Context); ok {
+		tpl := c.Template("HTTPTrace")
+		if tpl != nil {
+			tt = tpl.Template
+		}
+	}
+
+	if tt == nil {
+		tt = outputTemplate
+	}
+
+	logger := WithTraceLevel(
+		&defaultTraceLogger{template: tt, out: os.Stderr}, t.level,
+	)
+
 	ctx = httptrace.WithClientTrace(ctx, newClientTrace(logger))
 	req = req.WithContext(ctx)
 

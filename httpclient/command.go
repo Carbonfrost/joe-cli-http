@@ -20,6 +20,7 @@ type Options struct {
 func (o *Options) Execute(c *cli.Context) error {
 	return c.Do(
 		FlagsAndArgs(),
+		cli.RegisterTemplate("HTTPTrace", outputTemplateText),
 		cli.ContextValue(servicesKey, newContextServices()),
 	)
 }
