@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"io"
@@ -141,6 +142,16 @@ const (
 
 {{- define "GotConn" -}}
 {{ Gray }}* Connected to {{ .Remote }} ({{ .LocalAddr }}{{ if .Reused }}, reused{{ end }}){{ResetColor}}
+{{ end -}}
+
+{{- define "TLSHandshakeDone" -}}
+{{ Gray -}}
+* SSL connection using {{ .Proto }} / {{ .CipherSuite }}
+* Server certificate:
+{{ range .ServerCertificate -}}
+*   {{ .Name }}: {{ .Value }}
+{{ end -}}
+{{- ResetColor -}}
 {{ end -}}
 
 {{- define "DNSDone" -}}
@@ -407,6 +418,29 @@ func (l *defaultTraceLogger) GotConn(info httptrace.GotConnInfo) {
 }
 
 func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err error) {
+	l.render("TLSHandshakeDone", struct {
+		Proto             string
+		CipherSuite       string
+		ServerCertificate []NameValue
+	}{
+		Proto:             versionString(state.Version),
+		CipherSuite:       tls.CipherSuiteName(state.CipherSuite),
+		ServerCertificate: formatCert(state.PeerCertificates[0]),
+	})
+}
+
+type NameValue struct {
+	Name  string
+	Value string
+}
+
+func formatCert(c *x509.Certificate) []NameValue {
+	return []NameValue{
+		{"Subject", fmt.Sprint(c.Subject)},
+		{"Not Before", fmt.Sprint(c.NotBefore)},
+		{"Not After", fmt.Sprint(c.NotAfter)},
+		{"Issuer", fmt.Sprint(c.Issuer)},
+	}
 }
 
 func (l *defaultTraceLogger) TLSHandshakeStart() {
