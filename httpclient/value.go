@@ -30,6 +30,10 @@ func fixupAddress(addr string) string {
 		addr = "http://localhost" + addr
 	}
 
+	if addr == "" || strings.HasPrefix(addr, "/") {
+		return addr
+	}
+
 	if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
 		addr = "http://" + addr
 	}

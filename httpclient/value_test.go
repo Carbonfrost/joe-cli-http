@@ -14,13 +14,13 @@ var _ = Describe("URLValue", func() {
 		err := u.Set(value)
 
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(u.Scheme).NotTo(Equal(""))
 		Expect(u.String()).To(Equal(expected))
 	},
 
 		Entry("localhost", "localhost", "http://localhost"),
 		Entry("example", "example.com", "http://example.com"),
 		Entry("port", ":8080", "http://localhost:8080"),
+		Entry("rooted", "/root", "/root"),
+		Entry("empty", "", ""),
 	)
 })
