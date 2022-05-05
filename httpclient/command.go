@@ -236,7 +236,7 @@ func FlagsAndArgs() cli.Action {
 
 		cli.AddArg(&cli.Arg{
 			Name:   "url",
-			Value:  cli.URL(),
+			Value:  new(URLValue),
 			Action: setURL(),
 		}),
 	)
@@ -327,8 +327,8 @@ func setUserAgent() cli.Action {
 
 func setURL() cli.ActionFunc {
 	return func(c *cli.Context) error {
-		u := c.URL("")
-		Services(c).Request.URL = u
+		u := c.Value("").(*URLValue)
+		Services(c).Request.URL = &u.URL
 		Services(c).Request.Host = u.Host
 		return nil
 	}
