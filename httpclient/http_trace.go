@@ -33,6 +33,7 @@ type TraceLogger interface {
 	Wait100Continue()
 	WroteHeaderField(key string, value []string)
 	WroteRequest(httptrace.WroteRequestInfo)
+	StartRequest(req *http.Request)
 }
 
 type nopTraceLogger struct{}
@@ -132,6 +133,10 @@ const (
 
 {{- define "WroteHeaderField" -}}
 {{ Gray }}> {{ .Key | Magenta }}: {{ .Value | Join ", " | Gray }}{{ResetColor}}
+{{ end -}}
+
+{{- define "StartRequest" -}}
+{{ Gray }}> {{ .Method | Magenta }} {{ .Path }} {{ .Proto }}{{ ResetColor }}
 {{ end -}}
 
 {{- define "GotConn" -}}
@@ -428,6 +433,26 @@ func (l *defaultTraceLogger) render(fn string, data interface{}) {
 	l.template.ExecuteTemplate(l.out, fn, data)
 }
 
+func (l *defaultTraceLogger) StartRequest(req *http.Request) {
+	path := req.URL.Path
+	proto := req.Proto
+	if path == "" {
+		path = "/"
+	}
+	if proto == "" {
+		proto = "HTTP/1.1"
+	}
+	l.render("StartRequest", struct {
+		Method string
+		Path   string
+		Proto  string
+	}{
+		Method: req.Method,
+		Path:   path,
+		Proto:  proto,
+	})
+}
+
 func (nopTraceLogger) ConnectDone(network, addr string, err error) {
 }
 
@@ -465,6 +490,9 @@ func (nopTraceLogger) WroteHeaderField(key string, value []string) {
 func (nopTraceLogger) WroteRequest(httptrace.WroteRequestInfo) {
 }
 
+func (nopTraceLogger) StartRequest(*http.Request) {
+}
+
 func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
 
@@ -487,6 +515,7 @@ func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error
 	ctx = httptrace.WithClientTrace(ctx, newClientTrace(logger))
 	req = req.WithContext(ctx)
 
+	logger.StartRequest(req)
 	return http.DefaultTransport.RoundTrip(req)
 }
 
