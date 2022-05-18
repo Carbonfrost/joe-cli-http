@@ -15,7 +15,7 @@ func main() {
 
 func createApp() *cli.App {
 	return &cli.App{
-		Name:     "gofetch",
+		Name:     "wig",
 		HelpText: "Provides access to the Go HTTP client with some cURL compatibility",
 		Uses: cli.Pipeline(
 			&httpclient.Options{},

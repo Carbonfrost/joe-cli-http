@@ -13,4 +13,4 @@ fi
 GOOS="$(go env GOOS)"
 GOARCH="$(go env GOARCH)"
 
-"${dir}/${GOOS}_${GOARCH}/gofetch" "$@"
+"${dir}/${GOOS}_${GOARCH}/wig" "$@"
