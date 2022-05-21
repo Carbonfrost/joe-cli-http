@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/Carbonfrost/joe-cli"
 )
@@ -45,19 +43,18 @@ func FlagsAndArgs() cli.Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
 			{
-				Name:     "method",
-				Aliases:  []string{"X", "request"},
-				HelpText: "Sets the request method",
-				Value:    cli.String(),
-				Action:   setHTTPMethod(),
-				Category: requestOptions,
+				Name:      "method",
+				Aliases:   []string{"X", "request"},
+				UsageText: "NAME",
+				HelpText:  "Sets the request method to {NAME}",
+				Uses:      cli.BindContext(Services, (*ContextServices).SetMethod),
+				Category:  requestOptions,
 			},
 			{
 				Name:     "header",
 				Aliases:  []string{"H"},
 				HelpText: "Sets header to {NAME} and {VALUE}",
-				Value:    &cli.NameValue{},
-				Action:   setHTTPHeader(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetHeader),
 				Category: requestOptions,
 			},
 			{
@@ -79,80 +76,70 @@ func FlagsAndArgs() cli.Action {
 				Aliases:  []string{"L", "location"},
 				Options:  cli.No,
 				HelpText: "Follow redirects in the Location header",
-				Value:    cli.Bool(),
-				Action:   followRedirects(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetFollowRedirects),
 				Category: requestOptions,
 			},
 			{
 				Name:     "user-agent",
 				Aliases:  []string{"A"},
 				HelpText: "Send the specified user-agent {NAME} to server",
-				Action:   setUserAgent(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetUserAgent),
 				Category: requestOptions,
 			},
 			{
 				Name:     "include",
 				Aliases:  []string{"i"},
-				Value:    cli.Bool(),
 				HelpText: "Include response headers in the output",
-				Action:   setIncludeHeaders(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetIncludeHeaders),
 				Category: requestOptions,
 			},
 			{
 				Name:     "dial-timeout",
-				Value:    cli.Duration(),
 				HelpText: "maximum amount of time a dial will wait for a connect to complete",
-				Action:   setDialTimeout(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetDialTimeout),
 				Category: requestOptions,
 			},
 			{
 				Name:     "tlsv1",
 				HelpText: "Use TLSv1.0 or higher.  This is implied as this tool doesn't support SSLv3",
-				Value:    cli.Bool(),
-				Action:   setTLSVersion(tls.VersionTLS10, tls.VersionTLS13),
+				Uses:     tlsVersionFlag(tls.VersionTLS10, tls.VersionTLS13),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "tlsv1.0",
 				HelpText: "Use TLSv1.0",
-				Value:    cli.Bool(),
-				Action:   setTLSVersion(tls.VersionTLS10, tls.VersionTLS10),
+				Uses:     tlsVersionFlag(tls.VersionTLS10, tls.VersionTLS10),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "tlsv1.1",
 				HelpText: "Use TLSv1.1",
-				Value:    cli.Bool(),
-				Action:   setTLSVersion(tls.VersionTLS11, tls.VersionTLS11),
+				Uses:     tlsVersionFlag(tls.VersionTLS11, tls.VersionTLS11),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "tlsv1.2",
 				HelpText: "Use TLSv1.2",
-				Value:    cli.Bool(),
-				Action:   setTLSVersion(tls.VersionTLS12, tls.VersionTLS12),
+				Uses:     tlsVersionFlag(tls.VersionTLS12, tls.VersionTLS12),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "tlsv1.3",
 				HelpText: "Use TLSv1.3",
-				Value:    cli.Bool(),
-				Action:   setTLSVersion(tls.VersionTLS13, tls.VersionTLS13),
+				Uses:     tlsVersionFlag(tls.VersionTLS13, tls.VersionTLS13),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "insecure-skip-verify",
 				Aliases:  []string{"k"},
-				Value:    cli.Bool(),
 				HelpText: "Whether to verify the server's certificate chain and host name.",
-				Action:   insecureSkipVerify(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetInsecureSkipVerify),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "ciphers",
-				Value:    &CipherSuites{},
 				HelpText: "List of SSL ciphers to use.  Not applicable to TLS 1.3",
-				Action:   setCiphers(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetCiphers),
 				Category: tlsOptions,
 			},
 			{
@@ -165,44 +152,38 @@ func FlagsAndArgs() cli.Action {
 			},
 			{
 				Name:     "dns-interface",
-				Value:    cli.String(),
 				HelpText: "Use network {INTERFACE} by name or address for DNS requests",
-				Action:   setDNSInterface(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetDNSInterface),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "prefer-go",
-				Value:    cli.Bool(),
 				HelpText: "Whether Go's built-in DNS resolver is preferred",
-				Action:   setPreferGoDialer(),
+				Action:   cli.BindContext(Services, (*ContextServices).SetPreferGoDialer),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "dial-keep-alive",
-				Value:    cli.Duration(),
 				HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
-				Action:   setDialKeepAlive(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetDialKeepAlive),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "disable-dial-keep-alive",
-				Value:    cli.Bool(),
 				HelpText: "Disable dialer keep-alive probes",
-				Action:   disableDialKeepAlive(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetDisableDialKeepAlive),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "strict-errors",
-				Value:    cli.Bool(),
 				HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
-				Action:   setStrictErrorsDNS(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetStrictErrorsDNS),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "interface",
-				Value:    cli.String(),
 				HelpText: "Use network {INTERFACE} by name or address to connect",
-				Action:   setInterface(),
+				Uses:     cli.BindContext(Services, (*ContextServices).SetInterface),
 				Category: networkOptions,
 			},
 			{
@@ -235,9 +216,9 @@ func FlagsAndArgs() cli.Action {
 		}...),
 
 		cli.AddArg(&cli.Arg{
-			Name:   "url",
-			Value:  new(URLValue),
-			Action: setURL(),
+			Name:  "url",
+			Value: new(URLValue),
+			Uses:  cli.BindContext(Services, (*ContextServices).SetURL),
 		}),
 	)
 }
@@ -255,12 +236,13 @@ func newContextServices() *ContextServices {
 			Dial: h.dnsDialer.DialContext,
 		},
 	}
+	h.tlsConfig = &tls.Config{}
 	h.Client = &http.Client{
 		Transport: &traceableTransport{
 			Transport: &http.Transport{
 				DialContext:     h.dialer.DialContext,
 				DialTLSContext:  h.dialer.DialContext,
-				TLSClientConfig: &tls.Config{},
+				TLSClientConfig: h.tlsConfig,
 			},
 		},
 	}
@@ -273,44 +255,6 @@ func bind(fn func(*ContextServices) error) cli.ActionFunc {
 	}
 }
 
-func bindBoolean(fn func(*ContextServices, bool) error) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		return fn(Services(c), c.Bool(""))
-	}
-}
-
-func bindDuration(fn func(*ContextServices, time.Duration) error) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		return fn(Services(c), c.Duration(""))
-	}
-}
-
-func bindString(fn func(*ContextServices, string) error) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		return fn(Services(c), c.String(""))
-	}
-}
-
-func bindNameValue(fn func(*ContextServices, string, string) error) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		nv := c.Value("").(*cli.NameValue)
-		return fn(Services(c), nv.Name, nv.Value)
-	}
-}
-
-func setHTTPHeader() cli.Action {
-	return bindNameValue(func(s *ContextServices, name string, value string) error {
-		// If a colon was used, then assume the syntax Header:Value was used.
-		if strings.Contains(name, ":") && value == "true" {
-			args := strings.SplitN(name, ":", 2)
-			name = args[0]
-			value = args[1]
-		}
-		s.Request.Header.Set(name, value)
-		return nil
-	})
-}
-
 func setHTTPHeaderStatic(name, value string) cli.Action {
 	return bind(func(s *ContextServices) error {
 		s.Request.Header.Set(name, value)
@@ -318,73 +262,19 @@ func setHTTPHeaderStatic(name, value string) cli.Action {
 	})
 }
 
-func setUserAgent() cli.Action {
-	return bindString(func(s *ContextServices, value string) error {
-		s.Request.Header.Set("User-Agent", value)
-		return nil
-	})
-}
-
-func setURL() cli.ActionFunc {
-	return func(c *cli.Context) error {
-		u := c.Value("").(*URLValue)
-		Services(c).Request.URL = &u.URL
-		Services(c).Request.Host = u.Host
-		return nil
-	}
-}
-
-func setHTTPMethod() cli.Action {
-	return bindString(func(s *ContextServices, v string) error {
-		s.Request.Method = v
-		return nil
-	})
-}
-
-func followRedirects() cli.Action {
-	return bindBoolean(func(s *ContextServices, value bool) error {
-		if value {
-			s.Client.CheckRedirect = nil // default policy to follow 10 times
-			return nil
-		}
-
-		// Follow no redirects
-		s.Client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		}
-		return nil
-	})
-}
-
-func setTLSVersion(min, max uint16) cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		if v {
-			s.tlsConfig().MinVersion = min
-			s.tlsConfig().MaxVersion = max
-		}
-		return nil
-	})
-}
-
-func setIncludeHeaders() cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.IncludeHeaders = v
-		return nil
-	})
-}
-
-func insecureSkipVerify() cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.tlsConfig().InsecureSkipVerify = v
-		return nil
-	})
-}
-
-func setCiphers() cli.ActionFunc {
-	return func(c *cli.Context) error {
-		ids := c.Value("").(*CipherSuites)
-		Services(c).tlsConfig().CipherSuites = []uint16(*ids)
-		return nil
+func tlsVersionFlag(min, max uint16) cli.Action {
+	return cli.Prototype{
+		Value: new(bool),
+		Setup: cli.Setup{
+			Action: func(c *cli.Context) error {
+				s := Services(c)
+				if c.Bool("") {
+					s.TLSConfig().MinVersion = min
+					s.TLSConfig().MaxVersion = max
+				}
+				return nil
+			},
+		},
 	}
 }
 
@@ -440,63 +330,4 @@ func resolveInterface(v string) (*net.TCPAddr, error) {
 		}
 	}
 	return nil, errors.New("failed to resolve " + v)
-}
-
-func setInterface() cli.Action {
-	return bindString(func(s *ContextServices, value string) error {
-		addr, err := resolveInterface(value)
-		if err != nil {
-			return err
-		}
-		s.Dialer().LocalAddr = addr
-		return nil
-	})
-}
-
-func setDNSInterface() cli.Action {
-	return bindString(func(s *ContextServices, value string) error {
-		addr, err := resolveInterface(value)
-		if err != nil {
-			return err
-		}
-		s.DNSDialer().LocalAddr = addr
-		return nil
-	})
-}
-
-func setPreferGoDialer() cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.Dialer().Resolver.PreferGo = v
-		return nil
-	})
-}
-
-func setStrictErrorsDNS() cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.Dialer().Resolver.StrictErrors = v
-		return nil
-	})
-}
-
-func disableDialKeepAlive() cli.Action {
-	return bindBoolean(func(s *ContextServices, v bool) error {
-		if v {
-			s.Dialer().KeepAlive = time.Duration(-1)
-		}
-		return nil
-	})
-}
-
-func setDialTimeout() cli.Action {
-	return bindDuration(func(s *ContextServices, v time.Duration) error {
-		s.Dialer().Timeout = v
-		return nil
-	})
-}
-
-func setDialKeepAlive() cli.Action {
-	return bindDuration(func(s *ContextServices, v time.Duration) error {
-		s.Dialer().KeepAlive = v
-		return nil
-	})
 }
