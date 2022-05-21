@@ -14,12 +14,11 @@ type contextKey string
 const servicesKey contextKey = "httpclient_services"
 
 type ContextServices struct {
-	Client    *http.Client
-	Dialer    *net.Dialer
-	DNSDialer *net.Dialer
-	Request   *http.Request
-
+	Client         *http.Client
+	Request        *http.Request
 	IncludeHeaders bool
+	dialer         *net.Dialer
+	dnsDialer      *net.Dialer
 }
 
 func Do(c *cli.Context) (*Response, error) {
@@ -48,4 +47,12 @@ func (h *ContextServices) Do(ctx context.Context) (*Response, error) {
 
 func (h *ContextServices) tlsConfig() *tls.Config {
 	return h.Client.Transport.(*http.Transport).TLSClientConfig
+}
+
+func (h *ContextServices) Dialer() *net.Dialer {
+	return h.dialer
+}
+
+func (h *ContextServices) DNSDialer() *net.Dialer {
+	return h.dnsDialer
 }

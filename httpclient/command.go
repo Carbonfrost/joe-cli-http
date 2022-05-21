@@ -244,22 +244,22 @@ func FlagsAndArgs() cli.Action {
 
 func newContextServices() *ContextServices {
 	h := &ContextServices{
-		DNSDialer: &net.Dialer{},
+		dnsDialer: &net.Dialer{},
 		Request: &http.Request{
 			Method: "GET",
 			Header: make(http.Header),
 		},
 	}
-	h.Dialer = &net.Dialer{
+	h.dialer = &net.Dialer{
 		Resolver: &net.Resolver{
-			Dial: h.DNSDialer.DialContext,
+			Dial: h.dnsDialer.DialContext,
 		},
 	}
 	h.Client = &http.Client{
 		Transport: &traceableTransport{
 			Transport: &http.Transport{
-				DialContext:     h.Dialer.DialContext,
-				DialTLSContext:  h.Dialer.DialContext,
+				DialContext:     h.dialer.DialContext,
+				DialTLSContext:  h.dialer.DialContext,
 				TLSClientConfig: &tls.Config{},
 			},
 		},
@@ -448,7 +448,7 @@ func setInterface() cli.Action {
 		if err != nil {
 			return err
 		}
-		s.Dialer.LocalAddr = addr
+		s.Dialer().LocalAddr = addr
 		return nil
 	})
 }
@@ -459,21 +459,21 @@ func setDNSInterface() cli.Action {
 		if err != nil {
 			return err
 		}
-		s.DNSDialer.LocalAddr = addr
+		s.DNSDialer().LocalAddr = addr
 		return nil
 	})
 }
 
 func setPreferGoDialer() cli.Action {
 	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.Dialer.Resolver.PreferGo = v
+		s.Dialer().Resolver.PreferGo = v
 		return nil
 	})
 }
 
 func setStrictErrorsDNS() cli.Action {
 	return bindBoolean(func(s *ContextServices, v bool) error {
-		s.Dialer.Resolver.StrictErrors = v
+		s.Dialer().Resolver.StrictErrors = v
 		return nil
 	})
 }
@@ -481,7 +481,7 @@ func setStrictErrorsDNS() cli.Action {
 func disableDialKeepAlive() cli.Action {
 	return bindBoolean(func(s *ContextServices, v bool) error {
 		if v {
-			s.Dialer.KeepAlive = time.Duration(-1)
+			s.Dialer().KeepAlive = time.Duration(-1)
 		}
 		return nil
 	})
@@ -489,14 +489,14 @@ func disableDialKeepAlive() cli.Action {
 
 func setDialTimeout() cli.Action {
 	return bindDuration(func(s *ContextServices, v time.Duration) error {
-		s.Dialer.Timeout = v
+		s.Dialer().Timeout = v
 		return nil
 	})
 }
 
 func setDialKeepAlive() cli.Action {
 	return bindDuration(func(s *ContextServices, v time.Duration) error {
-		s.Dialer.KeepAlive = v
+		s.Dialer().KeepAlive = v
 		return nil
 	})
 }
