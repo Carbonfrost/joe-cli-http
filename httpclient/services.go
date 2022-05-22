@@ -15,7 +15,7 @@ type contextKey string
 
 const servicesKey contextKey = "httpclient_services"
 
-type ContextServices struct {
+type Client struct {
 	Client         *http.Client
 	Request        *http.Request
 	IncludeHeaders bool
@@ -25,22 +25,50 @@ type ContextServices struct {
 	tlsConfig *tls.Config
 }
 
+func New() *Client {
+	h := &Client{
+		dnsDialer: &net.Dialer{},
+		Request: &http.Request{
+			Method: "GET",
+			Header: make(http.Header),
+		},
+	}
+	h.dialer = &net.Dialer{
+		Resolver: &net.Resolver{
+			Dial: h.dnsDialer.DialContext,
+		},
+	}
+	h.tlsConfig = &tls.Config{}
+	h.Client = &http.Client{
+		Transport: &traceableTransport{
+			Transport: &http.Transport{
+				DialContext:     h.dialer.DialContext,
+				DialTLSContext:  h.dialer.DialContext,
+				TLSClientConfig: h.tlsConfig,
+			},
+		},
+	}
+	return h
+}
+
 func Do(c *cli.Context) (*Response, error) {
-	return Services(c).Do(c)
+	return FromContext(c).Do(c)
 }
 
-func Services(c context.Context) *ContextServices {
-	return c.Value(servicesKey).(*ContextServices)
+// FromContext obtains the client stored in the context
+func FromContext(c context.Context) *Client {
+	return c.Value(servicesKey).(*Client)
 }
 
-func (h *ContextServices) SetTraceLevel(v TraceLevel) {
-	h.Client.Transport.(*traceableTransport).level = v
+func (c *Client) SetTraceLevel(v TraceLevel) error {
+	c.Client.Transport.(*traceableTransport).level = v
+	return nil
 }
 
-func (h *ContextServices) Do(ctx context.Context) (*Response, error) {
-	h.Request = h.Request.WithContext(ctx)
+func (c *Client) Do(ctx context.Context) (*Response, error) {
+	c.Request = c.Request.WithContext(ctx)
 
-	resp, err := h.Client.Do(h.Request)
+	resp, err := c.Client.Do(c.Request)
 	if err != nil {
 		return nil, err
 	}
@@ -49,80 +77,80 @@ func (h *ContextServices) Do(ctx context.Context) (*Response, error) {
 	}, nil
 }
 
-func (h *ContextServices) TLSConfig() *tls.Config {
-	return h.tlsConfig
+func (c *Client) TLSConfig() *tls.Config {
+	return c.tlsConfig
 }
 
-func (h *ContextServices) Dialer() *net.Dialer {
-	return h.dialer
+func (c *Client) Dialer() *net.Dialer {
+	return c.dialer
 }
 
-func (h *ContextServices) DNSDialer() *net.Dialer {
-	return h.dnsDialer
+func (c *Client) DNSDialer() *net.Dialer {
+	return c.dnsDialer
 }
 
-func (h *ContextServices) SetMethod(s string) error {
-	h.Request.Method = s
+func (c *Client) SetMethod(s string) error {
+	c.Request.Method = s
 	return nil
 }
 
-func (h *ContextServices) SetFollowRedirects(value bool) error {
+func (c *Client) SetFollowRedirects(value bool) error {
 	if value {
-		h.Client.CheckRedirect = nil // default policy to follow 10 times
+		c.Client.CheckRedirect = nil // default policy to follow 10 times
 		return nil
 	}
 
 	// Follow no redirects
-	h.Client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+	c.Client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 	return nil
 }
 
-func (h *ContextServices) SetUserAgent(value string) error {
-	h.Request.Header.Set("User-Agent", value)
+func (c *Client) SetUserAgent(value string) error {
+	c.Request.Header.Set("User-Agent", value)
 	return nil
 }
 
-func (h *ContextServices) SetURL(u *URLValue) error {
-	h.Request.URL = &u.URL
-	h.Request.Host = u.Host
+func (c *Client) SetURL(u *URLValue) error {
+	c.Request.URL = &u.URL
+	c.Request.Host = u.Host
 	return nil
 }
 
-func (h *ContextServices) SetIncludeHeaders(v bool) error {
-	h.IncludeHeaders = v
+func (c *Client) SetIncludeHeaders(v bool) error {
+	c.IncludeHeaders = v
 	return nil
 }
 
-func (h *ContextServices) SetInsecureSkipVerify(v bool) error {
-	h.TLSConfig().InsecureSkipVerify = v
+func (c *Client) SetInsecureSkipVerify(v bool) error {
+	c.TLSConfig().InsecureSkipVerify = v
 	return nil
 }
 
-func (h *ContextServices) SetCiphers(ids *CipherSuites) error {
-	h.TLSConfig().CipherSuites = []uint16(*ids)
+func (c *Client) SetCiphers(ids *CipherSuites) error {
+	c.TLSConfig().CipherSuites = []uint16(*ids)
 	return nil
 }
 
-func (h *ContextServices) SetPreferGoDialer(v bool) error {
-	h.Dialer().Resolver.PreferGo = v
+func (c *Client) SetPreferGoDialer(v bool) error {
+	c.Dialer().Resolver.PreferGo = v
 	return nil
 }
 
-func (h *ContextServices) SetStrictErrorsDNS(v bool) error {
-	h.Dialer().Resolver.StrictErrors = v
+func (c *Client) SetStrictErrorsDNS(v bool) error {
+	c.Dialer().Resolver.StrictErrors = v
 	return nil
 }
 
-func (h *ContextServices) SetDisableDialKeepAlive(v bool) error {
+func (c *Client) SetDisableDialKeepAlive(v bool) error {
 	if v {
-		h.Dialer().KeepAlive = time.Duration(-1)
+		c.Dialer().KeepAlive = time.Duration(-1)
 	}
 	return nil
 }
 
-func (h *ContextServices) SetHeader(n *cli.NameValue) error {
+func (c *Client) SetHeader(n *cli.NameValue) error {
 	name, value := n.Name, n.Value
 	// If a colon was used, then assume the syntax Header:Value was used.
 	if strings.Contains(name, ":") && value == "true" {
@@ -130,20 +158,20 @@ func (h *ContextServices) SetHeader(n *cli.NameValue) error {
 		name = args[0]
 		value = args[1]
 	}
-	h.Request.Header.Set(name, value)
+	c.Request.Header.Set(name, value)
 	return nil
 }
 
-func (h *ContextServices) SetInterface(value string) error {
+func (c *Client) SetInterface(value string) error {
 	addr, err := resolveInterface(value)
 	if err != nil {
 		return err
 	}
-	h.Dialer().LocalAddr = addr
+	c.Dialer().LocalAddr = addr
 	return nil
 }
 
-func (h *ContextServices) SetDNSInterface(value string) error {
+func (c *Client) SetDNSInterface(value string) error {
 	if value == "" {
 		return nil
 	}
@@ -151,16 +179,16 @@ func (h *ContextServices) SetDNSInterface(value string) error {
 	if err != nil {
 		return err
 	}
-	h.DNSDialer().LocalAddr = addr
+	c.DNSDialer().LocalAddr = addr
 	return nil
 }
 
-func (h *ContextServices) SetDialTimeout(v time.Duration) error {
-	h.Dialer().Timeout = v
+func (c *Client) SetDialTimeout(v time.Duration) error {
+	c.Dialer().Timeout = v
 	return nil
 }
 
-func (h *ContextServices) SetDialKeepAlive(v time.Duration) error {
-	h.Dialer().KeepAlive = v
+func (c *Client) SetDialKeepAlive(v time.Duration) error {
+	c.Dialer().KeepAlive = v
 	return nil
 }

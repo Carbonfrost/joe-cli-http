@@ -5,13 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 
 	"github.com/Carbonfrost/joe-cli"
 )
 
 // Options provides the options for how the HTTP client works.  This is the entry
-// point for setting up a command or app to contain HTTP client services in the context
+// point for setting up a command or app to contain an HTTP client in the context.
 type Options struct {
 }
 
@@ -19,7 +18,7 @@ func (o *Options) Execute(c *cli.Context) error {
 	return c.Do(
 		FlagsAndArgs(),
 		cli.RegisterTemplate("HTTPTrace", outputTemplateText),
-		cli.ContextValue(servicesKey, newContextServices()),
+		cli.ContextValue(servicesKey, New()),
 	)
 }
 
@@ -29,7 +28,7 @@ func FetchAndPrint() cli.Action {
 		if err != nil {
 			return err
 		}
-		return response.CopyTo(c.Stdout, Services(c).IncludeHeaders)
+		return response.CopyTo(c.Stdout, FromContext(c).IncludeHeaders)
 	})
 }
 
@@ -47,14 +46,14 @@ func FlagsAndArgs() cli.Action {
 				Aliases:   []string{"X", "request"},
 				UsageText: "NAME",
 				HelpText:  "Sets the request method to {NAME}",
-				Uses:      cli.BindContext(Services, (*ContextServices).SetMethod),
+				Uses:      cli.BindContext(FromContext, (*Client).SetMethod),
 				Category:  requestOptions,
 			},
 			{
 				Name:     "header",
 				Aliases:  []string{"H"},
 				HelpText: "Sets header to {NAME} and {VALUE}",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetHeader),
+				Uses:     cli.BindContext(FromContext, (*Client).SetHeader),
 				Category: requestOptions,
 			},
 			{
@@ -76,27 +75,27 @@ func FlagsAndArgs() cli.Action {
 				Aliases:  []string{"L", "location"},
 				Options:  cli.No,
 				HelpText: "Follow redirects in the Location header",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetFollowRedirects),
+				Uses:     cli.BindContext(FromContext, (*Client).SetFollowRedirects),
 				Category: requestOptions,
 			},
 			{
 				Name:     "user-agent",
 				Aliases:  []string{"A"},
 				HelpText: "Send the specified user-agent {NAME} to server",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetUserAgent),
+				Uses:     cli.BindContext(FromContext, (*Client).SetUserAgent),
 				Category: requestOptions,
 			},
 			{
 				Name:     "include",
 				Aliases:  []string{"i"},
 				HelpText: "Include response headers in the output",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetIncludeHeaders),
+				Uses:     cli.BindContext(FromContext, (*Client).SetIncludeHeaders),
 				Category: requestOptions,
 			},
 			{
 				Name:     "dial-timeout",
 				HelpText: "maximum amount of time a dial will wait for a connect to complete",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetDialTimeout),
+				Uses:     cli.BindContext(FromContext, (*Client).SetDialTimeout),
 				Category: requestOptions,
 			},
 			{
@@ -133,13 +132,13 @@ func FlagsAndArgs() cli.Action {
 				Name:     "insecure-skip-verify",
 				Aliases:  []string{"k"},
 				HelpText: "Whether to verify the server's certificate chain and host name.",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetInsecureSkipVerify),
+				Uses:     cli.BindContext(FromContext, (*Client).SetInsecureSkipVerify),
 				Category: tlsOptions,
 			},
 			{
 				Name:     "ciphers",
 				HelpText: "List of SSL ciphers to use.  Not applicable to TLS 1.3",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetCiphers),
+				Uses:     cli.BindContext(FromContext, (*Client).SetCiphers),
 				Category: tlsOptions,
 			},
 			{
@@ -153,37 +152,37 @@ func FlagsAndArgs() cli.Action {
 			{
 				Name:     "dns-interface",
 				HelpText: "Use network {INTERFACE} by name or address for DNS requests",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetDNSInterface),
+				Uses:     cli.BindContext(FromContext, (*Client).SetDNSInterface),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "prefer-go",
 				HelpText: "Whether Go's built-in DNS resolver is preferred",
-				Action:   cli.BindContext(Services, (*ContextServices).SetPreferGoDialer),
+				Action:   cli.BindContext(FromContext, (*Client).SetPreferGoDialer),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "dial-keep-alive",
 				HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetDialKeepAlive),
+				Uses:     cli.BindContext(FromContext, (*Client).SetDialKeepAlive),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "disable-dial-keep-alive",
 				HelpText: "Disable dialer keep-alive probes",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetDisableDialKeepAlive),
+				Uses:     cli.BindContext(FromContext, (*Client).SetDisableDialKeepAlive),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "strict-errors",
 				HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetStrictErrorsDNS),
+				Uses:     cli.BindContext(FromContext, (*Client).SetStrictErrorsDNS),
 				Category: dnsOptions,
 			},
 			{
 				Name:     "interface",
 				HelpText: "Use network {INTERFACE} by name or address to connect",
-				Uses:     cli.BindContext(Services, (*ContextServices).SetInterface),
+				Uses:     cli.BindContext(FromContext, (*Client).SetInterface),
 				Category: networkOptions,
 			},
 			{
@@ -203,13 +202,13 @@ func FlagsAndArgs() cli.Action {
 					switch c.Occurrences("") {
 					case 0:
 					case 1:
-						Services(c).SetTraceLevel(TraceOn)
+						FromContext(c).SetTraceLevel(TraceOn)
 					case 2:
-						Services(c).SetTraceLevel(TraceVerbose)
+						FromContext(c).SetTraceLevel(TraceVerbose)
 					case 3:
 						fallthrough
 					default:
-						Services(c).SetTraceLevel(TraceDebug)
+						FromContext(c).SetTraceLevel(TraceDebug)
 					}
 				},
 			},
@@ -218,45 +217,19 @@ func FlagsAndArgs() cli.Action {
 		cli.AddArg(&cli.Arg{
 			Name:  "url",
 			Value: new(URLValue),
-			Uses:  cli.BindContext(Services, (*ContextServices).SetURL),
+			Uses:  cli.BindContext(FromContext, (*Client).SetURL),
 		}),
 	)
 }
 
-func newContextServices() *ContextServices {
-	h := &ContextServices{
-		dnsDialer: &net.Dialer{},
-		Request: &http.Request{
-			Method: "GET",
-			Header: make(http.Header),
-		},
-	}
-	h.dialer = &net.Dialer{
-		Resolver: &net.Resolver{
-			Dial: h.dnsDialer.DialContext,
-		},
-	}
-	h.tlsConfig = &tls.Config{}
-	h.Client = &http.Client{
-		Transport: &traceableTransport{
-			Transport: &http.Transport{
-				DialContext:     h.dialer.DialContext,
-				DialTLSContext:  h.dialer.DialContext,
-				TLSClientConfig: h.tlsConfig,
-			},
-		},
-	}
-	return h
-}
-
-func bind(fn func(*ContextServices) error) cli.ActionFunc {
+func bind(fn func(*Client) error) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		return fn(Services(c))
+		return fn(FromContext(c))
 	}
 }
 
 func setHTTPHeaderStatic(name, value string) cli.Action {
-	return bind(func(s *ContextServices) error {
+	return bind(func(s *Client) error {
 		s.Request.Header.Set(name, value)
 		return nil
 	})
@@ -267,7 +240,7 @@ func tlsVersionFlag(min, max uint16) cli.Action {
 		Value: new(bool),
 		Setup: cli.Setup{
 			Action: func(c *cli.Context) error {
-				s := Services(c)
+				s := FromContext(c)
 				if c.Bool("") {
 					s.TLSConfig().MinVersion = min
 					s.TLSConfig().MaxVersion = max

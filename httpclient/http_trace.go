@@ -206,10 +206,7 @@ func SetTraceLevel() cli.Action {
 			f.Value = new(TraceLevel)
 			return nil
 		}),
-		Action: func(c *cli.Context) {
-			level := *c.Value("").(*TraceLevel)
-			Services(c).SetTraceLevel(level)
-		},
+		Action: cli.BindContext(FromContext, (*Client).SetTraceLevel),
 	}
 }
 
