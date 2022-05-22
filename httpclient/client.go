@@ -16,9 +16,10 @@ type contextKey string
 const servicesKey contextKey = "httpclient_services"
 
 type Client struct {
-	Client         *http.Client
-	Request        *http.Request
-	IncludeHeaders bool
+	Client            *http.Client
+	Request           *http.Request
+	IncludeHeaders    bool
+	InterfaceResolver InterfaceResolver
 
 	dialer    *net.Dialer
 	dnsDialer *net.Dialer
@@ -27,7 +28,8 @@ type Client struct {
 
 func New() *Client {
 	h := &Client{
-		dnsDialer: &net.Dialer{},
+		InterfaceResolver: &defaultResolver{},
+		dnsDialer:         &net.Dialer{},
 		Request: &http.Request{
 			Method: "GET",
 			Header: make(http.Header),
@@ -167,7 +169,7 @@ func (c *Client) SetHeader(n *cli.NameValue) error {
 }
 
 func (c *Client) SetInterface(value string) error {
-	addr, err := resolveInterface(value)
+	addr, err := c.resolveInterface(value)
 	if err != nil {
 		return err
 	}
@@ -179,7 +181,7 @@ func (c *Client) SetDNSInterface(value string) error {
 	if value == "" {
 		return nil
 	}
-	addr, err := resolveInterface(value)
+	addr, err := c.resolveInterface(value)
 	if err != nil {
 		return err
 	}
@@ -195,4 +197,8 @@ func (c *Client) SetDialTimeout(v time.Duration) error {
 func (c *Client) SetDialKeepAlive(v time.Duration) error {
 	c.Dialer().KeepAlive = v
 	return nil
+}
+
+func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
+	return c.InterfaceResolver.Resolve(v)
 }

@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 
@@ -276,36 +275,4 @@ func listInterfaces() cli.ActionFunc {
 		}
 		return nil
 	}
-}
-
-func resolveInterface(v string) (*net.TCPAddr, error) {
-	var resolveTCP = func(value string) (*net.TCPAddr, error) {
-		return net.ResolveTCPAddr("tcp", net.JoinHostPort(value, "0"))
-	}
-	var resolveIPNet = func(value string) (*net.TCPAddr, error) {
-		ip, _, err := net.ParseCIDR(value)
-		if err != nil {
-			return nil, err
-		}
-		return resolveTCP(ip.String())
-	}
-
-	ip := net.ParseIP(v)
-	if ip != nil {
-		return resolveTCP(ip.String())
-	}
-	eth, err := net.InterfaceByName(v)
-	if err != nil {
-		return nil, err
-	}
-	addrs, err := eth.Addrs()
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range addrs {
-		if a.Network() == "ip+net" {
-			return resolveIPNet(a.String())
-		}
-	}
-	return nil, errors.New("failed to resolve " + v)
 }
