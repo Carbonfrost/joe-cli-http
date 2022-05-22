@@ -212,6 +212,11 @@ func FlagsAndArgs() cli.Action {
 					}
 				},
 			},
+			{
+				Name:     "trace-level",
+				HelpText: "Set which client operations are traced",
+				Uses:     SetTraceLevel(),
+			},
 		}...),
 
 		cli.AddArg(&cli.Arg{

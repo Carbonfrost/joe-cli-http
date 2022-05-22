@@ -65,6 +65,10 @@ func (c *Client) SetTraceLevel(v TraceLevel) error {
 	return nil
 }
 
+func (c *Client) setTraceLevelHelper(v *TraceLevel) error {
+	return c.SetTraceLevel(*v)
+}
+
 func (c *Client) Do(ctx context.Context) (*Response, error) {
 	c.Request = c.Request.WithContext(ctx)
 
