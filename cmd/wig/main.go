@@ -23,5 +23,13 @@ func createApp() *cli.App {
 		),
 		Action:  httpclient.FetchAndPrint(),
 		Version: build.Version,
+		Flags: []*cli.Flag{
+			{
+				Name:     "chdir",
+				HelpText: "Change directory into the specified working {DIRECTORY}",
+				Value:    &cli.File{Name: "."},
+				Options:  cli.MustExist | cli.WorkingDirectory,
+			},
+		},
 	}
 }
