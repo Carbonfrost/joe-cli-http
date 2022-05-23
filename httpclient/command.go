@@ -116,6 +116,23 @@ func FlagsAndArgs() cli.Action {
 				Category: responseOptions,
 			},
 			{
+				Name:     "download",
+				HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
+				Aliases:  []string{"O", "remote-name"},
+				Value:    new(bool),
+				Action: func(c *cli.Context) error {
+					switch c.Occurrences("") {
+					case 1:
+						FromContext(c).SetDownloadFile(PreserveRequestFile)
+					case 2:
+						FromContext(c).SetDownloadFile(PreserveRequestPath)
+					default:
+						return fmt.Errorf("too many occurrences of -O flag")
+					}
+					return nil
+				},
+			},
+			{
 				Name:     "tlsv1",
 				HelpText: "Use TLSv1.0 or higher.  This is implied as this tool doesn't support SSLv3",
 				Uses:     tlsVersionFlag(tls.VersionTLS10, tls.VersionTLS13),
