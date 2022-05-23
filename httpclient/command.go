@@ -27,16 +27,23 @@ func FetchAndPrint() cli.Action {
 		if err != nil {
 			return err
 		}
-		return response.CopyTo(c.Stdout, FromContext(c).IncludeHeaders)
+
+		output, err := FromContext(c).openDownload(response)
+		if err != nil {
+			return err
+		}
+
+		return response.CopyTo(output, FromContext(c).IncludeHeaders)
 	})
 }
 
 func FlagsAndArgs() cli.Action {
 	const (
-		dnsOptions     = "DNS options"
-		networkOptions = "Network interface options"
-		requestOptions = "Request options"
-		tlsOptions     = "TLS options"
+		dnsOptions      = "DNS options"
+		networkOptions  = "Network interface options"
+		requestOptions  = "Request options"
+		responseOptions = "Response options"
+		tlsOptions      = "TLS options"
 	)
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
@@ -85,17 +92,28 @@ func FlagsAndArgs() cli.Action {
 				Category: requestOptions,
 			},
 			{
-				Name:     "include",
-				Aliases:  []string{"i"},
-				HelpText: "Include response headers in the output",
-				Uses:     cli.BindContext(FromContext, (*Client).SetIncludeHeaders),
-				Category: requestOptions,
-			},
-			{
 				Name:     "dial-timeout",
 				HelpText: "maximum amount of time a dial will wait for a connect to complete",
 				Uses:     cli.BindContext(FromContext, (*Client).SetDialTimeout),
 				Category: requestOptions,
+			},
+			{
+				Name:     "include",
+				Aliases:  []string{"i"},
+				HelpText: "Include response headers in the output",
+				Uses:     cli.BindContext(FromContext, (*Client).SetIncludeHeaders),
+				Category: responseOptions,
+			},
+			{
+				Name:     "output",
+				HelpText: "Download file to {FILE} instead of writing to stdout",
+				Aliases:  []string{"o"},
+				Value:    new(cli.File),
+				Action: func(c *cli.Context) error {
+					FromContext(c).SetDownloadFile(&directAdapter{c.File("")})
+					return nil
+				},
+				Category: responseOptions,
 			},
 			{
 				Name:     "tlsv1",
