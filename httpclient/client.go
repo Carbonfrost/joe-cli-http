@@ -50,6 +50,7 @@ func New() *Client {
 				DialContext:     h.dialer.DialContext,
 				DialTLSContext:  h.dialer.DialContext,
 				TLSClientConfig: h.tlsConfig,
+				Proxy:           http.ProxyFromEnvironment,
 			},
 		},
 	}
