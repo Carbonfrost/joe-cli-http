@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -167,15 +166,8 @@ func (c *Client) SetDisableDialKeepAlive(v bool) error {
 	return nil
 }
 
-func (c *Client) SetHeader(n *cli.NameValue) error {
-	name, value := n.Name, n.Value
-	// If a colon was used, then assume the syntax Header:Value was used.
-	if strings.Contains(name, ":") && value == "true" {
-		args := strings.SplitN(name, ":", 2)
-		name = args[0]
-		value = args[1]
-	}
-	c.Request.Header.Set(name, value)
+func (c *Client) SetHeader(n *HeaderValue) error {
+	c.Request.Header.Add(n.Name, n.Value)
 	return nil
 }
 

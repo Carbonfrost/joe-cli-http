@@ -60,6 +60,7 @@ func FlagsAndArgs() cli.Action {
 				Aliases:  []string{"H"},
 				HelpText: "Sets header to {NAME} and {VALUE}",
 				Uses:     cli.BindContext(FromContext, (*Client).SetHeader),
+				Options:  cli.EachOccurrence,
 				Category: requestOptions,
 			},
 			{
