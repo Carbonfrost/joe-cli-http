@@ -11,11 +11,16 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
 
 type contextKey string
 
 const servicesKey contextKey = "httpclient_services"
+
+var (
+	defaultUserAgent string = "Go-http-client/1.1 wig/" + build.Version
+)
 
 type Client struct {
 	Client            *http.Client
@@ -35,7 +40,9 @@ func New() *Client {
 		dnsDialer:         &net.Dialer{},
 		Request: &http.Request{
 			Method: "GET",
-			Header: make(http.Header),
+			Header: http.Header{
+				"User-Agent": []string{defaultUserAgent},
+			},
 		},
 	}
 	h.dialer = &net.Dialer{
