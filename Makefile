@@ -22,7 +22,7 @@ generate:
 lint:
 	$(Q) go run honnef.co/go/tools/cmd/staticcheck -checks 'all,-ST*' $(shell go list ./...)
 
-install: -install-wig -install-toupee
+install: -install-wig -install-toupee -install-weave
 
 -install-%: build -check-env-PREFIX -check-env-_GO_OUTPUT_DIR
 	$(Q) eng/install "${_GO_OUTPUT_DIR}/$*" $(PREFIX)/bin
