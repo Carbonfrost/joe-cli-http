@@ -26,6 +26,7 @@ type Client struct {
 	Request           *http.Request
 	IncludeHeaders    bool
 	InterfaceResolver InterfaceResolver
+	BodyContent       Content
 	downloader        Downloader
 
 	dialer    *net.Dialer
@@ -81,8 +82,20 @@ func (c *Client) setTraceLevelHelper(v *TraceLevel) error {
 	return c.SetTraceLevel(*v)
 }
 
+func wrapReader(r io.Reader) io.ReadCloser {
+	if c, ok := r.(io.ReadCloser); ok {
+		return c
+	}
+	return io.NopCloser(r)
+}
+
 func (c *Client) Do(ctx context.Context) (*Response, error) {
 	c.Request = c.Request.WithContext(ctx)
+
+	// Apply additional setup to request
+	if c.BodyContent != nil {
+		c.Request.Body = wrapReader(c.BodyContent.Read())
+	}
 
 	resp, err := c.Client.Do(c.Request)
 	if err != nil {
@@ -204,6 +217,21 @@ func (c *Client) SetDialKeepAlive(v time.Duration) error {
 
 func (c *Client) SetDownloadFile(v Downloader) error {
 	c.downloader = v
+	return nil
+}
+
+func (c *Client) SetBody(body string) error {
+	c.BodyContent = NewRawContent([]byte(body))
+	return nil
+}
+
+func (c *Client) setBodyContentHelper(name *ContentType) error {
+	c.BodyContent = NewContent(*name)
+	return nil
+}
+
+func (c *Client) SetBodyContent(bodyContent Content) error {
+	c.BodyContent = bodyContent
 	return nil
 }
 

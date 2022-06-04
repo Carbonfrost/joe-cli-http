@@ -64,6 +64,25 @@ func FlagsAndArgs() cli.Action {
 				Category: requestOptions,
 			},
 			{
+				Name:     "body",
+				HelpText: "Sets the raw content of the body of the request",
+				Aliases:  []string{"data-raw"},
+				Uses: cli.Pipeline(
+					cli.Implies("method", "POST"),
+					cli.Implies("body-content", ContentTypeRaw.String()),
+					cli.BindContext(FromContext, (*Client).SetBody),
+				),
+				Options:  cli.AllowFileReference,
+				Category: requestOptions,
+			},
+			{
+				Name:     "body-content",
+				HelpText: "Sets the type of the body of the request: form, raw, urlencoded, multipart, json",
+				Uses:     cli.BindContext(FromContext, (*Client).setBodyContentHelper),
+				Options:  cli.ImpliedAction,
+				Category: requestOptions,
+			},
+			{
 				Name:     "json",
 				HelpText: "Sets the Accept header to application/json",
 				Value:    cli.Bool(),

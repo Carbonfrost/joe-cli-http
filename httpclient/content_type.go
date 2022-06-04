@@ -38,7 +38,7 @@ var (
 )
 
 func (ContentType) Synopsis() string {
-	return "(form|raw|urlencoded|multipart|json)"
+	return "TYPE"
 }
 
 func (c ContentType) String() string {
@@ -64,14 +64,19 @@ func (c *ContentType) Set(arg string) error {
 	switch arg {
 	case "form":
 		*c = ContentTypeFormData
+		return nil
 	case "raw":
 		*c = ContentTypeRaw
+		return nil
 	case "urlencoded":
 		*c = ContentTypeURLEncodedFormData
+		return nil
 	case "multipart":
 		*c = ContentTypeMultipartFormData
+		return nil
 	case "json":
 		*c = ContentTypeJSON
+		return nil
 	}
 	return fmt.Errorf("unknown content type %q", arg)
 }
