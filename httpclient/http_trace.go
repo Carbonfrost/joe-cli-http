@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
@@ -20,6 +21,35 @@ import (
 // TraceLevel indicates the amount of client tracing to generate
 type TraceLevel int
 
+type httpStatus int
+
+func (s httpStatus) Color() string {
+	switch 100 * (s / 100) {
+	case 100:
+		return "Magenta"
+	case 200:
+		return "Green"
+	case 300:
+		return "Yellow"
+	case 400, 500:
+		fallthrough
+	default:
+		return "Red"
+	}
+}
+
+func (s httpStatus) Message() string {
+	return http.StatusText(int(s))
+}
+
+func (s httpStatus) Code() int {
+	return int(s)
+}
+
+func (s httpStatus) String() string {
+	return strconv.Itoa(int(s)) + " " + s.Message()
+}
+
 // TraceLogger provides delegates from ClientTrace
 type TraceLogger interface {
 	ConnectDone(network, addr string, err error)
@@ -35,6 +65,7 @@ type TraceLogger interface {
 	WroteHeaderField(key string, value []string)
 	WroteRequest(httptrace.WroteRequestInfo)
 	StartRequest(req *http.Request)
+	ResponseDone(resp *http.Response, err error)
 }
 
 type nopTraceLogger struct{}
@@ -61,12 +92,13 @@ const (
 	TraceTLS
 	TraceHTTP1XX
 	TraceRequestBody
+	TraceResponseStatus
 
 	// TraceOff causes all tracing to be switched off
 	TraceOff TraceLevel = 0
 
 	// TraceOn enables tracing of when connections are made and header
-	TraceOn = TraceConnections | TraceRequestHeaders
+	TraceOn = TraceConnections | TraceRequestHeaders | TraceResponseStatus
 
 	// TraceVerbose enables tracing of DNS, TLS, HTTP 1xx responses
 	TraceVerbose = TraceOn | TraceDNS | TraceTLS | TraceHTTP1XX
@@ -84,6 +116,7 @@ var (
 		"tls",
 		"http1xx",
 		"requestBody",
+		"responseStatus",
 		"off",
 	}
 	traceEnum = [...]TraceLevel{
@@ -96,6 +129,7 @@ var (
 		TraceTLS,
 		TraceHTTP1XX,
 		TraceRequestBody,
+		TraceResponseStatus,
 		TraceOff,
 	}
 )
@@ -108,6 +142,7 @@ var (
 		"Magenta":    func(...string) string { return "" },
 		"Blue":       func(...string) string { return "" },
 		"ResetColor": func(...string) string { return "" },
+		"Color":      func(...string) string { return "" },
 		"Join":       strings.Join,
 	}
 	outputTemplate = template.Must(template.New("HTTPTrace").Funcs(funcs).Parse(outputTemplateText))
@@ -156,6 +191,10 @@ const (
 
 {{- define "DNSDone" -}}
 {{ Gray }}* Resolved to {{ .Addrs | Join ", " }}{{ResetColor}}
+{{ end -}}
+
+{{- define "StatusCode" -}}
+{{ Color .Status.Color }}{{ .Status }}{{ ResetColor }}
 {{ end -}}
 `
 )
@@ -481,6 +520,14 @@ func (l *defaultTraceLogger) StartRequest(req *http.Request) {
 	})
 }
 
+func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
+	l.render("StatusCode", struct {
+		Status httpStatus
+	}{
+		Status: httpStatus(resp.StatusCode),
+	})
+}
+
 func (nopTraceLogger) ConnectDone(network, addr string, err error) {
 }
 
@@ -521,20 +568,12 @@ func (nopTraceLogger) WroteRequest(httptrace.WroteRequestInfo) {
 func (nopTraceLogger) StartRequest(*http.Request) {
 }
 
+func (nopTraceLogger) ResponseDone(*http.Response, error) {
+}
+
 func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
-
-	var tt *template.Template
-	if c, ok := ctx.(*cli.Context); ok {
-		tpl := c.Template("HTTPTrace")
-		if tpl != nil {
-			tt = tpl.Template
-		}
-	}
-
-	if tt == nil {
-		tt = outputTemplate
-	}
+	tt := traceTemplate(ctx)
 
 	logger := WithTraceLevel(
 		&defaultTraceLogger{template: tt, out: os.Stderr}, t.level,
@@ -544,7 +583,10 @@ func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error
 	req = req.WithContext(ctx)
 
 	logger.StartRequest(req)
-	return http.DefaultTransport.RoundTrip(req)
+
+	rsp, err := http.DefaultTransport.RoundTrip(req)
+	logger.ResponseDone(rsp, err)
+	return rsp, err
 }
 
 func indexTraceString(j string) int {
@@ -554,6 +596,17 @@ func indexTraceString(j string) int {
 		}
 	}
 	return -1
+}
+
+func traceTemplate(ctx context.Context) *template.Template {
+	if c, ok := ctx.(*cli.Context); ok {
+		tpl := c.Template("HTTPTrace")
+		if tpl != nil {
+			return tpl.Template
+		}
+	}
+
+	return outputTemplate
 }
 
 var (
