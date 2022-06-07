@@ -152,6 +152,11 @@ func (c *Client) SetIncludeHeaders(v bool) error {
 	return nil
 }
 
+func (c *Client) setOutputFileHelper(f *cli.File) error {
+	c.SetDownloadFile(&directAdapter{f})
+	return nil
+}
+
 func (c *Client) SetInsecureSkipVerify(v bool) error {
 	c.TLSConfig().InsecureSkipVerify = v
 	return nil

@@ -234,14 +234,22 @@ func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 
 // SetTraceLevel provides the action for a flag which sets the trace level
 // corresponding to the flag's value.
-func SetTraceLevel() cli.Action {
-	return cli.Prototype{
-		Name:      "trace",
-		EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
-		UsageText: "LEVEL",
-		Setup: cli.Setup{
-			Uses: cli.BindContext(FromContext, (*Client).setTraceLevelHelper),
-		},
+func SetTraceLevel(s ...TraceLevel) cli.Action {
+	switch len(s) {
+	case 0:
+		return &cli.Prototype{
+			Name:      "trace",
+			HelpText:  "Set which client operations are traced",
+			UsageText: "LEVEL",
+			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
+			Setup: cli.Setup{
+				Uses: cli.BindContext(FromContext, (*Client).setTraceLevelHelper),
+			},
+		}
+	case 1:
+		return cli.BindContext(FromContext, (*Client).SetTraceLevel, s[0])
+	default:
+		panic(expectedOneArg)
 	}
 }
 
