@@ -11,6 +11,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
+	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
 type contextKey string
@@ -27,11 +28,14 @@ type Client struct {
 	IncludeHeaders    bool
 	InterfaceResolver InterfaceResolver
 	BodyContent       Content
+	UserInfo          *UserInfo
 	downloader        Downloader
 
-	dialer    *net.Dialer
-	dnsDialer *net.Dialer
-	tlsConfig *tls.Config
+	dialer         *net.Dialer
+	dnsDialer      *net.Dialer
+	tlsConfig      *tls.Config
+	auth           Authenticator
+	authMiddleware []func(Authenticator) Authenticator
 }
 
 func New() *Client {
@@ -95,6 +99,15 @@ func (c *Client) Do(ctx context.Context) (*Response, error) {
 	// Apply additional setup to request
 	if c.BodyContent != nil {
 		c.Request.Body = wrapReader(c.BodyContent.Read())
+	}
+	auth := c.Auth()
+	for _, a := range c.authMiddleware {
+		auth = a(auth)
+	}
+	err := auth.Authenticate(c.Request, c.UserInfo)
+
+	if err != nil {
+		return nil, err
 	}
 
 	resp, err := c.Client.Do(c.Request)
@@ -249,4 +262,39 @@ func (c *Client) openDownload(resp *Response) (io.Writer, error) {
 		return os.Stdout, nil
 	}
 	return c.downloader.OpenDownload(resp)
+}
+
+func (c *Client) SetAuth(auth Authenticator) error {
+	c.auth = auth
+	return nil
+}
+
+func (c *Client) setAuthenticatorHelper(a *provider.Value) error {
+	args := a.Args.(*map[string]string)
+	res, err := NewAuthenticator(a.Name, *args)
+	if err != nil {
+		return err
+	}
+	c.auth = res
+	return nil
+}
+
+func (c *Client) setAuthModeHelper(auth AuthMode) error {
+	return c.SetAuth(auth)
+}
+
+func (c *Client) SetUser(user *UserInfo) error {
+	c.UserInfo = user
+	return nil
+}
+
+func (c *Client) Auth() Authenticator {
+	if c.auth == nil {
+		c.auth = NoAuth
+	}
+	return c.auth
+}
+
+func (c *Client) UseAuthMiddleware(fn func(Authenticator) Authenticator) {
+	c.authMiddleware = append(c.authMiddleware, fn)
 }

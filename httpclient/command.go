@@ -30,6 +30,8 @@ func (o *Options) Execute(c *cli.Context) error {
 		FlagsAndArgs(),
 		cli.RegisterTemplate("HTTPTrace", outputTemplateText),
 		cli.ContextValue(servicesKey, New()),
+		Authenticators,
+		PromptForCredentials(),
 	)
 }
 
@@ -88,6 +90,13 @@ func FlagsAndArgs() cli.Action {
 			Value: new(URLValue),
 			Uses:  cli.BindContext(FromContext, (*Client).SetURL),
 		}),
+
+		cli.AddFlags([]*cli.Flag{
+			{Uses: ListAuthenticators()},
+			{Uses: SetUser()},
+			{Uses: SetAuth()},
+			{Uses: SetBasicAuth()},
+		}...),
 	)
 }
 
