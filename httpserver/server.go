@@ -111,6 +111,21 @@ func (s *Server) SetReadTimeout(v time.Duration) error {
 	return nil
 }
 
+func (s *Server) SetWriteTimeout(v time.Duration) error {
+	s.Server.WriteTimeout = v
+	return nil
+}
+
+func (s *Server) SetReadHeaderTimeout(v time.Duration) error {
+	s.Server.ReadHeaderTimeout = v
+	return nil
+}
+
+func (s *Server) SetIdleTimeout(v time.Duration) error {
+	s.Server.IdleTimeout = v
+	return nil
+}
+
 func (s *Server) actualReady() func(context.Context) {
 	if s.ready == nil {
 		return func(_ context.Context) {}
