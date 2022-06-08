@@ -26,7 +26,23 @@ var _ = Describe("URLValue", func() {
 	)
 })
 
-var _ = Describe("Header", func() {
+var _ = Describe("UserInfo", func() {
+
+	DescribeTable("examples", func(value string, expected string) {
+		u := new(httpclient.UserInfo)
+		err := u.Set(value)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(u.String()).To(Equal(expected))
+	},
+
+		Entry("user only", "user", "user"),
+		Entry("user and password", "user:go", "user:go"),
+		Entry("empty password", "hello:", "hello:"),
+	)
+})
+
+var _ = Describe("HeaderValue", func() {
 
 	Describe("Set", func() {
 		DescribeTable("examples",

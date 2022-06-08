@@ -24,6 +24,28 @@ type HeaderValue struct {
 	Value string
 }
 
+type UserInfo struct {
+	User        string
+	Password    string
+	HasPassword bool
+}
+
+func (*UserInfo) Synopsis() string {
+	return "<user:password>"
+}
+
+func (u *UserInfo) Set(arg string) error {
+	u.User, u.Password, u.HasPassword = strings.Cut(arg, ":")
+	return nil
+}
+
+func (u *UserInfo) String() string {
+	if u.HasPassword {
+		return u.User + ":" + u.Password
+	}
+	return u.User
+}
+
 type headerValueCounter struct {
 	count int
 }
@@ -124,4 +146,5 @@ func splitValuePair(arg string) (k, v string, hasValue bool) {
 var (
 	_ flag.Value = (*URLValue)(nil)
 	_ flag.Value = (*HeaderValue)(nil)
+	_ flag.Value = (*UserInfo)(nil)
 )
