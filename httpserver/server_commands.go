@@ -26,6 +26,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetReadTimeout()},
 			{Uses: SetReadHeaderTimeout()},
 			{Uses: SetWriteTimeout()},
+			{Uses: SetStaticDirectory()},
+			{Uses: SetNoDirectoryListings()},
 		}...),
 	)
 }
@@ -149,6 +151,26 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 	})
 }
 
+// SetStaticDirectory sets the static directory to host
+func SetStaticDirectory(f ...*cli.File) cli.Action {
+	return createFlag((*Server).setStaticDirectoryHelper, f, &cli.Prototype{
+		Name:     "directory",
+		Aliases:  []string{"d"},
+		Value:    new(cli.File),
+		Options:  cli.MustExist,
+		HelpText: "Serve static files from the specified directory",
+	})
+}
+
+// SetNoDirectoryListings causes directories not to be listed
+func SetNoDirectoryListings() cli.Action {
+	return &cli.Prototype{
+		Name:     "no-directory-listings",
+		HelpText: "When set, don't display directory listings",
+		Setup:    dualSetup(cli.BindContext(FromContext, (*Server).SetNoDirectoryListings)),
+	}
+}
+
 // RunServer locates the server in context and runs it until interrupt signal
 // is detected
 func RunServer() cli.Action {
@@ -207,5 +229,14 @@ func createFlag[T any](binder func(*Server, T) error, args []T, proto *cli.Proto
 		return cli.BindContext(FromContext, binder, args[0])
 	default:
 		panic(expectedOneArg)
+	}
+}
+
+// dualSetup sets up optional setup that applies to both Uses and Action timing
+func dualSetup(a cli.Action) cli.Setup {
+	return cli.Setup{
+		Optional: true,
+		Uses:     a,
+		Action:   a,
 	}
 }

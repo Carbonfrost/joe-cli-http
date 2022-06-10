@@ -18,7 +18,7 @@ func createApp() *cli.App {
 		Name:     "weave",
 		HelpText: "Provides access to a simple Go HTTP server for files and proxy handling",
 		Uses: cli.Pipeline(
-			httpserver.New(),
+			httpserver.DefaultServer(),
 			&color.Options{},
 			httpserver.RunServer(),
 		),

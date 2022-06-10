@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -19,7 +20,10 @@ import (
 type Server struct {
 	*http.Server
 
-	ready func(context.Context)
+	staticDir       string
+	handlerFactory  func(*Server) (http.Handler, error)
+	ready           func(context.Context)
+	hideDirListings bool
 }
 
 // Option is an option to configure the server
@@ -46,10 +50,32 @@ func New(options ...Option) *Server {
 	return s
 }
 
+func DefaultServer() *Server {
+	return New(WithHandlerFactory(func(s *Server) (http.Handler, error) {
+		staticDir := s.staticDir
+		if staticDir == "" {
+			return nil, nil
+		}
+		handler := http.FileServer(http.Dir(staticDir))
+
+		if s.hideDirListings {
+			handler = hideListing(handler)
+		}
+		return handler, nil
+	}))
+}
+
 // WithHandler sets the handler which will run on the server
 func WithHandler(handler http.Handler) Option {
 	return func(s *Server) {
 		s.Server.Handler = handler
+	}
+}
+
+// WithHandlerFactory sets how to create the handler which will run on the server
+func WithHandlerFactory(f func(*Server) (http.Handler, error)) Option {
+	return func(s *Server) {
+		s.handlerFactory = f
 	}
 }
 
@@ -66,6 +92,13 @@ func FromContext(ctx context.Context) *Server {
 }
 
 func (s *Server) ListenAndServe() error {
+	if s.handlerFactory != nil {
+		h, err := s.handlerFactory(s)
+		if err != nil {
+			return err
+		}
+		s.Server.Handler = h
+	}
 	fmt.Fprintf(os.Stderr, "Listening on %s%s... (Press ^C to exit)", s.proto(), s.Server.Addr)
 	return s.Server.ListenAndServe()
 }
@@ -126,6 +159,20 @@ func (s *Server) SetIdleTimeout(v time.Duration) error {
 	return nil
 }
 
+func (s *Server) SetStaticDirectory(path string) error {
+	s.staticDir = path
+	return nil
+}
+
+func (s *Server) SetNoDirectoryListings(v bool) error {
+	s.hideDirListings = true
+	return nil
+}
+
+func (s *Server) setStaticDirectoryHelper(f *cli.File) error {
+	return s.SetStaticDirectory(f.Name)
+}
+
 func (s *Server) actualReady() func(context.Context) {
 	if s.ready == nil {
 		return func(_ context.Context) {}
@@ -135,4 +182,15 @@ func (s *Server) actualReady() func(context.Context) {
 
 func (s *Server) proto() string {
 	return "http://"
+}
+
+func hideListing(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/") {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		next.ServeHTTP(w, req)
+	}
 }
