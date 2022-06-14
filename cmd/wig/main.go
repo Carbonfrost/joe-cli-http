@@ -20,6 +20,7 @@ func createApp() *cli.App {
 		Uses: cli.Pipeline(
 			&httpclient.Options{},
 			&color.Options{},
+			cli.Sorted,
 		),
 		Action:  httpclient.FetchAndPrint(),
 		Version: build.Version,

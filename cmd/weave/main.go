@@ -21,6 +21,7 @@ func createApp() *cli.App {
 			httpserver.DefaultServer(),
 			&color.Options{},
 			httpserver.RunServer(),
+			cli.Sorted,
 		),
 		Version: build.Version,
 		Flags: []*cli.Flag{
