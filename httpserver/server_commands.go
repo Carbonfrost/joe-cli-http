@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 )
 
 const (
@@ -35,85 +36,44 @@ func FlagsAndArgs() cli.Action {
 // SetHostname sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetHostname(s ...string) cli.Action {
-	switch len(s) {
-	case 0:
-		return cli.Prototype{
-			Name:     "host",
-			Aliases:  []string{"h"},
-			HelpText: "Sets the server {HOST} name to use",
-			Category: listenerCategory,
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Server).SetHostname),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Server).SetHostname, s[0])
-	default:
-		panic(expectedOneArg)
-	}
+	return createFlag((*Server).SetHostname, s, &cli.Prototype{
+		Name:     "host",
+		Aliases:  []string{"h"},
+		HelpText: "Sets the server {HOST} name to use",
+		Category: listenerCategory,
+	})
 }
 
 // SetPort sets the server port, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetPort(s ...int) cli.Action {
-	switch len(s) {
-	case 0:
-		return cli.Prototype{
-			Name:     "port",
-			Aliases:  []string{"p"},
-			HelpText: "Sets the server {PORT} that will be used",
-			Category: listenerCategory,
-
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Server).SetPort),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Server).SetPort, s[0])
-	default:
-		panic(expectedOneArg)
-	}
+	return createFlag((*Server).SetPort, s, &cli.Prototype{
+		Name:     "port",
+		Aliases:  []string{"p"},
+		HelpText: "Sets the server {PORT} that will be used",
+		Category: listenerCategory,
+	})
 }
 
 // SetAddr sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetAddr(s ...string) cli.Action {
-	switch len(s) {
-	case 0:
-		return cli.Prototype{
-			Name:     "addr",
-			HelpText: "Sets the server {ADDRESS} to use",
-			Category: listenerCategory,
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Server).SetAddr),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Server).SetAddr, s[0])
-	default:
-		panic(expectedOneArg)
-	}
+	return createFlag((*Server).SetAddr, s, &cli.Prototype{
+		Name:     "addr",
+		HelpText: "Sets the server {ADDRESS} to use",
+		Category: listenerCategory,
+	})
 }
 
 // SetReadTimeout sets the maximum duration for reading the entire
 // request, including the body, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetReadTimeout(d ...time.Duration) cli.Action {
-	switch len(d) {
-	case 0:
-		return cli.Prototype{
-			Name:     "read-timeout",
-			HelpText: "Sets the maximum {DURATION} for reading the entire request",
-			Category: advancedCategory,
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Server).SetReadTimeout),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Server).SetReadTimeout, d[0])
-	default:
-		panic(expectedOneArg)
-	}
+	return createFlag((*Server).SetReadTimeout, d, &cli.Prototype{
+		Name:     "read-timeout",
+		HelpText: "Sets the maximum {DURATION} for reading the entire request",
+		Category: advancedCategory,
+	})
 }
 
 // SetReadHeaderTimeout sets the amount of time allowed to read
@@ -124,6 +84,7 @@ func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
 		Name:     "read-header-timeout",
 		Value:    new(time.Duration),
 		HelpText: "Sets the amount of {TIME} allowed to read request headers",
+		Category: advancedCategory,
 	})
 }
 
@@ -135,6 +96,7 @@ func SetWriteTimeout(d ...time.Duration) cli.Action {
 		Name:     "read-header-timeout",
 		Value:    new(time.Duration),
 		HelpText: "Sets the amount of {TIME} allowed to read request headers",
+		Category: advancedCategory,
 	})
 }
 
@@ -148,6 +110,7 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 		Name:     "idle-timeout",
 		Value:    new(time.Duration),
 		HelpText: "Sets the amount of {TIME} allowed to read request headers",
+		Category: advancedCategory,
 	})
 }
 
@@ -218,25 +181,10 @@ func serverFailed(err error) error {
 	return cli.Exit(fmt.Sprintf("fatal: unable to start server: %s", err), 1)
 }
 
-func createFlag[T any](binder func(*Server, T) error, args []T, proto *cli.Prototype) cli.Action {
-	switch len(args) {
-	case 0:
-		proto.Setup = cli.Setup{
-			Uses: cli.BindContext(FromContext, binder),
-		}
-		return proto
-	case 1:
-		return cli.BindContext(FromContext, binder, args[0])
-	default:
-		panic(expectedOneArg)
-	}
+func createFlag[V any](binder func(*Server, V) error, args []V, proto *cli.Prototype) cli.Action {
+	return cliutil.FlagBinding(FromContext, binder, args, proto)
 }
 
-// dualSetup sets up optional setup that applies to both Uses and Action timing
 func dualSetup(a cli.Action) cli.Setup {
-	return cli.Setup{
-		Optional: true,
-		Uses:     a,
-		Action:   a,
-	}
+	return cliutil.DualSetup(a)
 }
