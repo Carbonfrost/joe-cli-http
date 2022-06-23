@@ -108,9 +108,9 @@ func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
 func SetWriteTimeout(d ...time.Duration) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "read-header-timeout",
+			Name:     "write-header-timeout",
 			Value:    new(time.Duration),
-			HelpText: "Sets the amount of {TIME} allowed to read request headers",
+			HelpText: "Sets the amount of {TIME} allowed to write response",
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetWriteTimeout, d),
