@@ -185,15 +185,18 @@ func promptForPassword(c *cli.Context) error {
 }
 
 func SetUser(s ...*UserInfo) cli.Action {
-	return createFlag((*Client).SetUser, s, &cli.Prototype{
-		Name:     "user",
-		HelpText: "Set the user and password",
-		Category: requestOptions,
-		Aliases:  []string{"u"},
-		Setup: cli.Setup{
-			Uses: cli.Implies("auth", BasicAuth.String()),
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "user",
+			HelpText: "Set the user and password",
+			Category: requestOptions,
+			Aliases:  []string{"u"},
+			Setup: cli.Setup{
+				Uses: cli.Implies("auth", BasicAuth.String()),
+			},
 		},
-	})
+		withBinding((*Client).SetUser, s),
+	)
 }
 
 func SetBasicAuth() cli.Action {

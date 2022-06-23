@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
-	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 )
 
 const (
@@ -36,68 +35,86 @@ func FlagsAndArgs() cli.Action {
 // SetHostname sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetHostname(s ...string) cli.Action {
-	return createFlag((*Server).SetHostname, s, &cli.Prototype{
-		Name:     "host",
-		Aliases:  []string{"h"},
-		HelpText: "Sets the server {HOST} name to use",
-		Category: listenerCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "host",
+			Aliases:  []string{"h"},
+			HelpText: "Sets the server {HOST} name to use",
+			Category: listenerCategory,
+		},
+		withBinding((*Server).SetHostname, s),
+	)
 }
 
 // SetPort sets the server port, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetPort(s ...int) cli.Action {
-	return createFlag((*Server).SetPort, s, &cli.Prototype{
-		Name:     "port",
-		Aliases:  []string{"p"},
-		HelpText: "Sets the server {PORT} that will be used",
-		Category: listenerCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "port",
+			Aliases:  []string{"p"},
+			HelpText: "Sets the server {PORT} that will be used",
+			Category: listenerCategory,
+		},
+		withBinding((*Server).SetPort, s),
+	)
 }
 
 // SetAddr sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetAddr(s ...string) cli.Action {
-	return createFlag((*Server).SetAddr, s, &cli.Prototype{
-		Name:     "addr",
-		HelpText: "Sets the server {ADDRESS} to use",
-		Category: listenerCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "addr",
+			HelpText: "Sets the server {ADDRESS} to use",
+			Category: listenerCategory,
+		},
+		withBinding((*Server).SetAddr, s),
+	)
 }
 
 // SetReadTimeout sets the maximum duration for reading the entire
 // request, including the body, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetReadTimeout(d ...time.Duration) cli.Action {
-	return createFlag((*Server).SetReadTimeout, d, &cli.Prototype{
-		Name:     "read-timeout",
-		HelpText: "Sets the maximum {DURATION} for reading the entire request",
-		Category: advancedCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "read-timeout",
+			HelpText: "Sets the maximum {DURATION} for reading the entire request",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetReadTimeout, d),
+	)
 }
 
 // SetReadHeaderTimeout sets the amount of time allowed to read
 // request headers, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
-	return createFlag((*Server).SetReadHeaderTimeout, d, &cli.Prototype{
-		Name:     "read-header-timeout",
-		Value:    new(time.Duration),
-		HelpText: "Sets the amount of {TIME} allowed to read request headers",
-		Category: advancedCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "read-header-timeout",
+			Value:    new(time.Duration),
+			HelpText: "Sets the amount of {TIME} allowed to read request headers",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetReadHeaderTimeout, d),
+	)
 }
 
 // SetWriteTimeout sets the maximum duration before timing out
 // writes of the response, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetWriteTimeout(d ...time.Duration) cli.Action {
-	return createFlag((*Server).SetWriteTimeout, d, &cli.Prototype{
-		Name:     "read-header-timeout",
-		Value:    new(time.Duration),
-		HelpText: "Sets the amount of {TIME} allowed to read request headers",
-		Category: advancedCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "read-header-timeout",
+			Value:    new(time.Duration),
+			HelpText: "Sets the amount of {TIME} allowed to read request headers",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetWriteTimeout, d),
+	)
 }
 
 // SetIdleTimeout sets the maximum amount of time to wait for the
@@ -106,32 +123,40 @@ func SetWriteTimeout(d ...time.Duration) cli.Action {
 // If zero is set, then the value of read time is used, unless both are zero
 // in which case there is no timeout.
 func SetIdleTimeout(d ...time.Duration) cli.Action {
-	return createFlag((*Server).SetIdleTimeout, d, &cli.Prototype{
-		Name:     "idle-timeout",
-		Value:    new(time.Duration),
-		HelpText: "Sets the amount of {TIME} allowed to read request headers",
-		Category: advancedCategory,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "idle-timeout",
+			Value:    new(time.Duration),
+			HelpText: "Sets the amount of {TIME} allowed to read request headers",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetIdleTimeout, d),
+	)
 }
 
 // SetStaticDirectory sets the static directory to host
 func SetStaticDirectory(f ...*cli.File) cli.Action {
-	return createFlag((*Server).setStaticDirectoryHelper, f, &cli.Prototype{
-		Name:     "directory",
-		Aliases:  []string{"d"},
-		Value:    new(cli.File),
-		Options:  cli.MustExist,
-		HelpText: "Serve static files from the specified directory",
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "directory",
+			Aliases:  []string{"d"},
+			Value:    new(cli.File),
+			Options:  cli.MustExist,
+			HelpText: "Serve static files from the specified directory",
+		},
+		withBinding((*Server).setStaticDirectoryHelper, f),
+	)
 }
 
 // SetNoDirectoryListings causes directories not to be listed
 func SetNoDirectoryListings() cli.Action {
-	return &cli.Prototype{
-		Name:     "no-directory-listings",
-		HelpText: "When set, don't display directory listings",
-		Setup:    dualSetup(cli.BindContext(FromContext, (*Server).SetNoDirectoryListings)),
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "no-directory-listings",
+			HelpText: "When set, don't display directory listings",
+		},
+		withBinding((*Server).SetNoDirectoryListings, []bool{true}),
+	)
 }
 
 // RunServer locates the server in context and runs it until interrupt signal
@@ -181,10 +206,13 @@ func serverFailed(err error) error {
 	return cli.Exit(fmt.Sprintf("fatal: unable to start server: %s", err), 1)
 }
 
-func createFlag[V any](binder func(*Server, V) error, args []V, proto *cli.Prototype) cli.Action {
-	return cliutil.FlagBinding(FromContext, binder, args, proto)
-}
-
-func dualSetup(a cli.Action) cli.Setup {
-	return cliutil.DualSetup(a)
+func withBinding[V any](binder func(*Server, V) error, args []V) cli.Action {
+	switch len(args) {
+	case 0:
+		return cli.BindContext(FromContext, binder)
+	case 1:
+		return cli.BindContext(FromContext, binder, args[0])
+	default:
+		panic(expectedOneArg)
+	}
 }

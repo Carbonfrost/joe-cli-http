@@ -101,66 +101,61 @@ func FlagsAndArgs() cli.Action {
 }
 
 func SetMethod(s ...string) cli.Action {
-	switch len(s) {
-	case 0:
-		return &cli.Prototype{
+	return cli.Pipeline(
+		&cli.Prototype{
 			Name:      "method",
 			Aliases:   []string{"X", "request"},
 			UsageText: "NAME",
 			HelpText:  "Sets the request method to {NAME}",
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Client).SetMethod),
-			},
-			Options:  cli.ImpliedAction,
-			Category: requestOptions,
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Client).SetMethod, s[0])
-	default:
-		panic(expectedOneArg)
-	}
-
+			Options:   cli.ImpliedAction,
+			Category:  requestOptions,
+		},
+		withBinding((*Client).SetMethod, s),
+	)
 }
 
 func SetHeader(s ...*HeaderValue) cli.Action {
-	switch len(s) {
-	case 0:
-		return &cli.Prototype{
+	return cli.Pipeline(
+		&cli.Prototype{
 			Name:     "header",
 			Aliases:  []string{"H"},
 			HelpText: "Sets header to {NAME} and {VALUE}",
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Client).SetHeader),
-			},
 			Options:  cli.EachOccurrence,
 			Category: requestOptions,
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Client).SetHeader, s[0])
-	default:
-		panic(expectedOneArg)
-	}
+		},
+		withBinding((*Client).SetHeader, s),
+	)
 }
 
 func SetBody(s ...string) cli.Action {
-	return createFlag((*Client).SetBody, s, &cli.Prototype{
-		Name:     "body",
-		HelpText: "Sets the raw content of the body of the request",
-		Aliases:  []string{"data-raw"},
-		Category: requestOptions,
-		Options:  cli.AllowFileReference,
-	}, cli.Implies("method", "POST"),
-		cli.Implies("body-content", ContentTypeRaw.String()),
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "body",
+			HelpText: "Sets the raw content of the body of the request",
+			Aliases:  []string{"data-raw"},
+			Category: requestOptions,
+			Options:  cli.AllowFileReference,
+			Setup: cli.Setup{
+				Uses: cli.Pipeline(
+					cli.Implies("method", "POST"),
+					cli.Implies("body-content", ContentTypeRaw.String()),
+				),
+			},
+		},
+		withBinding((*Client).SetBody, s),
 	)
 }
 
 func SetBodyContent(s ...*ContentType) cli.Action {
-	return createFlag((*Client).setBodyContentHelper, s, &cli.Prototype{
-		Name:     "body-content",
-		HelpText: "Sets the type of the body of the request: form, raw, urlencoded, multipart, json",
-		Options:  cli.ImpliedAction,
-		Category: requestOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "body-content",
+			HelpText: "Sets the type of the body of the request: form, raw, urlencoded, multipart, json",
+			Options:  cli.ImpliedAction,
+			Category: requestOptions,
+		},
+		withBinding((*Client).setBodyContentHelper, s),
+	)
 }
 
 func SetJSON() cli.Action {
@@ -190,49 +185,64 @@ func SetJSONContent() cli.Action {
 }
 
 func SetFollowRedirects(s ...bool) cli.Action {
-	return createFlag((*Client).SetFollowRedirects, s, &cli.Prototype{
-		Name:     "follow-redirects",
-		Aliases:  []string{"L", "location"},
-		Options:  cli.No,
-		HelpText: "Follow redirects in the Location header",
-		Category: requestOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "follow-redirects",
+			Aliases:  []string{"L", "location"},
+			Options:  cli.No,
+			HelpText: "Follow redirects in the Location header",
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetFollowRedirects, s),
+	)
 }
 
 func SetUserAgent(s ...string) cli.Action {
-	return createFlag((*Client).SetUserAgent, s, &cli.Prototype{
-		Name:     "user-agent",
-		Aliases:  []string{"A"},
-		HelpText: "Send the specified user-agent {NAME} to server",
-		Category: requestOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "user-agent",
+			Aliases:  []string{"A"},
+			HelpText: "Send the specified user-agent {NAME} to server",
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetUserAgent, s),
+	)
 }
 
 func SetDialTimeout(s ...time.Duration) cli.Action {
-	return createFlag((*Client).SetDialTimeout, s, &cli.Prototype{
-		Name:     "dial-timeout",
-		HelpText: "maximum amount of time a dial will wait for a connect to complete",
-		Category: requestOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "dial-timeout",
+			HelpText: "maximum amount of time a dial will wait for a connect to complete",
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetDialTimeout, s),
+	)
 }
 
 func SetIncludeResponseHeaders(s ...bool) cli.Action {
-	return createFlag((*Client).SetIncludeHeaders, s, &cli.Prototype{
-		Name:     "include",
-		Aliases:  []string{"i"},
-		HelpText: "Include response headers in the output",
-		Category: responseOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "include",
+			Aliases:  []string{"i"},
+			HelpText: "Include response headers in the output",
+			Category: responseOptions,
+		},
+		withBinding((*Client).SetIncludeHeaders, s),
+	)
 }
 
 func SetOutputFile(f ...*cli.File) cli.Action {
-	return createFlag((*Client).setOutputFileHelper, f, &cli.Prototype{
-		Name:     "output",
-		HelpText: "Download file to {FILE} instead of writing to stdout",
-		Aliases:  []string{"o"},
-		Value:    new(cli.File),
-		Category: responseOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "output",
+			HelpText: "Download file to {FILE} instead of writing to stdout",
+			Aliases:  []string{"o"},
+			Value:    new(cli.File),
+			Category: responseOptions,
+		},
+		withBinding((*Client).setOutputFileHelper, f),
+	)
 }
 
 func SetDownload() cli.Action {
@@ -299,20 +309,26 @@ func SetTLSv1_3() cli.Action {
 }
 
 func SetInsecureSkipVerify(v ...bool) cli.Action {
-	return createFlag((*Client).SetInsecureSkipVerify, v, &cli.Prototype{
-		Name:     "insecure-skip-verify",
-		Aliases:  []string{"k", "insecure"},
-		HelpText: "Whether to verify the server's certificate chain and host name.",
-		Category: tlsOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "insecure-skip-verify",
+			Aliases:  []string{"k", "insecure"},
+			HelpText: "Whether to verify the server's certificate chain and host name.",
+			Category: tlsOptions,
+		},
+		withBinding((*Client).SetInsecureSkipVerify, v),
+	)
 }
 
 func SetCiphers(v ...*CipherSuites) cli.Action {
-	return createFlag((*Client).SetCiphers, v, &cli.Prototype{
-		Name:     "ciphers",
-		HelpText: "List of SSL ciphers to use.  Not applicable to TLS 1.3",
-		Category: tlsOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "ciphers",
+			HelpText: "List of SSL ciphers to use.  Not applicable to TLS 1.3",
+			Category: tlsOptions,
+		},
+		withBinding((*Client).SetCiphers, v),
+	)
 }
 
 func ListCiphers() cli.Action {
@@ -329,11 +345,14 @@ func ListCiphers() cli.Action {
 }
 
 func SetDNSInterface(s ...string) cli.Action {
-	return createFlag((*Client).SetDNSInterface, s, &cli.Prototype{
-		Name:     "dns-interface",
-		HelpText: "Use network {INTERFACE} by name or address for DNS requests",
-		Category: dnsOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "dns-interface",
+			HelpText: "Use network {INTERFACE} by name or address for DNS requests",
+			Category: dnsOptions,
+		},
+		withBinding((*Client).SetDNSInterface, s),
+	)
 }
 
 func SetPreferGo() cli.Action {
@@ -346,11 +365,14 @@ func SetPreferGo() cli.Action {
 }
 
 func SetDialKeepAlive(v ...time.Duration) cli.Action {
-	return createFlag((*Client).SetDialKeepAlive, v, &cli.Prototype{
-		Name:     "dial-keep-alive",
-		HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
-		Category: dnsOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "dial-keep-alive",
+			HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
+			Category: dnsOptions,
+		},
+		withBinding((*Client).SetDialKeepAlive, v),
+	)
 }
 
 func SetDisableDialKeepAlive() cli.Action {
@@ -372,11 +394,14 @@ func SetStrictErrorsDNS() cli.Action {
 }
 
 func SetInterface(v ...string) cli.Action {
-	return createFlag((*Client).SetInterface, v, &cli.Prototype{
-		Name:     "interface",
-		HelpText: "Use network {INTERFACE} by name or address to connect",
-		Category: networkOptions,
-	})
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "interface",
+			HelpText: "Use network {INTERFACE} by name or address to connect",
+			Category: networkOptions,
+		},
+		withBinding((*Client).SetInterface, v),
+	)
 }
 
 func ListInterfaces() cli.Action {
@@ -470,10 +495,17 @@ func listInterfaces() cli.ActionFunc {
 	}
 }
 
-func createFlag[V any](binder func(*Client, V) error, args []V, proto *cli.Prototype, uses ...cli.Action) cli.Action {
-	return cliutil.FlagBinding(FromContext, binder, args, proto, uses...)
-}
-
 func dualSetup(a cli.Action) cli.Setup {
 	return cliutil.DualSetup(a)
+}
+
+func withBinding[V any](binder func(*Client, V) error, args []V) cli.Action {
+	switch len(args) {
+	case 0:
+		return cli.BindContext(FromContext, binder)
+	case 1:
+		return cli.BindContext(FromContext, binder, args[0])
+	default:
+		panic(expectedOneArg)
+	}
 }
