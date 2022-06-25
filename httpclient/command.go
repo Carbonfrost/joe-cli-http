@@ -279,6 +279,7 @@ func SetDownload() cli.Action {
 				HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
 				Aliases:  []string{"O", "remote-name"},
 				Value:    new(bool),
+				Category: responseOptions,
 			},
 			Action: func(c *cli.Context) error {
 				switch c.Occurrences("") {
