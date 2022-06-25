@@ -142,34 +142,37 @@ func (*promptForCredentials) RequiresUserInfo() bool {
 
 // ListAuthenticators provides an action which will list the providers
 func ListAuthenticators() cli.Action {
-	return &cli.Prototype{
-		HelpText: "List available authentication mechanisms",
-		Category: requestOptions,
-		Setup:    dualSetup(provider.ListProviders("authenticators")),
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			HelpText: "List available authentication mechanisms",
+			Category: requestOptions,
+			Setup:    dualSetup(provider.ListProviders("authenticators")),
+		},
+		tagged,
+	)
 }
 
 func SetAuth(v ...*provider.Value) cli.Action {
-	switch len(v) {
-	case 0:
-		return &cli.Prototype{
+	return cli.Pipeline(
+		&cli.Prototype{
 			Name:      "auth",
 			UsageText: "<provider>[,options...]",
 			Options:   cli.ImpliedAction,
 			Category:  requestOptions,
-			Setup: cli.Setup{
-				Optional: true,
-				Uses: cli.Pipeline(
-					cli.BindContext(FromContext, (*Client).setAuthenticatorHelper),
-					cli.Accessory("-", (*provider.Value).ArgumentFlag),
-				),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Client).setAuthenticatorHelper, v[0])
-	default:
-		panic(expectedOneArg)
-	}
+		},
+		withBinding((*Client).setAuthenticatorHelper, v),
+		cli.Accessory("-", taggedProviderArgumentFlag),
+		tagged,
+	)
+}
+
+func taggedProviderArgumentFlag(v *provider.Value) cli.Prototype {
+	proto := v.ArgumentFlag()
+	proto.Setup.Uses = cli.Pipeline(
+		proto.Setup.Uses,
+		tagged,
+	)
+	return proto
 }
 
 // PromptForCredentials will display prompts for user and/or password credentials if
@@ -196,17 +199,21 @@ func SetUser(s ...*UserInfo) cli.Action {
 			},
 		},
 		withBinding((*Client).SetUser, s),
+		tagged,
 	)
 }
 
 func SetBasicAuth() cli.Action {
-	return &cli.Prototype{
-		Name:     "basic",
-		HelpText: "Use Basic auth",
-		Value:    new(bool),
-		Category: requestOptions,
-		Setup:    dualSetup(cli.BindContext(FromContext, (*Client).setAuthModeHelper, BasicAuth)),
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "basic",
+			HelpText: "Use Basic auth",
+			Value:    new(bool),
+			Category: requestOptions,
+			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).setAuthModeHelper, BasicAuth)),
+		},
+		tagged,
+	)
 }
 
 func (*AuthMode) Synopsis() string {

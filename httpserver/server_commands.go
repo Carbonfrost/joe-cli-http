@@ -17,6 +17,16 @@ const (
 	allowShutdownTime = 3 * time.Second
 )
 
+var (
+	tagged = cli.Data(SourceAnnotation())
+)
+
+// SourceAnnotation gets the name and value of the annotation added to the Data
+// of all flags that are initialized from this package
+func SourceAnnotation() (string, string) {
+	return "Source", "joe-cli-http/httpclient"
+}
+
 func FlagsAndArgs() cli.Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
@@ -43,6 +53,7 @@ func SetHostname(s ...string) cli.Action {
 			Category: listenerCategory,
 		},
 		withBinding((*Server).SetHostname, s),
+		tagged,
 	)
 }
 
@@ -57,6 +68,7 @@ func SetPort(s ...int) cli.Action {
 			Category: listenerCategory,
 		},
 		withBinding((*Server).SetPort, s),
+		tagged,
 	)
 }
 
@@ -70,6 +82,7 @@ func SetAddr(s ...string) cli.Action {
 			Category: listenerCategory,
 		},
 		withBinding((*Server).SetAddr, s),
+		tagged,
 	)
 }
 
@@ -84,6 +97,7 @@ func SetReadTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetReadTimeout, d),
+		tagged,
 	)
 }
 
@@ -99,6 +113,7 @@ func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetReadHeaderTimeout, d),
+		tagged,
 	)
 }
 
@@ -114,6 +129,7 @@ func SetWriteTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetWriteTimeout, d),
+		tagged,
 	)
 }
 
@@ -131,6 +147,7 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetIdleTimeout, d),
+		tagged,
 	)
 }
 
@@ -145,6 +162,7 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 			HelpText: "Serve static files from the specified directory",
 		},
 		withBinding((*Server).setStaticDirectoryHelper, f),
+		tagged,
 	)
 }
 
@@ -156,6 +174,7 @@ func SetNoDirectoryListings() cli.Action {
 			HelpText: "When set, don't display directory listings",
 		},
 		withBinding((*Server).SetNoDirectoryListings, []bool{true}),
+		tagged,
 	)
 }
 

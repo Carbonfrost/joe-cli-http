@@ -25,6 +25,16 @@ const (
 	tlsOptions      = "TLS options"
 )
 
+var (
+	tagged = cli.Data(SourceAnnotation())
+)
+
+// SourceAnnotation gets the name and value of the annotation added to the Data
+// of all flags that are initialized from this package
+func SourceAnnotation() (string, string) {
+	return "Source", "joe-cli-http/httpclient"
+}
+
 func (o *Options) Execute(c *cli.Context) error {
 	return c.Do(
 		FlagsAndArgs(),
@@ -111,6 +121,7 @@ func SetMethod(s ...string) cli.Action {
 			Category:  requestOptions,
 		},
 		withBinding((*Client).SetMethod, s),
+		tagged,
 	)
 }
 
@@ -124,6 +135,7 @@ func SetHeader(s ...*HeaderValue) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetHeader, s),
+		tagged,
 	)
 }
 
@@ -143,6 +155,7 @@ func SetBody(s ...string) cli.Action {
 			},
 		},
 		withBinding((*Client).SetBody, s),
+		tagged,
 	)
 }
 
@@ -155,33 +168,40 @@ func SetBodyContent(s ...*ContentType) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).setBodyContentHelper, s),
+		tagged,
 	)
 }
 
 func SetJSON() cli.Action {
-	return cli.Setup{
-		Optional: true,
-		Uses: &cli.Prototype{
-			Name:     "json",
-			HelpText: "Sets the Accept header to application/json",
-			Value:    cli.Bool(),
-			Category: requestOptions,
+	return cli.Pipeline(
+		cli.Setup{
+			Optional: true,
+			Uses: &cli.Prototype{
+				Name:     "json",
+				HelpText: "Sets the Accept header to application/json",
+				Value:    cli.Bool(),
+				Category: requestOptions,
+			},
+			Action: setHTTPHeaderStatic("Accept", "application/json"),
 		},
-		Action: setHTTPHeaderStatic("Accept", "application/json"),
-	}
+		tagged,
+	)
 }
 
 func SetJSONContent() cli.Action {
-	return cli.Setup{
-		Optional: true,
-		Uses: &cli.Prototype{
-			Name:     "json-content",
-			HelpText: "Sets the Content-Type header to application/json",
-			Value:    cli.Bool(),
-			Category: requestOptions,
+	return cli.Pipeline(
+		cli.Setup{
+			Optional: true,
+			Uses: &cli.Prototype{
+				Name:     "json-content",
+				HelpText: "Sets the Content-Type header to application/json",
+				Value:    cli.Bool(),
+				Category: requestOptions,
+			},
+			Action: setHTTPHeaderStatic("Content-Type", "application/json"),
 		},
-		Action: setHTTPHeaderStatic("Content-Type", "application/json"),
-	}
+		tagged,
+	)
 }
 
 func SetFollowRedirects(s ...bool) cli.Action {
@@ -194,6 +214,7 @@ func SetFollowRedirects(s ...bool) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetFollowRedirects, s),
+		tagged,
 	)
 }
 
@@ -206,6 +227,7 @@ func SetUserAgent(s ...string) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetUserAgent, s),
+		tagged,
 	)
 }
 
@@ -217,6 +239,7 @@ func SetDialTimeout(s ...time.Duration) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetDialTimeout, s),
+		tagged,
 	)
 }
 
@@ -229,6 +252,7 @@ func SetIncludeResponseHeaders(s ...bool) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).SetIncludeHeaders, s),
+		tagged,
 	)
 }
 
@@ -242,30 +266,34 @@ func SetOutputFile(f ...*cli.File) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).setOutputFileHelper, f),
+		tagged,
 	)
 }
 
 func SetDownload() cli.Action {
-	return cli.Setup{
-		Optional: true,
-		Uses: &cli.Prototype{
-			Name:     "download",
-			HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
-			Aliases:  []string{"O", "remote-name"},
-			Value:    new(bool),
+	return cli.Pipeline(
+		cli.Setup{
+			Optional: true,
+			Uses: &cli.Prototype{
+				Name:     "download",
+				HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
+				Aliases:  []string{"O", "remote-name"},
+				Value:    new(bool),
+			},
+			Action: func(c *cli.Context) error {
+				switch c.Occurrences("") {
+				case 1:
+					FromContext(c).SetDownloadFile(PreserveRequestFile)
+				case 2:
+					FromContext(c).SetDownloadFile(PreserveRequestPath)
+				default:
+					return fmt.Errorf("too many occurrences of -O flag")
+				}
+				return nil
+			},
 		},
-		Action: func(c *cli.Context) error {
-			switch c.Occurrences("") {
-			case 1:
-				FromContext(c).SetDownloadFile(PreserveRequestFile)
-			case 2:
-				FromContext(c).SetDownloadFile(PreserveRequestPath)
-			default:
-				return fmt.Errorf("too many occurrences of -O flag")
-			}
-			return nil
-		},
-	}
+		tagged,
+	)
 }
 
 func SetTLSv1() cli.Action {
@@ -317,6 +345,7 @@ func SetInsecureSkipVerify(v ...bool) cli.Action {
 			Category: tlsOptions,
 		},
 		withBinding((*Client).SetInsecureSkipVerify, v),
+		tagged,
 	)
 }
 
@@ -328,20 +357,24 @@ func SetCiphers(v ...*CipherSuites) cli.Action {
 			Category: tlsOptions,
 		},
 		withBinding((*Client).SetCiphers, v),
+		tagged,
 	)
 }
 
 func ListCiphers() cli.Action {
-	return &cli.Prototype{
-		Name:     "list-ciphers",
-		Value:    cli.Bool(),
-		Options:  cli.Exits,
-		HelpText: "List the cipher suites available and exit",
-		Category: tlsOptions,
-		Setup: cli.Setup{
-			Action: doListCiphers,
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "list-ciphers",
+			Value:    cli.Bool(),
+			Options:  cli.Exits,
+			HelpText: "List the cipher suites available and exit",
+			Category: tlsOptions,
+			Setup: cli.Setup{
+				Action: doListCiphers,
+			},
 		},
-	}
+		tagged,
+	)
 }
 
 func SetDNSInterface(s ...string) cli.Action {
@@ -352,16 +385,20 @@ func SetDNSInterface(s ...string) cli.Action {
 			Category: dnsOptions,
 		},
 		withBinding((*Client).SetDNSInterface, s),
+		tagged,
 	)
 }
 
 func SetPreferGo() cli.Action {
-	return &cli.Prototype{
-		Name:     "prefer-go",
-		HelpText: "Whether Go's built-in DNS resolver is preferred",
-		Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetPreferGoDialer)),
-		Category: dnsOptions,
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "prefer-go",
+			HelpText: "Whether Go's built-in DNS resolver is preferred",
+			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetPreferGoDialer)),
+			Category: dnsOptions,
+		},
+		tagged,
+	)
 }
 
 func SetDialKeepAlive(v ...time.Duration) cli.Action {
@@ -372,25 +409,32 @@ func SetDialKeepAlive(v ...time.Duration) cli.Action {
 			Category: dnsOptions,
 		},
 		withBinding((*Client).SetDialKeepAlive, v),
+		tagged,
 	)
 }
 
 func SetDisableDialKeepAlive() cli.Action {
-	return &cli.Prototype{
-		Name:     "disable-dial-keep-alive",
-		HelpText: "Disable dialer keep-alive probes",
-		Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetDisableDialKeepAlive)),
-		Category: dnsOptions,
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "disable-dial-keep-alive",
+			HelpText: "Disable dialer keep-alive probes",
+			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetDisableDialKeepAlive)),
+			Category: dnsOptions,
+		},
+		tagged,
+	)
 }
 
 func SetStrictErrorsDNS() cli.Action {
-	return &cli.Prototype{
-		Name:     "strict-errors",
-		HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
-		Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetStrictErrorsDNS)),
-		Category: dnsOptions,
-	}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "strict-errors",
+			HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
+			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetStrictErrorsDNS)),
+			Category: dnsOptions,
+		},
+		tagged,
+	)
 }
 
 func SetInterface(v ...string) cli.Action {
@@ -401,44 +445,51 @@ func SetInterface(v ...string) cli.Action {
 			Category: networkOptions,
 		},
 		withBinding((*Client).SetInterface, v),
+		tagged,
 	)
 }
 
 func ListInterfaces() cli.Action {
-	return &cli.Prototype{
-		Name:     "list-interfaces",
-		Value:    cli.Bool(),
-		Options:  cli.Exits,
-		HelpText: "List network interfaces and then exit",
-		Setup: cli.Setup{
-			Action: listInterfaces(),
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "list-interfaces",
+			Value:    cli.Bool(),
+			Options:  cli.Exits,
+			HelpText: "List network interfaces and then exit",
+			Setup: cli.Setup{
+				Action: listInterfaces(),
+			},
+			Category: networkOptions,
 		},
-		Category: networkOptions,
-	}
+		tagged,
+	)
 }
 
 func SetVerbose() cli.Action {
-	return &cli.Prototype{
-		Name:     "verbose",
-		Aliases:  []string{"v"},
-		Value:    new(bool),
-		HelpText: "Display verbose output; can be used multiple times",
-		Setup: cli.Setup{
-			Action: func(c *cli.Context) {
-				switch c.Occurrences("") {
-				case 0:
-				case 1:
-					FromContext(c).SetTraceLevel(TraceOn)
-				case 2:
-					FromContext(c).SetTraceLevel(TraceVerbose)
-				case 3:
-					fallthrough
-				default:
-					FromContext(c).SetTraceLevel(TraceDebug)
-				}
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "verbose",
+			Aliases:  []string{"v"},
+			Value:    new(bool),
+			HelpText: "Display verbose output; can be used multiple times",
+			Setup: cli.Setup{
+				Action: func(c *cli.Context) {
+					switch c.Occurrences("") {
+					case 0:
+					case 1:
+						FromContext(c).SetTraceLevel(TraceOn)
+					case 2:
+						FromContext(c).SetTraceLevel(TraceVerbose)
+					case 3:
+						fallthrough
+					default:
+						FromContext(c).SetTraceLevel(TraceDebug)
+					}
+				},
 			},
 		},
-	}
+		tagged,
+	)
 }
 
 func bind(fn func(*Client) error) cli.ActionFunc {
@@ -455,22 +506,25 @@ func setHTTPHeaderStatic(name, value string) cli.Action {
 }
 
 func tlsVersionFlag(min, max uint16, proto *cli.Prototype) cli.Action {
-	return cli.Setup{
-		Uses: cli.Pipeline(
-			&cli.Prototype{
-				Value: new(bool),
+	return cli.Pipeline(
+		cli.Setup{
+			Uses: cli.Pipeline(
+				&cli.Prototype{
+					Value: new(bool),
+				},
+				proto,
+			),
+			Action: func(c *cli.Context) error {
+				s := FromContext(c)
+				if c.Bool("") {
+					s.TLSConfig().MinVersion = min
+					s.TLSConfig().MaxVersion = max
+				}
+				return nil
 			},
-			proto,
-		),
-		Action: func(c *cli.Context) error {
-			s := FromContext(c)
-			if c.Bool("") {
-				s.TLSConfig().MinVersion = min
-				s.TLSConfig().MaxVersion = max
-			}
-			return nil
 		},
-	}
+		tagged,
+	)
 }
 
 func listInterfaces() cli.ActionFunc {
