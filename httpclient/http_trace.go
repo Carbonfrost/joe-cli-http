@@ -138,12 +138,14 @@ var (
 	funcs = template.FuncMap{
 
 		// Stub color functions when used outside of Joe-cli
-		"Gray":       func(...string) string { return "" },
-		"Magenta":    func(...string) string { return "" },
-		"Blue":       func(...string) string { return "" },
-		"ResetColor": func(...string) string { return "" },
-		"Color":      func(...string) string { return "" },
-		"Join":       strings.Join,
+		"Gray":       func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"Magenta":    func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"Blue":       func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"ResetColor": func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"Color":      func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"Join": func(v string, args []string) string {
+			return strings.Join(args, v)
+		},
 	}
 	outputTemplate = template.Must(template.New("HTTPTrace").Funcs(funcs).Parse(outputTemplateText))
 )

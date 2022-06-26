@@ -38,7 +38,7 @@ func SourceAnnotation() (string, string) {
 func (o *Options) Execute(c *cli.Context) error {
 	return c.Do(
 		FlagsAndArgs(),
-		cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
 		cli.ContextValue(servicesKey, New()),
 		Authenticators,
 		PromptForCredentials(),
