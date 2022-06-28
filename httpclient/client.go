@@ -39,7 +39,10 @@ type Client struct {
 	authMiddleware []func(Authenticator) Authenticator
 }
 
-func New() *Client {
+// Option is an option to configure the client
+type Option func(*Client)
+
+func New(options ...Option) *Client {
 	h := &Client{
 		InterfaceResolver: &defaultResolver{},
 		dnsDialer:         &net.Dialer{},

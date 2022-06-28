@@ -10,11 +10,6 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 )
 
-// Options provides the options for how the HTTP client works.  This is the entry
-// point for setting up a command or app to contain an HTTP client in the context.
-type Options struct {
-}
-
 const (
 	expectedOneArg = "expected 0 or 1 arg"
 
@@ -35,8 +30,8 @@ func SourceAnnotation() (string, string) {
 	return "Source", "joe-cli-http/httpclient"
 }
 
-func (o *Options) Execute(c *cli.Context) error {
-	return c.Do(
+func (c *Client) Execute(ctx *cli.Context) error {
+	return ctx.Do(
 		FlagsAndArgs(),
 		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
 		cli.ContextValue(servicesKey, New()),
