@@ -19,10 +19,6 @@ type contextKey string
 
 const servicesKey contextKey = "httpclient_services"
 
-var (
-	defaultUserAgent string = "Go-http-client/1.1 wig/" + build.Version
-)
-
 type Client struct {
 	Client            *http.Client
 	Request           *http.Request
@@ -49,7 +45,7 @@ func New(options ...Option) *Client {
 		Request: &http.Request{
 			Method: "GET",
 			Header: http.Header{
-				"User-Agent": []string{defaultUserAgent},
+				"User-Agent": []string{defaultUserAgent()},
 			},
 		},
 	}
@@ -305,4 +301,11 @@ func (c *Client) Auth() Authenticator {
 
 func (c *Client) UseAuthMiddleware(fn func(Authenticator) Authenticator) {
 	c.authMiddleware = append(c.authMiddleware, fn)
+}
+
+func defaultUserAgent() string {
+	if len(build.Version) == 0 {
+		return "Go-http-client/1.1"
+	}
+	return "Go-http-client/1.1 wig/" + build.Version
 }
