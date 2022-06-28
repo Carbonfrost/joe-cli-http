@@ -6,7 +6,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
-	"github.com/Carbonfrost/joe-cli-http/internal/uritemplates"
+	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
 
 func main() {
