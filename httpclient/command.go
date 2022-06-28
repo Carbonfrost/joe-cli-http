@@ -96,9 +96,8 @@ func FlagsAndArgs() cli.Action {
 		}...),
 
 		cli.AddArg(&cli.Arg{
-			Name:  "url",
-			Value: new(URLValue),
-			Uses:  cli.BindContext(FromContext, (*Client).SetURL),
+			Name: "url",
+			Uses: cli.BindContext(FromContext, (*Client).SetURLValue),
 		}),
 
 		cli.AddFlags([]*cli.Flag{

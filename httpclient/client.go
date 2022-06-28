@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -154,10 +155,14 @@ func (c *Client) SetUserAgent(value string) error {
 	return nil
 }
 
-func (c *Client) SetURL(u *URLValue) error {
-	c.Request.URL = &u.URL
+func (c *Client) SetURL(u *url.URL) error {
+	c.Request.URL = u
 	c.Request.Host = u.Host
 	return nil
+}
+
+func (c *Client) SetURLValue(u *URLValue) error {
+	return c.SetURL(&u.URL)
 }
 
 func (c *Client) SetIncludeHeaders(v bool) error {

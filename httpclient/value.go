@@ -30,6 +30,10 @@ type UserInfo struct {
 	HasPassword bool
 }
 
+func NewURLValue(u *url.URL) *URLValue {
+	return &URLValue{*u}
+}
+
 func (*UserInfo) Synopsis() string {
 	return "<user:password>"
 }
