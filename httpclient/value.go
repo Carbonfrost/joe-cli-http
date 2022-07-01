@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
 
 // URLValue provides ergonomics for entering URLs as values.  When the text looks like
 // a port (e.g. :8080), the URL is interpeted as localhost.  When the text looks like a
 // hostname, the prefix http:// is preprended.
 type URLValue struct {
-	url.URL
+	loc string
 }
 
 // HeaderValue provides an instance of a value in a header
@@ -30,8 +31,12 @@ type UserInfo struct {
 	HasPassword bool
 }
 
-func NewURLValue(u *url.URL) *URLValue {
-	return &URLValue{*u}
+type headerValueCounter struct {
+	count int
+}
+
+func NewURLValue(loc string) *URLValue {
+	return &URLValue{loc}
 }
 
 func (*UserInfo) Synopsis() string {
@@ -50,20 +55,28 @@ func (u *UserInfo) String() string {
 	return u.User
 }
 
-type headerValueCounter struct {
-	count int
+// URL interprets the value as a URL
+func (u *URLValue) URL() (*url.URL, error) {
+	return url.Parse(fixupAddress(u.loc))
+}
+
+// URL interprets the value as a URI Template
+func (u *URLValue) URITemplate() (*uritemplates.URITemplate, error) {
+	return uritemplates.Parse(fixupAddress(u.loc))
 }
 
 func (u *URLValue) Set(arg string) error {
-	v, err := url.Parse(fixupAddress(arg))
-	if err == nil {
-		u.URL = *v
-	}
-	return err
+	u.loc = arg
+	return nil
 }
 
 func (u *URLValue) String() string {
-	return u.URL.String()
+	return u.loc
+}
+
+func (u *URLValue) Reset() {
+	// To faciliate re-use
+	u.loc = ""
 }
 
 func fixupAddress(addr string) string {

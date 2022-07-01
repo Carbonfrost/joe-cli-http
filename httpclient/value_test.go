@@ -15,7 +15,9 @@ var _ = Describe("URLValue", func() {
 		err := u.Set(value)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(u.String()).To(Equal(expected))
+
+		uu, _ := u.URL()
+		Expect(uu.String()).To(Equal(expected))
 	},
 
 		Entry("localhost", "localhost", "http://localhost"),

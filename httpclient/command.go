@@ -8,6 +8,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
+	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
 
 const (
@@ -42,17 +43,24 @@ func (c *Client) Execute(ctx *cli.Context) error {
 
 func FetchAndPrint() cli.Action {
 	return cli.ActionFunc(func(c *cli.Context) error {
-		response, err := Do(c)
+		responses, err := Do(c)
 		if err != nil {
 			return err
 		}
 
-		output, err := FromContext(c).openDownload(response)
-		if err != nil {
-			return err
+		for _, response := range responses {
+			output, err := FromContext(c).openDownload(response)
+			if err != nil {
+				return err
+			}
+
+			err = response.CopyTo(output, FromContext(c).IncludeHeaders)
+			if err != nil {
+				return err
+			}
 		}
 
-		return response.CopyTo(output, FromContext(c).IncludeHeaders)
+		return nil
 	})
 }
 
@@ -62,6 +70,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetMethod()},
 			{Uses: SetHeader()},
 			{Uses: SetBody()},
+			{Uses: SetBaseURL()},
+			{Uses: SetURITemplateVar()},
 			{Uses: SetBodyContent()},
 			{Uses: SetJSON()},
 			{Uses: SetJSONContent()},
@@ -91,8 +101,10 @@ func FlagsAndArgs() cli.Action {
 		}...),
 
 		cli.AddArg(&cli.Arg{
-			Name: "url",
-			Uses: cli.BindContext(FromContext, (*Client).SetURLValue),
+			Name:    "url",
+			NArg:    cli.TakeUntilNextFlag,
+			Uses:    cli.BindContext(FromContext, (*Client).SetURLValue),
+			Options: cli.EachOccurrence,
 		}),
 
 		cli.AddFlags([]*cli.Flag{
@@ -483,6 +495,34 @@ func SetVerbose() cli.Action {
 				},
 			},
 		},
+		tagged,
+	)
+}
+
+func SetBaseURL(name ...*URLValue) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "base",
+			Aliases:  []string{"a"},
+			HelpText: "Specify a base URL.  Can be used multiple times",
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetBaseURL, name),
+		tagged,
+	)
+}
+
+func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "param",
+			Aliases:  []string{"T"},
+			HelpText: "Specify a value used to fill an RFC 6570 Level 4 URI template and parse the input URL as having template expressions",
+			Value:    new(uritemplates.Var),
+			Category: requestOptions,
+			Options:  cli.EachOccurrence,
+		},
+		withBinding((*Client).SetURITemplateVar, v),
 		tagged,
 	)
 }

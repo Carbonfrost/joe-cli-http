@@ -12,6 +12,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
+	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
@@ -26,8 +27,9 @@ type Client struct {
 	InterfaceResolver InterfaceResolver
 	BodyContent       Content
 	UserInfo          *UserInfo
-	downloader        Downloader
+	LocationResolver  LocationResolver
 
+	downloader     Downloader
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
 	tlsConfig      *tls.Config
@@ -68,7 +70,7 @@ func New(options ...Option) *Client {
 	return h
 }
 
-func Do(c *cli.Context) (*Response, error) {
+func Do(c *cli.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
 }
 
@@ -93,7 +95,26 @@ func wrapReader(r io.Reader) io.ReadCloser {
 	return io.NopCloser(r)
 }
 
-func (c *Client) Do(ctx context.Context) (*Response, error) {
+func (c *Client) Do(ctx context.Context) ([]*Response, error) {
+	urls, err := c.ensureLocationResolver().Resolve(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp := make([]*Response, 0, len(urls))
+	for _, u := range urls {
+		r, err := c.doOne(u, ctx)
+		if err != nil {
+			return rsp, err
+		}
+		rsp = append(rsp, r)
+	}
+	return rsp, nil
+}
+
+func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
+	c.Request.URL = u
+	c.Request.Host = u.Host
 	c.Request = c.Request.WithContext(ctx)
 
 	// Apply additional setup to request
@@ -154,14 +175,31 @@ func (c *Client) SetUserAgent(value string) error {
 	return nil
 }
 
+func (c *Client) SetBaseURL(u *URLValue) error {
+	uu, err := u.URL()
+	if err != nil {
+		return err
+	}
+	return c.ensureLocationResolver().SetBase(uu)
+}
+
 func (c *Client) SetURL(u *url.URL) error {
-	c.Request.URL = u
-	c.Request.Host = u.Host
-	return nil
+	return c.ensureLocationResolver().Add(u.String())
 }
 
 func (c *Client) SetURLValue(u *URLValue) error {
-	return c.SetURL(&u.URL)
+	return c.ensureLocationResolver().Add(u.String())
+}
+
+func (c *Client) SetURITemplateVar(v *uritemplates.Var) error {
+	return c.ensureLocationResolver().AddVar(v)
+}
+
+func (c *Client) ensureLocationResolver() LocationResolver {
+	if c.LocationResolver == nil {
+		c.LocationResolver = NewDefaultLocationResolver()
+	}
+	return c.LocationResolver
 }
 
 func (c *Client) SetIncludeHeaders(v bool) error {
