@@ -66,7 +66,8 @@ func WithPromptForCredentials(auth Authenticator) Authenticator {
 }
 
 func (m AuthMode) RequiresUserInfo() bool {
-	if m == BasicAuth {
+	switch m {
+	case BasicAuth:
 		return true
 	}
 	return false
@@ -114,7 +115,9 @@ func (m *AuthMode) UnmarshalText(b []byte) error {
 func (p *promptForCredentials) Authenticate(r *http.Request, ui *UserInfo) error {
 	c := r.Context().(*cli.Context)
 
-	ui = c.Value("user").(*UserInfo)
+	if ui == nil {
+		ui = c.Value("user").(*UserInfo)
+	}
 	if p.auth.RequiresUserInfo() {
 		if ui == nil {
 			ui = &UserInfo{}
