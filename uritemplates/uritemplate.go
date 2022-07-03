@@ -22,7 +22,12 @@ func Parse(text string) (*URITemplate, error) {
 }
 
 func (u *URITemplate) Expand(value interface{}) (string, error) {
-	return u.u.Expand(value)
+	if val, ok := value.(Vars); ok {
+		value = map[string]interface{}(val)
+	}
+
+	s, err := u.u.Expand(value)
+	return s, err
 }
 
 func (u *URITemplate) Names() []string {
