@@ -35,7 +35,7 @@ func (c *Client) Execute(ctx *cli.Context) error {
 	return ctx.Do(
 		FlagsAndArgs(),
 		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
-		cli.ContextValue(servicesKey, New()),
+		cli.ContextValue(servicesKey, c),
 		Authenticators,
 		PromptForCredentials(),
 	)

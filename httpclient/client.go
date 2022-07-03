@@ -67,6 +67,9 @@ func New(options ...Option) *Client {
 			},
 		},
 	}
+	for _, o := range options {
+		o(h)
+	}
 	return h
 }
 
@@ -121,12 +124,7 @@ func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 	if c.BodyContent != nil {
 		c.Request.Body = wrapReader(c.BodyContent.Read())
 	}
-	auth := c.Auth()
-	for _, a := range c.authMiddleware {
-		auth = a(auth)
-	}
-	err := auth.Authenticate(c.Request, c.UserInfo)
-
+	err := c.applyAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +136,14 @@ func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 	return &Response{
 		Response: resp,
 	}, nil
+}
+
+func (c *Client) applyAuth() error {
+	auth := c.Auth()
+	for _, a := range c.authMiddleware {
+		auth = a(auth)
+	}
+	return auth.Authenticate(c.Request, c.UserInfo)
 }
 
 func (c *Client) TLSConfig() *tls.Config {

@@ -198,6 +198,11 @@ const (
 {{- define "StatusCode" -}}
 {{ Color .Status.Color }}{{ .Status }}{{ ResetColor }}
 {{ end -}}
+
+{{- define "GenericError" -}}
+{{ .Red }}{{ .Error }}{{ ResetColor }}
+{{ end -}}
+
 `
 )
 
@@ -236,23 +241,17 @@ func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 
 // SetTraceLevel provides the action for a flag which sets the trace level
 // corresponding to the flag's value.
-func SetTraceLevel(s ...TraceLevel) cli.Action {
-	switch len(s) {
-	case 0:
-		return &cli.Prototype{
+func SetTraceLevel(s ...*TraceLevel) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
 			Name:      "trace",
 			HelpText:  "Set which client operations are traced",
 			UsageText: "LEVEL",
 			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
-			Setup: cli.Setup{
-				Uses: cli.BindContext(FromContext, (*Client).setTraceLevelHelper),
-			},
-		}
-	case 1:
-		return cli.BindContext(FromContext, (*Client).SetTraceLevel, s[0])
-	default:
-		panic(expectedOneArg)
-	}
+		},
+		withBinding((*Client).setTraceLevelHelper, s),
+		tagged,
+	)
 }
 
 func (l *TraceLevel) Set(arg string) error {
@@ -531,6 +530,15 @@ func (l *defaultTraceLogger) StartRequest(req *http.Request) {
 }
 
 func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
+	if resp == nil || err != nil {
+		l.render("GenericError", struct {
+			Error error
+		}{
+			Error: err,
+		})
+		return
+	}
+
 	l.render("StatusCode", struct {
 		Status httpStatus
 	}{
