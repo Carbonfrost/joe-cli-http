@@ -347,6 +347,11 @@ func (c *Client) UseAuthMiddleware(fn func(Authenticator) Authenticator) {
 	c.authMiddleware = append(c.authMiddleware, fn)
 }
 
+func (o Option) Execute(c *cli.Context) error {
+	o(FromContext(c))
+	return nil
+}
+
 func defaultUserAgent() string {
 	if len(build.Version) == 0 {
 		return "Go-http-client/1.1"

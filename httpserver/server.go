@@ -184,6 +184,11 @@ func (s *Server) proto() string {
 	return "http://"
 }
 
+func (o Option) Execute(c *cli.Context) error {
+	o(FromContext(c))
+	return nil
+}
+
 func hideListing(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, "/") {
