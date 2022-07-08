@@ -1,0 +1,74 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/toupee
+    id: toupee
+    binary: toupee
+    goos: &platforms 
+      - linux
+      - windows
+      - darwin
+    env: &env
+      - CGO_ENABLED=0
+    ldflags: &ldflags
+      - -s -w -X github.com/Carbonfrost/joe-cli-http/internal/build.Version={{.Version}}
+
+  - main: ./cmd/weave
+    id: weave
+    binary: weave
+    goos: *platforms
+    env: *env
+    ldflags: *ldflags
+
+  - main: ./cmd/wig
+    id: wig
+    binary: wig
+    goos: *platforms
+    env: *env
+    ldflags: *ldflags
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      "386": i386
+      amd64: x86_64
+
+brews:
+  - name: toupee
+    ids:
+    - toupee
+    tap: &tap
+      owner: Carbonfrost
+      name: homebrew-tap
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    description: "Expands RFC 6570 (level 4) URI templates"
+    homepage: "https://github.com/Carbonfrost/joe-cli-http"
+
+  - name: weave
+    ids:
+    - weave
+    tap: *tap
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    description: "Provides access to a simple Go HTTP server for files and proxy handling"
+    homepage: "https://github.com/Carbonfrost/joe-cli-http"
+
+  - name: wig
+    ids:
+    - wig
+    tap: *tap
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"        
+    description: "Provides access to the Go HTTP client with some cURL compatibility"
+    homepage: "https://github.com/Carbonfrost/joe-cli-http"
+
+changelog:
+  skip: true
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-dev"
