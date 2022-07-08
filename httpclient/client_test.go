@@ -10,7 +10,6 @@ import (
 var _ = Describe("Client", func() {
 
 	Describe("SetHeader", func() {
-
 		It("aggregates header values", func() {
 			s := httpclient.New()
 			s.SetHeader(&httpclient.HeaderValue{"Link", "Something"})
@@ -18,6 +17,13 @@ var _ = Describe("Client", func() {
 
 			Expect(s.Request.Header).To(HaveKeyWithValue("Link", []string{"Something", "SomethingElse"}))
 		})
+	})
 
+	Describe("New", func() {
+		It("sets up the default user agent string", func() {
+			s := httpclient.New()
+			expected := "Go-http-client/1.1 (wig/development, +https://github.com/Carbonfrost/joe-cli-http/cmd/wig)"
+			Expect(s.Request.Header).To(HaveKeyWithValue("User-Agent", []string{expected}))
+		})
 	})
 })

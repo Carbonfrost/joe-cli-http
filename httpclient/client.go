@@ -3,6 +3,7 @@ package httpclient
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 type contextKey string
 
 const servicesKey contextKey = "httpclient_services"
+const wigURL = "https://github.com/Carbonfrost/joe-cli-http/cmd/wig"
 
 type Client struct {
 	Client            *http.Client
@@ -37,6 +39,12 @@ type Client struct {
 	authMiddleware []func(Authenticator) Authenticator
 }
 
+var (
+	impliedOptions = []Option{
+		WithDefaultUserAgent(defaultUserAgent()),
+	}
+)
+
 // Option is an option to configure the client
 type Option func(*Client)
 
@@ -46,9 +54,6 @@ func New(options ...Option) *Client {
 		dnsDialer:         &net.Dialer{},
 		Request: &http.Request{
 			Method: "GET",
-			Header: http.Header{
-				"User-Agent": []string{defaultUserAgent()},
-			},
 		},
 	}
 	h.dialer = &net.Dialer{
@@ -67,10 +72,19 @@ func New(options ...Option) *Client {
 			},
 		},
 	}
-	for _, o := range options {
+	for _, o := range append(impliedOptions, options...) {
 		o(h)
 	}
 	return h
+}
+
+func WithDefaultUserAgent(s string) Option {
+	return func(c *Client) {
+		if c.Request.Header == nil {
+			c.Request.Header = http.Header{}
+		}
+		c.Request.Header.Set("User-Agent", s)
+	}
 }
 
 func Do(c *cli.Context) ([]*Response, error) {
@@ -353,8 +367,9 @@ func (o Option) Execute(c *cli.Context) error {
 }
 
 func defaultUserAgent() string {
-	if len(build.Version) == 0 {
-		return "Go-http-client/1.1"
+	version := build.Version
+	if len(version) == 0 {
+		version = "development"
 	}
-	return "Go-http-client/1.1 wig/" + build.Version
+	return fmt.Sprintf("Go-http-client/1.1 (wig/%s, +%s)", version, wigURL)
 }
