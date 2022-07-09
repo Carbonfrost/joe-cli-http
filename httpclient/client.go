@@ -87,6 +87,12 @@ func WithDefaultUserAgent(s string) Option {
 	}
 }
 
+func WithLocationResolver(r LocationResolver) Option {
+	return func(c *Client) {
+		c.LocationResolver = r
+	}
+}
+
 func Do(c *cli.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
 }
