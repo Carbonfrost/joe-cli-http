@@ -35,6 +35,9 @@ func (u *URITemplate) Names() []string {
 }
 
 func (u *URITemplate) Set(arg string) error {
+	if u.u != nil {
+		arg = u.u.String() + arg
+	}
 	uri, err := uritemplates.Parse(arg)
 	u.u = uri
 	return err
