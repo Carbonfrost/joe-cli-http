@@ -119,12 +119,13 @@ func FlagsAndArgs() cli.Action {
 func SetMethod(s ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:      "method",
-			Aliases:   []string{"X", "request"},
-			UsageText: "NAME",
-			HelpText:  "Sets the request method to {NAME}",
-			Options:   cli.ImpliedAction,
-			Category:  requestOptions,
+			Name:       "method",
+			Aliases:    []string{"X", "request"},
+			UsageText:  "NAME",
+			HelpText:   "Sets the request method to {NAME}",
+			Options:    cli.ImpliedAction,
+			Category:   requestOptions,
+			Completion: cli.CompletionValues("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "CONNECT", "OPTIONS", "TRACE"),
 		},
 		withBinding((*Client).SetMethod, s),
 		tagged,
@@ -387,9 +388,10 @@ func ListCiphers() cli.Action {
 func SetDNSInterface(s ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "dns-interface",
-			HelpText: "Use network {INTERFACE} by name or address for DNS requests",
-			Category: dnsOptions,
+			Name:       "dns-interface",
+			HelpText:   "Use network {INTERFACE} by name or address for DNS requests",
+			Category:   dnsOptions,
+			Completion: completeInterfaces(),
 		},
 		withBinding((*Client).SetDNSInterface, s),
 		tagged,
@@ -447,9 +449,10 @@ func SetStrictErrorsDNS() cli.Action {
 func SetInterface(v ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "interface",
-			HelpText: "Use network {INTERFACE} by name or address to connect",
-			Category: networkOptions,
+			Name:       "interface",
+			HelpText:   "Use network {INTERFACE} by name or address to connect",
+			Category:   networkOptions,
+			Completion: completeInterfaces(),
 		},
 		withBinding((*Client).SetInterface, v),
 		tagged,
@@ -581,6 +584,25 @@ func listInterfaces() cli.ActionFunc {
 			fmt.Println()
 		}
 		return nil
+	}
+}
+
+func completeInterfaces() cli.CompletionFunc {
+	return func(cc *cli.CompletionContext) []cli.CompletionItem {
+		values := []string{}
+		eths, _ := net.Interfaces()
+		for _, s := range eths {
+			values = append(values, s.Name)
+
+			addrs, err := s.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, a := range addrs {
+				values = append(values, a.String())
+			}
+		}
+		return cli.CompletionValues(values...).Complete(cc)
 	}
 }
 
