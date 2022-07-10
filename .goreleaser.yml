@@ -6,7 +6,7 @@ builds:
   - main: ./cmd/toupee
     id: toupee
     binary: toupee
-    goos: &platforms 
+    goos: &platforms
       - linux
       - windows
       - darwin
@@ -30,12 +30,38 @@ builds:
     ldflags: *ldflags
 
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
+  - id: toupee
+    builds:
+      - toupee
+    name_template: "toupee_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
       "386": i386
       amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+
+  - id: weave
+    builds:
+      - weave
+    name_template: "weave_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      "386": i386
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+
+  - id: wig
+    builds:
+      - wig
+    name_template: "wig_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      "386": i386
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
 
 brews:
   - name: toupee
@@ -60,7 +86,7 @@ brews:
     ids:
     - wig
     tap: *tap
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"        
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     description: "Provides access to the Go HTTP client with some cURL compatibility"
     homepage: "https://github.com/Carbonfrost/joe-cli-http"
 
