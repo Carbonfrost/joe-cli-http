@@ -29,6 +29,10 @@ func (c *FormDataContent) SetFile(name, file io.Reader) error {
 	panic("not impl")
 }
 
+func (c *FormDataContent) ContentType() string {
+	return ""
+}
+
 func (c *MultipartFormDataContent) Query() (url.Values, error) {
 	panic("not impl")
 }
@@ -41,6 +45,10 @@ func (c *MultipartFormDataContent) SetFile(name, file io.Reader) error {
 	panic("not impl")
 }
 
+func (c *MultipartFormDataContent) ContentType() string {
+	return ""
+}
+
 func (c *URLEncodedFormDataContent) Query() (url.Values, error) {
 	panic("not impl")
 }
@@ -51,4 +59,8 @@ func (c *URLEncodedFormDataContent) Set(name, value string) error {
 
 func (c *URLEncodedFormDataContent) SetFile(name, file io.Reader) error {
 	panic("not impl")
+}
+
+func (c *URLEncodedFormDataContent) ContentType() string {
+	return ""
 }

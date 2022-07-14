@@ -73,6 +73,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetBaseURL()},
 			{Uses: SetURITemplateVar()},
 			{Uses: SetBodyContent()},
+			{Uses: SetFillValue()},
 			{Uses: SetJSON()},
 			{Uses: SetJSONContent()},
 			{Uses: SetFollowRedirects()},
@@ -174,7 +175,23 @@ func SetBodyContent(s ...*ContentType) cli.Action {
 			Options:  cli.ImpliedAction,
 			Category: requestOptions,
 		},
+		cli.Implies("method", "POST"),
 		withBinding((*Client).setBodyContentHelper, s),
+		tagged,
+	)
+}
+
+func SetFillValue(s ...*cli.NameValue) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "fill",
+			HelpText: "Fills a value in the body of the request or the query string",
+			Aliases:  []string{"F"},
+			Category: requestOptions,
+			Options:  cli.EachOccurrence,
+		},
+		cli.Implies("method", "POST"),
+		withBinding((*Client).SetFillValue, s),
 		tagged,
 	)
 }
@@ -196,17 +213,15 @@ func SetJSON() cli.Action {
 }
 
 func SetJSONContent() cli.Action {
+	c := ContentTypeJSON
 	return cli.Pipeline(
-		cli.Setup{
-			Optional: true,
-			Uses: &cli.Prototype{
-				Name:     "json-content",
-				HelpText: "Sets the Content-Type header to application/json",
-				Value:    cli.Bool(),
-				Category: requestOptions,
-			},
-			Action: setHTTPHeaderStatic("Content-Type", "application/json"),
+		&cli.Prototype{
+			Name:     "json-content",
+			HelpText: "Sets the Content-Type header to application/json",
+			Value:    cli.Bool(),
+			Category: requestOptions,
 		},
+		SetBodyContent(&c),
 		tagged,
 	)
 }

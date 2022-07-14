@@ -37,6 +37,7 @@ type Client struct {
 	tlsConfig      *tls.Config
 	auth           Authenticator
 	authMiddleware []func(Authenticator) Authenticator
+	bodyForm       []*cli.NameValue
 }
 
 var (
@@ -141,7 +142,21 @@ func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 	c.Request = c.Request.WithContext(ctx)
 
 	// Apply additional setup to request
+	if len(c.bodyForm) > 0 {
+		c.ensureBodyContent()
+	}
 	if c.BodyContent != nil {
+		for _, k := range c.bodyForm {
+			err := c.BodyContent.Set(k.Name, k.Name)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if c.Request.Header.Get("Content-Type") == "" {
+			if ct := c.BodyContent.ContentType(); ct != "" {
+				c.Request.Header.Set("Content-Type", ct)
+			}
+		}
 		c.Request.Body = wrapReader(c.BodyContent.Read())
 	}
 	err := c.applyAuth()
@@ -316,8 +331,20 @@ func (c *Client) setBodyContentHelper(name *ContentType) error {
 	return nil
 }
 
+func (c *Client) ensureBodyContent() Content {
+	if c.BodyContent == nil {
+		c.BodyContent = &FormDataContent{}
+	}
+	return c.BodyContent
+}
+
 func (c *Client) SetBodyContent(bodyContent Content) error {
 	c.BodyContent = bodyContent
+	return nil
+}
+
+func (c *Client) SetFillValue(v *cli.NameValue) error {
+	c.bodyForm = append(c.bodyForm, v)
 	return nil
 }
 

@@ -13,6 +13,7 @@ import (
 type Content interface {
 	Read() io.Reader
 	Query() (url.Values, error)
+	ContentType() string
 	Set(name, value string) error
 	SetFile(name, file io.Reader) error
 }
@@ -70,4 +71,8 @@ func (c *RawContent) Set(name, value string) error {
 
 func (c *RawContent) SetFile(name, file io.Reader) error {
 	return rawContentSetError
+}
+
+func (c *RawContent) ContentType() string {
+	return ""
 }
