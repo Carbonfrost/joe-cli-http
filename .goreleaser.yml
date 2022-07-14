@@ -70,6 +70,7 @@ brews:
     tap: &tap
       owner: Carbonfrost
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     description: "Expands RFC 6570 (level 4) URI templates"
     homepage: "https://github.com/Carbonfrost/joe-cli-http"
