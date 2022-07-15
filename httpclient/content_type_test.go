@@ -32,9 +32,10 @@ var _ = Describe("ContentType", func() {
 	Describe("Set", func() {
 
 		DescribeTable("examples", func(arg string, expected httpclient.ContentType) {
-			var actual httpclient.ContentType
-			cli.Set(&actual, arg)
+			var actual httpclient.ContentType = -1
+			err := cli.Set(&actual, arg)
 
+			Expect(err).NotTo(HaveOccurred())
 			Expect(actual).To(Equal(expected))
 		},
 			Entry("FormData", "form", httpclient.ContentTypeFormData),
@@ -42,6 +43,13 @@ var _ = Describe("ContentType", func() {
 			Entry("URLEncodedFormData", "urlencoded", httpclient.ContentTypeURLEncodedFormData),
 			Entry("MultipartFormData", "multipart", httpclient.ContentTypeMultipartFormData),
 			Entry("JSON", "json", httpclient.ContentTypeJSON),
+
+			Entry("empty string", "", httpclient.ContentType(-1)),
+			Entry("FormData marshal", "FORM_DATA", httpclient.ContentTypeFormData),
+			Entry("Raw marshal", "RAW", httpclient.ContentTypeRaw),
+			Entry("URLEncodedFormData marshal", "URL_ENCODED_FORM_DATA", httpclient.ContentTypeURLEncodedFormData),
+			Entry("MultipartFormData marshal", "MULTIPART_FORM_DATA", httpclient.ContentTypeMultipartFormData),
+			Entry("JSON marshal", "JSON", httpclient.ContentTypeJSON),
 		)
 	})
 })

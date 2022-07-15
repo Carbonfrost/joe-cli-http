@@ -61,6 +61,9 @@ func (c *ContentType) UnmarshalText(b []byte) error {
 }
 
 func (c *ContentType) Set(arg string) error {
+	if arg == "" {
+		return nil
+	}
 	switch arg {
 	case "form":
 		*c = ContentTypeFormData
@@ -77,6 +80,12 @@ func (c *ContentType) Set(arg string) error {
 	case "json":
 		*c = ContentTypeJSON
 		return nil
+	}
+	for i := range contentTypeStrings {
+		if arg == contentTypeStrings[i] {
+			*c = ContentType(i)
+			return nil
+		}
 	}
 	return fmt.Errorf("unknown content type %q", arg)
 }
