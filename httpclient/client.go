@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -194,7 +195,7 @@ func (c *Client) DNSDialer() *net.Dialer {
 }
 
 func (c *Client) SetMethod(s string) error {
-	c.Request.Method = s
+	c.Request.Method = strings.ToUpper(s)
 	return nil
 }
 
