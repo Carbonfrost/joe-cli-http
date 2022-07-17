@@ -34,6 +34,7 @@ func FlagsAndArgs() cli.Action {
 		cli.ContextValue(varsContextKey, Vars{}),
 		cli.AddFlags([]*cli.Flag{
 			{Uses: SetURITemplateVar()},
+			{Uses: SetURITemplateVars()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -57,6 +58,24 @@ func SetURITemplateVar(v ...*Var) cli.Action {
 			v := c.Value("").(*Var)
 			fromContext(c).Add(v)
 			return nil
+		}), cli.ActionTiming),
+		tagged,
+	)
+}
+
+func SetURITemplateVars(v ...*Vars) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "params",
+			Aliases:   []string{"t"},
+			UsageText: "expr|@file",
+			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
+			Value:     &Vars{},
+			Options:   cli.EachOccurrence | cli.AllowFileReference,
+		},
+		cli.AtTiming(cli.ActionFunc(func(c *cli.Context) error {
+			v := c.Value("").(*Vars)
+			return fromContext(c).Update(*v)
 		}), cli.ActionTiming),
 		tagged,
 	)

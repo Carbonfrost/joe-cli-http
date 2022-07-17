@@ -6,6 +6,7 @@ require (
 	github.com/Carbonfrost/joe-cli v0.2.1
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
+	github.com/spf13/afero v1.6.0
 	honnef.co/go/tools v0.3.2
 )
 

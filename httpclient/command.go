@@ -72,6 +72,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetBody()},
 			{Uses: SetBaseURL()},
 			{Uses: SetURITemplateVar()},
+			{Uses: SetURITemplateVars()},
 			{Uses: SetBodyContent()},
 			{Uses: SetFillValue()},
 			{Uses: SetJSON()},
@@ -541,6 +542,21 @@ func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
 			Options:  cli.EachOccurrence,
 		},
 		withBinding((*Client).SetURITemplateVar, v),
+		tagged,
+	)
+}
+
+func SetURITemplateVars(v ...uritemplates.Vars) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "params",
+			Aliases:   []string{"t"},
+			UsageText: "expr|@file",
+			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
+			Value:     &uritemplates.Vars{},
+			Options:   cli.EachOccurrence | cli.AllowFileReference,
+		},
+		withBinding((*Client).SetURITemplateVars, v),
 		tagged,
 	)
 }

@@ -160,6 +160,7 @@ func SetAuth(v ...*provider.Value) cli.Action {
 		&cli.Prototype{
 			Name:      "auth",
 			UsageText: "<provider>[,options...]",
+			HelpText:  "Sets the authorization provider for the endpoint",
 			Options:   cli.ImpliedAction,
 			Category:  requestOptions,
 		},
