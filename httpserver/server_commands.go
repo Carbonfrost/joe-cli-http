@@ -38,6 +38,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetWriteTimeout()},
 			{Uses: SetStaticDirectory()},
 			{Uses: SetNoDirectoryListings()},
+			{Uses: SetOpenInBrowser()},
 		}...),
 	)
 }
@@ -174,6 +175,19 @@ func SetNoDirectoryListings() cli.Action {
 			HelpText: "When set, don't display directory listings",
 		},
 		withBinding((*Server).SetNoDirectoryListings, []bool{true}),
+		tagged,
+	)
+}
+
+// SetOpenInBrowser causes the default Web browser to open when the server
+// is ready
+func SetOpenInBrowser() cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "open-in-browser",
+			HelpText: "When set, open the default Web browser when the server is ready",
+		},
+		withBinding((*Server).setOpenInBrowserHelper, []bool{true}),
 		tagged,
 	)
 }

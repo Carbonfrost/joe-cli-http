@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli/extensions/exec"
 )
 
 // Server provides an HTTP server (indeed http.Server is embedded)
@@ -86,6 +87,12 @@ func WithReadyFunc(ready func(context.Context)) Option {
 	}
 }
 
+// OpenInBrowser is a function to open the server in the browser.  This
+// function is passed as a value to WithReadyFunc
+func OpenInBrowser(c context.Context) {
+	FromContext(c).OpenInBrowser()
+}
+
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
@@ -99,8 +106,20 @@ func (s *Server) ListenAndServe() error {
 		}
 		s.Server.Handler = h
 	}
-	fmt.Fprintf(os.Stderr, "Listening on %s%s... (Press ^C to exit)", s.proto(), s.Server.Addr)
+	fmt.Fprintf(os.Stderr, "Listening on %s... (Press ^C to exit)", s.schemeAndAddr())
 	return s.Server.ListenAndServe()
+}
+
+func (s *Server) schemeAndAddr() string {
+	return s.proto() + s.Server.Addr
+}
+
+// OpenInBrowser opens in the browser.  The request path can also be
+// specified
+func (s *Server) OpenInBrowser(path ...string) error {
+	bind := s.schemeAndAddr() + strings.Join(path, "")
+	fmt.Fprintf(os.Stderr, "Opening default web browser %s...", bind)
+	return exec.Open(bind)
 }
 
 func (s *Server) Execute(c *cli.Context) error {
@@ -171,6 +190,11 @@ func (s *Server) SetNoDirectoryListings(v bool) error {
 
 func (s *Server) setStaticDirectoryHelper(f *cli.File) error {
 	return s.SetStaticDirectory(f.Name)
+}
+
+func (s *Server) setOpenInBrowserHelper(v bool) error {
+	WithReadyFunc(OpenInBrowser)(s)
+	return nil
 }
 
 func (s *Server) actualReady() func(context.Context) {
