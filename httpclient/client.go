@@ -3,8 +3,10 @@ package httpclient
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -39,6 +41,9 @@ type Client struct {
 	auth           Authenticator
 	authMiddleware []func(Authenticator) Authenticator
 	bodyForm       []*cli.NameValue
+	certFile       string
+	keyFile        string
+	rootCAs        []string
 }
 
 var (
@@ -164,6 +169,10 @@ func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = c.loadClientTLSCreds()
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := c.Client.Do(c.Request)
 	if err != nil {
@@ -180,6 +189,33 @@ func (c *Client) applyAuth() error {
 		auth = a(auth)
 	}
 	return auth.Authenticate(c.Request, c.UserInfo)
+}
+
+func (c *Client) loadClientTLSCreds() error {
+	if c.certFile != "" || c.keyFile != "" {
+		cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
+		cfg := c.TLSConfig()
+		cfg.Certificates = append(cfg.Certificates, cert)
+		if err != nil {
+			return err
+		}
+	}
+
+	caCertPool := c.TLSConfig().RootCAs
+	if caCertPool == nil {
+		caCertPool = x509.NewCertPool()
+		c.TLSConfig().RootCAs = caCertPool
+	}
+
+	for _, path := range c.rootCAs {
+		cert, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		_ = caCertPool.AppendCertsFromPEM(cert)
+	}
+
+	return nil
 }
 
 func (c *Client) TLSConfig() *tls.Config {
@@ -403,6 +439,30 @@ func (c *Client) Auth() Authenticator {
 
 func (c *Client) UseAuthMiddleware(fn func(Authenticator) Authenticator) {
 	c.authMiddleware = append(c.authMiddleware, fn)
+}
+
+func (c *Client) SetCACertFile(path string) error {
+	c.rootCAs = append(c.rootCAs, path)
+	return nil
+}
+
+func (c *Client) SetCACertPath(path string) error {
+	paths, err := fs.Glob(os.DirFS("."), "*.pem")
+	if err != nil {
+		return err
+	}
+	c.rootCAs = append(c.rootCAs, paths...)
+	return nil
+}
+
+func (c *Client) SetClientCertFile(path string) error {
+	c.certFile = path
+	return nil
+}
+
+func (c *Client) SetKeyFile(path string) error {
+	c.keyFile = path
+	return nil
 }
 
 func (o Option) Execute(c *cli.Context) error {

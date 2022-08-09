@@ -100,6 +100,10 @@ func FlagsAndArgs() cli.Action {
 			{Uses: ListInterfaces()},
 			{Uses: SetVerbose()},
 			{Uses: SetTraceLevel()},
+			{Uses: SetClientCertFile()},
+			{Uses: SetKeyFile()},
+			{Uses: SetCACertFile()},
+			{Uses: SetCACertPath()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -557,6 +561,61 @@ func SetURITemplateVars(v ...uritemplates.Vars) cli.Action {
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
 		withBinding((*Client).SetURITemplateVars, v),
+		tagged,
+	)
+}
+
+func SetCACertFile(path ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "cacert",
+			HelpText:  "CA certificate to verify peer against (PEM format)",
+			UsageText: "PATH",
+			Options:   cli.EachOccurrence,
+			Category:  tlsOptions,
+		},
+		withBinding((*Client).SetCACertFile, path),
+		tagged,
+	)
+}
+
+func SetCACertPath(path ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "capath",
+			HelpText:  "CA directory to verify peer against",
+			UsageText: "DIRECTORY",
+			Options:   cli.EachOccurrence,
+			Category:  tlsOptions,
+		},
+		withBinding((*Client).SetCACertPath, path),
+		tagged,
+	)
+}
+
+func SetClientCertFile(path ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "cert",
+			Aliases:   []string{"E"},
+			HelpText:  "Client certificate file (PEM format)",
+			UsageText: "PATH",
+			Category:  tlsOptions,
+		},
+		withBinding((*Client).SetClientCertFile, path),
+		tagged,
+	)
+}
+
+func SetKeyFile(path ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "key",
+			HelpText:  "Private key file (PEM format)",
+			UsageText: "PATH",
+			Category:  tlsOptions,
+		},
+		withBinding((*Client).SetKeyFile, path),
 		tagged,
 	)
 }
