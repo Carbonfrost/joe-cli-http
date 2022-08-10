@@ -310,6 +310,11 @@ func (c *Client) SetCiphers(ids *CipherSuites) error {
 	return nil
 }
 
+func (c *Client) SetCurves(ids *CurveIDs) error {
+	c.TLSConfig().CurvePreferences = []tls.CurveID(*ids)
+	return nil
+}
+
 func (c *Client) SetPreferGoDialer(v bool) error {
 	c.Dialer().Resolver.PreferGo = v
 	return nil

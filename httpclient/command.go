@@ -91,6 +91,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetInsecureSkipVerify()},
 			{Uses: SetCiphers()},
 			{Uses: ListCiphers()},
+			{Uses: SetCurves()},
+			{Uses: ListCurves()},
 			{Uses: SetDNSInterface()},
 			{Uses: SetPreferGo()},
 			{Uses: SetDialKeepAlive()},
@@ -389,6 +391,18 @@ func SetCiphers(v ...*CipherSuites) cli.Action {
 	)
 }
 
+func SetCurves(v ...*CurveIDs) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "curves",
+			HelpText: "TLS key exchange algorithms to request",
+			Category: tlsOptions,
+		},
+		withBinding((*Client).SetCurves, v),
+		tagged,
+	)
+}
+
 func ListCiphers() cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -401,6 +415,20 @@ func ListCiphers() cli.Action {
 				Action: doListCiphers,
 			},
 		},
+		tagged,
+	)
+}
+
+func ListCurves() cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "list-curves",
+			Value:    cli.Bool(),
+			Options:  cli.Exits,
+			HelpText: "List the key exchange algorithms and exit",
+			Category: tlsOptions,
+		},
+		cli.AtTiming(cli.ActionOf(doListCurves), cli.ActionTiming),
 		tagged,
 	)
 }

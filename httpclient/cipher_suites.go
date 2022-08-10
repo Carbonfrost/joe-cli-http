@@ -8,6 +8,23 @@ import (
 )
 
 type CipherSuites []uint16
+type CurveIDs []tls.CurveID
+
+var (
+	curves = []tls.CurveID{
+		tls.CurveP256,
+		tls.CurveP384,
+		tls.CurveP521,
+		tls.X25519,
+	}
+
+	curveNames = []string{
+		"P256",
+		"P384",
+		"P521",
+		"X25519",
+	}
+)
 
 func (c *CipherSuites) Set(arg string) error {
 	items := *c
@@ -32,6 +49,31 @@ func (c *CipherSuites) String() string {
 
 func (c *CipherSuites) Synopsis() string {
 	return "SUITES"
+}
+
+func (c *CurveIDs) Set(arg string) error {
+	items := *c
+	for _, name := range strings.Split(arg, ",") {
+		id, err := curve(name)
+		if err != nil {
+			return err
+		}
+		items = append(items, id)
+	}
+	*c = items
+	return nil
+}
+
+func (c *CurveIDs) String() string {
+	s := make([]string, len(*c))
+	for i, id := range *c {
+		s[i] = curveName(id)
+	}
+	return strings.Join(s, ",")
+}
+
+func (c *CurveIDs) Synopsis() string {
+	return "CURVES"
 }
 
 func cipherSuite(name string) (uint16, error) {
@@ -82,4 +124,28 @@ func versionString(e uint16) string {
 	default:
 		return fmt.Sprintf("0x%04X", e)
 	}
+}
+
+func doListCurves() {
+	for _, name := range curveNames {
+		fmt.Printf("%s\n", name)
+	}
+}
+
+func curveName(c tls.CurveID) string {
+	for i := range curves {
+		if c == curves[i] {
+			return curveNames[i]
+		}
+	}
+	return ""
+}
+
+func curve(c string) (tls.CurveID, error) {
+	for i := range curves {
+		if c == curveNames[i] {
+			return curves[i], nil
+		}
+	}
+	return 0, fmt.Errorf("unknown curve or named group %q", c)
 }
