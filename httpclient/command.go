@@ -107,6 +107,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetCACertFile()},
 			{Uses: SetCACertPath()},
 			{Uses: SetTime()},
+			{Uses: SetServerName()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -658,6 +659,18 @@ func SetTime(s ...*cli.File) cli.Action {
 			Category:  tlsOptions,
 		},
 		withBinding((*Client).setTimeHelper, s),
+		tagged,
+	)
+}
+
+func SetServerName(s ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "server-name",
+			HelpText: "Used to verify the {HOSTNAME} on certificates unless verification is being skipped",
+			Category: tlsOptions,
+		},
+		withBinding((*Client).SetServerName, s),
 		tagged,
 	)
 }

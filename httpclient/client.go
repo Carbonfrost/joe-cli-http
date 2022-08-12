@@ -470,6 +470,11 @@ func (c *Client) SetKeyFile(path string) error {
 	return nil
 }
 
+func (c *Client) SetServerName(s string) error {
+	c.TLSConfig().ServerName = s
+	return nil
+}
+
 func (c *Client) setTimeHelper(f *cli.File) error {
 	s, err := f.Stat()
 	if err != nil {
