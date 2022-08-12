@@ -470,6 +470,15 @@ func (c *Client) SetKeyFile(path string) error {
 	return nil
 }
 
+func (c *Client) setTimeHelper(f *cli.File) error {
+	s, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	c.TLSConfig().Time = s.ModTime
+	return nil
+}
+
 func (o Option) Execute(c *cli.Context) error {
 	o(FromContext(c))
 	return nil

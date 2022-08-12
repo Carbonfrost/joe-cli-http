@@ -106,6 +106,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetKeyFile()},
 			{Uses: SetCACertFile()},
 			{Uses: SetCACertPath()},
+			{Uses: SetTime()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -644,6 +645,19 @@ func SetKeyFile(path ...string) cli.Action {
 			Category:  tlsOptions,
 		},
 		withBinding((*Client).SetKeyFile, path),
+		tagged,
+	)
+}
+
+func SetTime(s ...*cli.File) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "time",
+			HelpText:  "Specifies a {FILE} whose mtime is used to represent the current time in TLS configuration",
+			UsageText: "PATH",
+			Category:  tlsOptions,
+		},
+		withBinding((*Client).setTimeHelper, s),
 		tagged,
 	)
 }
