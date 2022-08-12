@@ -108,6 +108,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetCACertPath()},
 			{Uses: SetTime()},
 			{Uses: SetServerName()},
+			{Uses: SetNextProtos()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -671,6 +672,18 @@ func SetServerName(s ...string) cli.Action {
 			Category: tlsOptions,
 		},
 		withBinding((*Client).SetServerName, s),
+		tagged,
+	)
+}
+
+func SetNextProtos(s ...[]string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "next-protos",
+			HelpText: "List of ALPN supported application level protocols, in order of preference.",
+			Category: tlsOptions,
+		},
+		withBinding((*Client).SetNextProtos, s),
 		tagged,
 	)
 }

@@ -484,6 +484,11 @@ func (c *Client) setTimeHelper(f *cli.File) error {
 	return nil
 }
 
+func (c *Client) SetNextProtos(s []string) error {
+	c.TLSConfig().NextProtos = s
+	return nil
+}
+
 func (o Option) Execute(c *cli.Context) error {
 	o(FromContext(c))
 	return nil
