@@ -25,7 +25,8 @@ const (
 )
 
 func (d *directAdapter) OpenDownload(_ *Response) (io.Writer, error) {
-	return d.Create()
+	w, err := d.Create()
+	return w.(io.Writer), err
 }
 
 func (d DownloadMode) OpenDownload(resp *Response) (io.Writer, error) {
