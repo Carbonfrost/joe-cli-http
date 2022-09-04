@@ -48,6 +48,9 @@ var (
 )
 
 func NewAuthenticator(name string, opts map[string]string) (Authenticator, error) {
+	if name == "" {
+		return NoAuth, nil
+	}
 	for i, a := range authStrings {
 		if name == a {
 			return AuthMode(i), nil
