@@ -3,8 +3,11 @@ package httpclient
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
+
+	"github.com/Carbonfrost/joe-cli"
 )
 
 type CipherSuites []uint16
@@ -92,14 +95,15 @@ func cipherSuite(name string) (uint16, error) {
 	return uint16(i), err
 }
 
-func doListCiphers() {
-	listCiphers(tls.CipherSuites())
-	listCiphers(tls.InsecureCipherSuites())
+func doListCiphers(c *cli.Context) error {
+	listCiphers(c.Stdout, tls.CipherSuites())
+	listCiphers(c.Stdout, tls.InsecureCipherSuites())
+	return nil
 }
 
-func listCiphers(items []*tls.CipherSuite) {
+func listCiphers(w io.Writer, items []*tls.CipherSuite) {
 	for _, cs := range items {
-		fmt.Printf("%s\t%s\n", cs.Name, sprintSupportedVersions(cs.SupportedVersions))
+		fmt.Fprintf(w, "%s\t%s\n", cs.Name, sprintSupportedVersions(cs.SupportedVersions))
 	}
 }
 
@@ -126,10 +130,11 @@ func versionString(e uint16) string {
 	}
 }
 
-func doListCurves() {
+func doListCurves(c *cli.Context) error {
 	for _, name := range curveNames {
-		fmt.Printf("%s\n", name)
+		fmt.Fprintf(c.Stdout, "%s\n", name)
 	}
+	return nil
 }
 
 func curveName(c tls.CurveID) string {

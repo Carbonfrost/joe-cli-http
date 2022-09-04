@@ -414,10 +414,8 @@ func ListCiphers() cli.Action {
 			Options:  cli.Exits,
 			HelpText: "List the cipher suites available and exit",
 			Category: tlsOptions,
-			Setup: cli.Setup{
-				Action: doListCiphers,
-			},
 		},
+		cli.AtTiming(cli.ActionOf(doListCiphers), cli.ActionTiming),
 		tagged,
 	)
 }
