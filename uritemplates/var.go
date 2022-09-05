@@ -84,6 +84,11 @@ func (v *Var) Reset() {
 	v.state = nil
 }
 
+func (v *Var) Copy() *Var {
+	res := *v
+	return &res
+}
+
 func (v *Var) Set(arg string) error {
 	if v.state == nil {
 		v.state = new(varState)

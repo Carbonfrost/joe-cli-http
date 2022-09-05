@@ -204,6 +204,11 @@ func (t *Vars) Reset() {
 	*t = Vars{}
 }
 
+func (t *Vars) Copy() *Vars {
+	res := *t
+	return &res
+}
+
 func printMap(v map[string]interface{}) string {
 	items := make([]string, len(v))
 	var i int

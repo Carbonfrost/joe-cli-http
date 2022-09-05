@@ -79,6 +79,11 @@ func (u *URLValue) Reset() {
 	u.loc = ""
 }
 
+func (u *URLValue) Copy() *URLValue {
+	res := *u
+	return &res
+}
+
 func fixupAddress(addr string) string {
 	if strings.HasPrefix(addr, ":") {
 		addr = "http://localhost" + addr
@@ -99,6 +104,11 @@ func (v *HeaderValue) Reset() {
 	// Reset is required to faciliate use of EachOccurrence
 	v.Name = ""
 	v.Value = ""
+}
+
+func (v *HeaderValue) Copy() *HeaderValue {
+	res := *v
+	return &res
 }
 
 func (v *HeaderValue) Set(arg string) error {
