@@ -54,7 +54,14 @@ func FetchAndPrint() cli.Action {
 				return err
 			}
 
-			err = response.CopyTo(output, FromContext(c).IncludeHeaders)
+			if FromContext(c).IncludeHeaders {
+				err = response.CopyHeadersTo(output)
+			}
+			if err != nil {
+				return err
+			}
+
+			err = response.CopyTo(output)
 			if err != nil {
 				return err
 			}

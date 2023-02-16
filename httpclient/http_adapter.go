@@ -10,27 +10,25 @@ type Response struct {
 	*http.Response
 }
 
-func (r *Response) CopyTo(w io.Writer, includeHeaders bool) error {
+func (r *Response) CopyTo(w io.Writer) error {
 	body := r.Response.Body
 	defer body.Close()
-
-	if includeHeaders {
-		r.printHeaders()
-	}
 
 	_, err := io.Copy(w, body)
 	return err
 }
 
-func (r *Response) printHeaders() {
+func (r *Response) CopyHeadersTo(w io.Writer) error {
 	for k, values := range r.Response.Header {
-		fmt.Print(k, ": ")
+		fmt.Fprint(w, k, ": ")
+
 		for i, val := range values {
 			if i > 0 {
-				fmt.Print(",")
+				fmt.Fprint(w, ",")
 			}
-			fmt.Print(val)
+			fmt.Fprint(w, val)
 		}
-		fmt.Println()
+		fmt.Fprintln(w)
 	}
+	return nil
 }
