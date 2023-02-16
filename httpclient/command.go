@@ -116,6 +116,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetTime()},
 			{Uses: SetServerName()},
 			{Uses: SetNextProtos()},
+			{Uses: SetRequestID()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -689,6 +690,19 @@ func SetNextProtos(s ...[]string) cli.Action {
 			Category: tlsOptions,
 		},
 		withBinding((*Client).SetNextProtos, s),
+		tagged,
+	)
+}
+
+func SetRequestID(s ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "request-id",
+			HelpText: "Sets or generates X-Request-ID header with optional {VALUE}",
+			Options:  cli.Optional,
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetRequestID, s),
 		tagged,
 	)
 }

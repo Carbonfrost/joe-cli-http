@@ -88,10 +88,7 @@ func New(options ...Option) *Client {
 
 func WithDefaultUserAgent(s string) Option {
 	return func(c *Client) {
-		if c.Request.Header == nil {
-			c.Request.Header = http.Header{}
-		}
-		c.Request.Header.Set("User-Agent", s)
+		ensureHeader(c.Request).Set("User-Agent", s)
 	}
 }
 
@@ -107,6 +104,21 @@ func WithMiddleware(m Middleware) Option {
 	return func(c *Client) {
 		c.AddMiddleware(m)
 	}
+}
+
+// WithRequestID provides middleware to the client that adds a header
+// X-Request-ID to the request.  The optional argument defines how to generate
+// the ID.  When specified, it must be one of these types:
+//
+//   - string
+//   - func()string
+//   - func(context.Context)(string, error)
+//
+// When unspecified, a cryptographically random string is generated for
+// request IDs.
+func WithRequestID(v ...any) Option {
+	mw := NewRequestIDMiddleware(v...)
+	return WithMiddleware(mw)
 }
 
 func Do(c *cli.Context) ([]*Response, error) {
@@ -489,6 +501,15 @@ func (c *Client) SetNextProtos(s []string) error {
 	return nil
 }
 
+func (c *Client) SetRequestID(s string) error {
+	if s == "" {
+		WithRequestID()(c)
+		return nil
+	}
+	WithRequestID(s)(c)
+	return nil
+}
+
 func (o Option) Execute(c *cli.Context) error {
 	o(FromContext(c))
 	return nil
@@ -500,4 +521,11 @@ func defaultUserAgent() string {
 		version = "development"
 	}
 	return fmt.Sprintf("Go-http-client/1.1 (joe-cli-http/%s, +%s)", version, joeURL)
+}
+
+func ensureHeader(r *http.Request) http.Header {
+	if r.Header == nil {
+		r.Header = http.Header{}
+	}
+	return r.Header
 }
