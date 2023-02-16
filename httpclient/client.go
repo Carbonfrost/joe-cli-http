@@ -23,7 +23,7 @@ import (
 type contextKey string
 
 const servicesKey contextKey = "httpclient_services"
-const wigURL = "https://github.com/Carbonfrost/joe-cli-http/cmd/wig"
+const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 
 type Client struct {
 	Client            *http.Client
@@ -499,5 +499,5 @@ func defaultUserAgent() string {
 	if len(version) == 0 {
 		version = "development"
 	}
-	return fmt.Sprintf("Go-http-client/1.1 (wig/%s, +%s)", version, wigURL)
+	return fmt.Sprintf("Go-http-client/1.1 (joe-cli-http/%s, +%s)", version, joeURL)
 }

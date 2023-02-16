@@ -1,11 +1,23 @@
 package wig
 
 import (
+	"fmt"
+
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli/extensions/color"
 )
+
+const wigURL = "https://github.com/Carbonfrost/joe-cli-http/cmd/wig"
+
+func defaultUserAgent() string {
+	version := build.Version
+	if len(version) == 0 {
+		version = "development"
+	}
+	return fmt.Sprintf("Go-http-client/1.1 (wig/%s, +%s)", version, wigURL)
+}
 
 func Run(args []string) {
 	NewApp().Run(args)
@@ -16,7 +28,9 @@ func NewApp() *cli.App {
 		Name:     "wig",
 		HelpText: "Provides access to the Go HTTP client with some cURL compatibility",
 		Uses: cli.Pipeline(
-			httpclient.New(),
+			httpclient.New(
+				httpclient.WithDefaultUserAgent(defaultUserAgent()),
+			),
 			&color.Options{},
 			cli.Sorted,
 		),
