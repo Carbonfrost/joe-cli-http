@@ -44,6 +44,7 @@ type Client struct {
 	certFile       string
 	keyFile        string
 	rootCAs        []string
+	middleware     []Middleware
 }
 
 var (
@@ -100,6 +101,14 @@ func WithLocationResolver(r LocationResolver) Option {
 	}
 }
 
+// WithMiddleware adds a middleware function that will execute before
+// the client request
+func WithMiddleware(m Middleware) Option {
+	return func(c *Client) {
+		c.AddMiddleware(m)
+	}
+}
+
 func Do(c *cli.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
 }
@@ -107,6 +116,10 @@ func Do(c *cli.Context) ([]*Response, error) {
 // FromContext obtains the client stored in the context
 func FromContext(c context.Context) *Client {
 	return c.Value(servicesKey).(*Client)
+}
+
+func (c *Client) AddMiddleware(m Middleware) {
+	c.middleware = append(c.middleware, m)
 }
 
 func (c *Client) SetTraceLevel(v TraceLevel) error {
@@ -142,36 +155,23 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 	return rsp, nil
 }
 
+func (c *Client) generateMiddleware() []Middleware {
+	return append([]Middleware{
+		setupBodyContent(c),
+		processAuth(c),
+	}, c.middleware...)
+}
+
 func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 	c.Request.URL = u
 	c.Request.Host = u.Host
 	c.Request = c.Request.WithContext(ctx)
 
-	// Apply additional setup to request
-	if len(c.bodyForm) > 0 {
-		c.ensureBodyContent()
-	}
-	if c.BodyContent != nil {
-		for _, k := range c.bodyForm {
-			err := c.BodyContent.Set(k.Name, k.Name)
-			if err != nil {
-				return nil, err
-			}
+	for _, m := range c.generateMiddleware() {
+		err := m.Handle(c.Request)
+		if err != nil {
+			return nil, err
 		}
-		if c.Request.Header.Get("Content-Type") == "" {
-			if ct := c.BodyContent.ContentType(); ct != "" {
-				c.Request.Header.Set("Content-Type", ct)
-			}
-		}
-		c.Request.Body = wrapReader(c.BodyContent.Read())
-	}
-	err := c.applyAuth()
-	if err != nil {
-		return nil, err
-	}
-	err = c.loadClientTLSCreds()
-	if err != nil {
-		return nil, err
 	}
 
 	resp, err := c.Client.Do(c.Request)
