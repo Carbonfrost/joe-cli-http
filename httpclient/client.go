@@ -207,7 +207,7 @@ func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
 }
 
 func (c *Client) applyAuth() error {
-	auth := c.Auth()
+	auth := c.Authenticator()
 	for _, a := range c.authMiddleware {
 		auth = a(auth)
 	}
@@ -463,7 +463,7 @@ func (c *Client) SetUser(user *UserInfo) error {
 	return nil
 }
 
-func (c *Client) Auth() Authenticator {
+func (c *Client) Authenticator() Authenticator {
 	if c.auth == nil {
 		c.auth = NoAuth
 	}
