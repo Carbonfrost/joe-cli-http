@@ -18,6 +18,26 @@ import (
 // that can be initialized and hosted within a CLI app.  The server is used
 // within the Uses pipeline where it registers itself as a context service.
 // The action RunServer is used to actually run the server.
+//
+// The simplest action to use is FetchAndPrint(), which executes the
+// request(s) and prints (or downloads) the results:
+//
+//	&cli.App{
+//	   Name: "goserv",
+//	   Uses: &httpserver.New(httpserver.WithHandler(...)),
+//	   Action: httpserver.RunServer(),
+//	}
+//
+// This simple app has numerous flags to configure connection handling.
+//
+// The cmd/weave package provides weave, which is a command line utility
+// that hosts a static file directory, which is similar to what the
+// DefaultServer() does
+//
+// If you only want to add the Server to the context (typically in
+// advanced scenarios where you are deeply customizing the behavior),
+// you only use the action httpserver.ContextValue() with the server
+// you want to add instead of add the server to the pipeline directly.
 type Server struct {
 	*http.Server
 
@@ -125,7 +145,7 @@ func (s *Server) OpenInBrowser(path ...string) error {
 func (s *Server) Execute(c *cli.Context) error {
 	return c.Do(
 		FlagsAndArgs(),
-		cli.ContextValue(servicesKey, s),
+		ContextValue(s),
 	)
 }
 

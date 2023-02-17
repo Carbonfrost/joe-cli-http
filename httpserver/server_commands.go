@@ -43,6 +43,10 @@ func FlagsAndArgs() cli.Action {
 	)
 }
 
+func ContextValue(s *Server) cli.Action {
+	return cli.ContextValue(servicesKey, s)
+}
+
 // SetHostname sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
 func SetHostname(s ...string) cli.Action {

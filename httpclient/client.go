@@ -25,6 +25,31 @@ type contextKey string
 const servicesKey contextKey = "httpclient_services"
 const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 
+// Client provides an HTTP client that can be accessed from commands,
+// flags, and args within Joe applications.  When you register the Client
+// within a Uses pipeline, it also registers flags, templates, and
+// other handlers to enable its configuration from the command line.
+// The simplest action to use is FetchAndPrint(), which executes the
+// request(s) and prints (or downloads) the results:
+//
+//	&cli.App{
+//	   Name: "gocurl",
+//	   Uses: &httpclient.New(),
+//	   Action: httpclient.FetchAndPrint(),
+//	}
+//
+// This simple app has numerous flags and its simplest invocation
+// could be something like
+//
+//	gocurl https://example.com/
+//
+// The cmd/wig package provides wig, which is a command line utility
+// very similar to this.
+//
+// If you only want to add the Client to the context (typically in
+// advanced scenarios where you are deeply customizing the behavior),
+// you only use the action httpclient.ContextValue() with the client
+// you want to add instead of add the client to the pipeline directly.
 type Client struct {
 	Client            *http.Client
 	Request           *http.Request

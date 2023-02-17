@@ -35,10 +35,14 @@ func (c *Client) Execute(ctx *cli.Context) error {
 	return ctx.Do(
 		FlagsAndArgs(),
 		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
-		cli.ContextValue(servicesKey, c),
+		ContextValue(c),
 		Authenticators,
 		PromptForCredentials(),
 	)
+}
+
+func ContextValue(c *Client) cli.Action {
+	return cli.ContextValue(servicesKey, c)
 }
 
 func FetchAndPrint() cli.Action {
