@@ -41,6 +41,7 @@ type Client struct {
 	auth           Authenticator
 	authMiddleware []func(Authenticator) Authenticator
 	bodyForm       []*cli.NameValue
+	queryString    url.Values
 	certFile       string
 	keyFile        string
 	rootCAs        []string
@@ -62,6 +63,7 @@ func New(options ...Option) *Client {
 	h := &Client{
 		InterfaceResolver: &defaultResolver{},
 		dnsDialer:         &net.Dialer{},
+		queryString:       url.Values{},
 		Request: &http.Request{
 			Method: "GET",
 		},
@@ -178,6 +180,7 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 func (c *Client) generateMiddleware() []Middleware {
 	return append([]Middleware{
 		setupBodyContent(c),
+		setupQueryString(c),
 		processAuth(c),
 	}, c.middleware...)
 }
@@ -520,6 +523,11 @@ func (c *Client) SetRequestID(s string) error {
 		return nil
 	}
 	WithRequestID(s)(c)
+	return nil
+}
+
+func (c *Client) SetQueryString(n *cli.NameValue) error {
+	c.queryString.Add(n.Name, n.Value)
 	return nil
 }
 

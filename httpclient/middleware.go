@@ -68,6 +68,18 @@ func setupBodyContent(c *Client) MiddlewareFunc {
 	}
 }
 
+func setupQueryString(c *Client) MiddlewareFunc {
+	return func(r *http.Request) error {
+		query := c.Request.URL.Query()
+		for k, v := range c.queryString {
+			query[k] = append(query[k], v...)
+		}
+
+		c.Request.URL.RawQuery = query.Encode()
+		return nil
+	}
+}
+
 func processAuth(c *Client) MiddlewareFunc {
 	return func(r *http.Request) error {
 		err := c.applyAuth()

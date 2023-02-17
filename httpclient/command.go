@@ -117,6 +117,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetServerName()},
 			{Uses: SetNextProtos()},
 			{Uses: SetRequestID()},
+			{Uses: SetQueryString()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -705,6 +706,20 @@ func SetRequestID(s ...string) cli.Action {
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetRequestID, s),
+		tagged,
+	)
+}
+
+func SetQueryString(s ...*cli.NameValue) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "query",
+			Aliases:  []string{"Q"},
+			HelpText: "Specify a {NAME} and {VALUE} to add to the query string",
+			Category: requestOptions,
+			Options:  cli.EachOccurrence,
+		},
+		withBinding((*Client).SetQueryString, s),
 		tagged,
 	)
 }
