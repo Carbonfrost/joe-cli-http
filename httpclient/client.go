@@ -47,6 +47,8 @@ type Client struct {
 	middleware     []Middleware
 }
 
+type RoundTripperFunc func(req *http.Request) *http.Response
+
 var (
 	impliedOptions = []Option{
 		WithDefaultUserAgent(defaultUserAgent()),
@@ -69,17 +71,17 @@ func New(options ...Option) *Client {
 			Dial: h.dnsDialer.DialContext,
 		},
 	}
+
 	h.tlsConfig = &tls.Config{}
+	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+	defaultTransport.DialContext = h.dialer.DialContext
+	defaultTransport.Proxy = http.ProxyFromEnvironment
 	h.Client = &http.Client{
 		Transport: &traceableTransport{
-			Transport: &http.Transport{
-				DialContext:     h.dialer.DialContext,
-				DialTLSContext:  h.dialer.DialContext,
-				TLSClientConfig: h.tlsConfig,
-				Proxy:           http.ProxyFromEnvironment,
-			},
+			Transport: defaultTransport,
 		},
 	}
+
 	for _, o := range append(impliedOptions, options...) {
 		o(h)
 	}
@@ -119,6 +121,12 @@ func WithMiddleware(m Middleware) Option {
 func WithRequestID(v ...any) Option {
 	mw := NewRequestIDMiddleware(v...)
 	return WithMiddleware(mw)
+}
+
+func WithTransport(t http.RoundTripper) Option {
+	return func(c *Client) {
+		c.Client.Transport.(*traceableTransport).Transport = t
+	}
 }
 
 func Do(c *cli.Context) ([]*Response, error) {
@@ -205,6 +213,11 @@ func (c *Client) applyAuth() error {
 
 func (c *Client) loadClientTLSCreds() error {
 	if c.certFile != "" || c.keyFile != "" {
+		t := c.Client.Transport.(*traceableTransport)
+		if defaultTransport, ok := t.Transport.(*http.Transport); ok {
+			defaultTransport.TLSClientConfig = c.tlsConfig
+		}
+
 		cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
 		cfg := c.TLSConfig()
 		cfg.Certificates = append(cfg.Certificates, cert)
@@ -513,6 +526,10 @@ func (c *Client) SetRequestID(s string) error {
 func (o Option) Execute(c *cli.Context) error {
 	o(FromContext(c))
 	return nil
+}
+
+func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
 }
 
 func defaultUserAgent() string {

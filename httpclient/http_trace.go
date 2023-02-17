@@ -82,7 +82,7 @@ type defaultTraceLogger struct {
 
 type traceableTransport struct {
 	level     TraceLevel
-	Transport *http.Transport
+	Transport http.RoundTripper
 }
 
 const (
@@ -602,7 +602,7 @@ func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 	logger.StartRequest(req)
 
-	rsp, err := http.DefaultTransport.RoundTrip(req)
+	rsp, err := t.Transport.RoundTrip(req)
 	logger.ResponseDone(rsp, err)
 	return rsp, err
 }
