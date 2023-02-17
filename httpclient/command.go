@@ -384,6 +384,8 @@ func SetInsecureSkipVerify(v ...bool) cli.Action {
 			Aliases:  []string{"k", "insecure"},
 			HelpText: "Whether to verify the server's certificate chain and host name.",
 			Category: tlsOptions,
+			EnvVars:  []string{"INSECURE_SKIP_VERIFY"},
+			Options:  cli.ImpliedAction,
 		},
 		withBinding((*Client).SetInsecureSkipVerify, v),
 		tagged,
