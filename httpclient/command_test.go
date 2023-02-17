@@ -1,6 +1,7 @@
 package httpclient_test
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -47,4 +48,26 @@ var _ = Describe("FetchAndPrint", func() {
 			},
 		),
 	)
+
+	It("generates output from response", func() {
+		var out bytes.Buffer
+
+		app := &cli.App{
+			Uses: httpclient.New(
+				httpclient.WithTransport(httpclient.RoundTripperFunc(func(*http.Request) *http.Response {
+					return &http.Response{
+						StatusCode: http.StatusBadRequest,
+						Body:       io.NopCloser(strings.NewReader(someJson)),
+					}
+				})),
+			),
+			Action: httpclient.FetchAndPrint(),
+			Stdout: &out,
+		}
+
+		args, _ := cli.Split("_ https://example.com")
+		err := app.RunContext(context.Background(), args)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out.String()).To(Equal(someJson))
+	})
 })

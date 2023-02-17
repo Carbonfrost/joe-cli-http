@@ -429,9 +429,9 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 	return c.InterfaceResolver.Resolve(v)
 }
 
-func (c *Client) openDownload(resp *Response) (io.Writer, error) {
+func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.Writer, error) {
 	if c.downloader == nil {
-		return os.Stdout, nil
+		return ctx.Stdout, nil
 	}
 	return c.downloader.OpenDownload(resp)
 }

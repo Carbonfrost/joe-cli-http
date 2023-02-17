@@ -49,7 +49,7 @@ func FetchAndPrint() cli.Action {
 		}
 
 		for _, response := range responses {
-			output, err := FromContext(c).openDownload(response)
+			output, err := FromContext(c).openDownload(c, response)
 			if err != nil {
 				return err
 			}
