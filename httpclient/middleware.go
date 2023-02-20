@@ -34,15 +34,37 @@ func NewRequestIDMiddleware(v ...any) Middleware {
 		panic(expectedOneArg)
 	}
 
-	var mw MiddlewareFunc = func(req *http.Request) error {
-		s, err := gen.generate(req.Context())
-		if err != nil {
-			return err
+	return WithHeader("X-Request-ID", func(req *http.Request) (string, error) {
+		return gen.generate(req.Context())
+	})
+}
+
+// WithHeader sets the specified header.  The value may be:
+//   - string
+//   - func()string.
+//   - func(*http.Request)(string, error).
+//
+// Other types using their default string format.
+func WithHeader(name string, value any) Middleware {
+	return MiddlewareFunc(func(r *http.Request) (err error) {
+		var headerValue string
+		switch v := value.(type) {
+		case string:
+			headerValue = v
+		case func() string:
+			headerValue = v()
+		case func(*http.Request) (string, error):
+			headerValue, err = v(r)
+			if err != nil {
+				return
+			}
+		default:
+			headerValue = fmt.Sprint(v)
 		}
-		ensureHeader(req).Set("X-Request-ID", s)
-		return nil
-	}
-	return mw
+
+		ensureHeader(r).Set(name, headerValue)
+		return
+	})
 }
 
 func setupBodyContent(c *Client) MiddlewareFunc {
