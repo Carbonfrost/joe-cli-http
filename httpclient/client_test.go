@@ -2,6 +2,7 @@ package httpclient_test
 
 import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"io"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,16 @@ var _ = Describe("Client", func() {
 			s.SetHeader(&httpclient.HeaderValue{"Link", "SomethingElse"})
 
 			Expect(s.Request.Header).To(HaveKeyWithValue("Link", []string{"Something", "SomethingElse"}))
+		})
+	})
+
+	Describe("SetBody", func() {
+		It("sets raw body value", func() {
+			s := httpclient.New()
+			s.SetBody("raw content")
+
+			body, _ := io.ReadAll(s.BodyContent.Read())
+			Expect(string(body)).To(Equal("raw content"))
 		})
 	})
 

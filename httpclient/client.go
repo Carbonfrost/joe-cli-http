@@ -432,7 +432,17 @@ func (c *Client) SetBody(body string) error {
 }
 
 func (c *Client) setBodyContentHelper(name *ContentType) error {
-	c.BodyContent = NewContent(*name)
+	if c.BodyContent == nil {
+		c.BodyContent = NewContent(*name)
+
+	} else {
+		var err error
+		c.BodyContent, err = convertContent(c.BodyContent, *name)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

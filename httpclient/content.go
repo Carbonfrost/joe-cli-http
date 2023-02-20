@@ -53,6 +53,17 @@ func NewRawContent(data []byte) *RawContent {
 	return res
 }
 
+func convertContent(from Content, to ContentType) (Content, error) {
+	if to == ContentTypeRaw {
+		if raw, ok := from.(*RawContent); ok {
+			return raw, nil
+		}
+		body, err := io.ReadAll(from.Read())
+		return NewRawContent(body), err
+	}
+	return nil, fmt.Errorf("conversion not supported %T -> %v", from, to)
+}
+
 func (c *bufferedContent) Read() io.Reader {
 	return bytes.NewReader(c.buf.Bytes())
 }

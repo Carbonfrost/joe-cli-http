@@ -108,6 +108,20 @@ var _ = Describe("Set actions", func() {
 			OnClient,
 			Fields{"BaseURL": Equal("https://example.com")},
 		),
+		Entry(
+			"SetBody",
+			httpclient.SetBody(),
+			"app -a RawContent",
+			OnClient,
+			Fields{"BodyContentString": Equal("RawContent")},
+		),
+		Entry(
+			"SetBodyContent",
+			httpclient.SetBodyContent(),
+			"app -a FORM_DATA",
+			OnClient,
+			Fields{"BodyContent": BeAssignableToTypeOf(&httpclient.FormDataContent{})},
+		),
 	)
 
 })
