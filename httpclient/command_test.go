@@ -3,6 +3,7 @@ package httpclient_test
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"strings"
@@ -71,3 +72,49 @@ var _ = Describe("FetchAndPrint", func() {
 		Expect(out.String()).To(Equal(someJson))
 	})
 })
+
+var _ = Describe("Set actions", func() {
+
+	DescribeTable("examples", func(act cli.Action, command string, transform any, expected Fields) {
+		client := httpclient.New(
+			httpclient.WithTransport(httpclient.RoundTripperFunc(func(r *http.Request) *http.Response {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(strings.NewReader("")),
+				}
+			})),
+		)
+		app := &cli.App{
+			Uses:   client,
+			Action: func() {},
+			Stdout: io.Discard,
+			Flags: []*cli.Flag{
+				{
+					Name: "a",
+					Uses: act,
+				},
+			},
+		}
+		args, _ := cli.Split(command)
+
+		err := app.RunContext(context.Background(), args)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(httpclient.Attributes(client)).To(WithTransform(transform, PointTo(MatchFields(IgnoreExtras, expected))))
+	},
+		Entry(
+			"SetBaseURL",
+			httpclient.SetBaseURL(),
+			"app -a https://example.com",
+			OnClient,
+			Fields{"BaseURL": Equal("https://example.com")},
+		),
+	)
+
+})
+
+func OnClient(v *httpclient.ClientAttributes) *httpclient.ClientAttributes {
+	return v
+}
+func OnTLSConfig(v *httpclient.ClientAttributes) *tls.Config {
+	return v.TLSConfig
+}
