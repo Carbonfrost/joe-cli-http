@@ -25,6 +25,7 @@ type HeaderValue struct {
 	Value string
 }
 
+// UserInfo provides the username and password
 type UserInfo struct {
 	User        string
 	Password    string
@@ -35,6 +36,7 @@ type headerValueCounter struct {
 	count int
 }
 
+// NewURLValue creates a new URLValue from a string
 func NewURLValue(loc string) *URLValue {
 	return &URLValue{loc}
 }
@@ -75,7 +77,7 @@ func (u *URLValue) String() string {
 }
 
 func (u *URLValue) Reset() {
-	// To faciliate re-use
+	// To facilitate re-use
 	u.loc = ""
 }
 
@@ -101,7 +103,7 @@ func fixupAddress(addr string) string {
 }
 
 func (v *HeaderValue) Reset() {
-	// Reset is required to faciliate use of EachOccurrence
+	// Reset is required to facilitate use of EachOccurrence
 	v.Name = ""
 	v.Value = ""
 }
