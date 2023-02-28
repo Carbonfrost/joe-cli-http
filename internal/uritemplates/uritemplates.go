@@ -1,4 +1,5 @@
 // Copyright 2013 Joshua Tacoma. All rights reserved.
+// Copyright 2023 Joe-cli-http authors.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -14,6 +15,9 @@
 //	values["repo"] = "uritemplates"
 //	expanded, _ := template.Expand(values)
 //	fmt.Printf(expanded)
+//
+// Added by Joe-cli-http:
+//   - PartialExpand to support partially expanding a template
 package uritemplates
 
 import (
@@ -206,17 +210,13 @@ func (self *UriTemplate) Names() []string {
 
 // Expand expands a URI template with a set of values to produce a string.
 func (self *UriTemplate) Expand(value interface{}) (string, error) {
-	values, ismap := value.(map[string]interface{})
-	if !ismap {
-		if m, ismap := struct2map(value); !ismap {
-			return "", errors.New("expected map[string]interface{}, struct, or pointer to struct.")
-		} else {
-			return self.Expand(m)
-		}
+	values, err := convertToValues(value)
+	if err != nil {
+		return "", err
 	}
 	var buf bytes.Buffer
 	for _, p := range self.parts {
-		err := p.expand(&buf, values)
+		_, err := p.expand(&buf, values)
 		if err != nil {
 			return "", err
 		}
@@ -224,10 +224,58 @@ func (self *UriTemplate) Expand(value interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{}) error {
+// PartialExpand expands a URI template with a set of values to produce a string, preserving
+// any unknown parameters
+func (self *UriTemplate) PartialExpand(value interface{}) (string, error) {
+	values, err := convertToValues(value)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	for _, p := range self.parts {
+		missing, err := p.expand(&buf, values)
+		if err != nil {
+			return "", err
+		}
+		if len(missing) == 0 {
+			continue
+		}
+		buf.WriteString("{")
+		if len(missing) == len(p.terms) {
+			buf.WriteString(p.first)
+		} else {
+			buf.WriteString(p.sep)
+		}
+		for i, m := range missing {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString(m.name)
+			if m.explode {
+				buf.WriteString("*")
+			}
+		}
+		buf.WriteString("}")
+	}
+	return buf.String(), nil
+}
+
+func convertToValues(value any) (map[string]any, error) {
+	values, ismap := value.(map[string]any)
+	if !ismap {
+		if m, ismap := struct2map(value); !ismap {
+			return nil, errors.New("expected map[string]interface{}, struct, or pointer to struct.")
+		} else {
+			return m, nil
+		}
+	}
+	return values, nil
+}
+
+func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{}) (missingTerms []templateTerm, err error) {
 	if len(self.raw) > 0 {
 		buf.WriteString(self.raw)
-		return nil
+		return
 	}
 	var zeroLen = buf.Len()
 	buf.WriteString(self.first)
@@ -235,6 +283,7 @@ func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{
 	for _, term := range self.terms {
 		value, exists := values[term.name]
 		if !exists {
+			missingTerms = append(missingTerms, term)
 			continue
 		}
 		if buf.Len() != firstLen {
@@ -247,13 +296,15 @@ func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{
 			self.expandArray(buf, term, v)
 		case map[string]interface{}:
 			if term.truncate > 0 {
-				return errors.New("cannot truncate a map expansion")
+				err = errors.New("cannot truncate a map expansion")
+				return
 			}
 			self.expandMap(buf, term, v)
 		default:
 			if m, ismap := struct2map(value); ismap {
 				if term.truncate > 0 {
-					return errors.New("cannot truncate a map expansion")
+					err = errors.New("cannot truncate a map expansion")
+					return
 				}
 				self.expandMap(buf, term, m)
 			} else {
@@ -267,7 +318,7 @@ func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{
 		buf.Reset()
 		buf.Write(original)
 	}
-	return nil
+	return
 }
 
 func (self *templatePart) expandName(buf *bytes.Buffer, name string, empty bool) {

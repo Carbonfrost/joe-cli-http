@@ -21,12 +21,13 @@ func Parse(text string) (*URITemplate, error) {
 	return &URITemplate{u}, err
 }
 
-func (u *URITemplate) Expand(value interface{}) (string, error) {
-	if val, ok := value.(Vars); ok {
-		value = map[string]interface{}(val)
-	}
+func (u *URITemplate) Expand(value any) (string, error) {
+	s, err := u.u.Expand(ensureValues(value))
+	return s, err
+}
 
-	s, err := u.u.Expand(value)
+func (u *URITemplate) PartialExpand(value any) (string, error) {
+	s, err := u.u.PartialExpand(ensureValues(value))
 	return s, err
 }
 
@@ -60,6 +61,13 @@ func (u *URITemplate) UnmarshalText(b []byte) error {
 	}
 	*u = *res
 	return nil
+}
+
+func ensureValues(value any) any {
+	if val, ok := value.(Vars); ok {
+		return map[string]any(val)
+	}
+	return value
 }
 
 var (

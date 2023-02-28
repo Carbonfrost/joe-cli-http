@@ -23,6 +23,13 @@ func SourceAnnotation() (string, string) {
 func Expand() cli.Action {
 	return cli.ActionFunc(func(c *cli.Context) error {
 		tpl := c.Value("template").(*URITemplate)
+
+		if c.Bool("partial") {
+			rr, err := tpl.PartialExpand(fromContext(c))
+			fmt.Fprintln(c.Stdout, rr)
+			return err
+		}
+
 		rr, err := tpl.Expand(fromContext(c))
 		fmt.Fprintln(c.Stdout, rr)
 		return err
@@ -35,6 +42,7 @@ func FlagsAndArgs() cli.Action {
 		cli.AddFlags([]*cli.Flag{
 			{Uses: SetURITemplateVar()},
 			{Uses: SetURITemplateVars()},
+			{Uses: SetPartialExpand()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -54,11 +62,11 @@ func SetURITemplateVar(v ...*Var) cli.Action {
 			Value:    new(Var),
 			Options:  cli.EachOccurrence,
 		},
-		cli.AtTiming(cli.ActionFunc(func(c *cli.Context) error {
+		cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {
 			v := c.Value("").(*Var)
 			fromContext(c).Add(v)
 			return nil
-		}), cli.ActionTiming),
+		})),
 		tagged,
 	)
 }
@@ -73,10 +81,22 @@ func SetURITemplateVars(v ...*Vars) cli.Action {
 			Value:     &Vars{},
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
-		cli.AtTiming(cli.ActionFunc(func(c *cli.Context) error {
+		cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {
 			v := c.Value("").(*Vars)
 			return fromContext(c).Update(*v)
-		}), cli.ActionTiming),
+		})),
+		tagged,
+	)
+}
+
+func SetPartialExpand(b ...bool) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "partial",
+			Aliases:  []string{"P"},
+			Value: cli.Bool(),
+			HelpText: "When set, partially expand the template by preserving missing variables",
+		},
 		tagged,
 	)
 }
