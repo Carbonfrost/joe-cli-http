@@ -51,13 +51,13 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // you only use the action httpclient.ContextValue() with the client
 // you want to add instead of add the client to the pipeline directly.
 type Client struct {
-	Client            *http.Client
-	Request           *http.Request
-	IncludeHeaders    bool
-	InterfaceResolver InterfaceResolver
-	BodyContent       Content
-	UserInfo          *UserInfo
-	LocationResolver  LocationResolver
+	Client                 *http.Client
+	Request                *http.Request
+	IncludeResponseHeaders bool
+	InterfaceResolver      InterfaceResolver
+	BodyContent            Content
+	UserInfo               *UserInfo
+	LocationResolver       LocationResolver
 
 	downloader     Downloader
 	dialer         *net.Dialer
@@ -343,8 +343,8 @@ func (c *Client) ensureLocationResolver() LocationResolver {
 	return c.LocationResolver
 }
 
-func (c *Client) SetIncludeHeaders(v bool) error {
-	c.IncludeHeaders = v
+func (c *Client) SetIncludeResponseHeaders(v bool) error {
+	c.IncludeResponseHeaders = v
 	return nil
 }
 

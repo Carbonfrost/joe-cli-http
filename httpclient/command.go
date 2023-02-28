@@ -58,7 +58,7 @@ func FetchAndPrint() cli.Action {
 				return err
 			}
 
-			if FromContext(c).IncludeHeaders {
+			if FromContext(c).IncludeResponseHeaders {
 				err = response.CopyHeadersTo(output)
 			}
 			if err != nil {
@@ -296,7 +296,7 @@ func SetIncludeResponseHeaders(s ...bool) cli.Action {
 			HelpText: "Include response headers in the output",
 			Category: responseOptions,
 		},
-		withBinding((*Client).SetIncludeHeaders, s),
+		withBinding((*Client).SetIncludeResponseHeaders, s),
 		tagged,
 	)
 }

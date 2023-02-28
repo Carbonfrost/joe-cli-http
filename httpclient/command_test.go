@@ -105,23 +105,51 @@ var _ = Describe("Set actions", func() {
 			"SetBaseURL",
 			httpclient.SetBaseURL(),
 			"app -a https://example.com",
-			OnClient,
-			Fields{"BaseURL": Equal("https://example.com")},
+			OnClient, Fields{"BaseURL": Equal("https://example.com")},
 		),
 		Entry(
 			"SetBody",
 			httpclient.SetBody(),
 			"app -a RawContent",
-			OnClient,
-			Fields{"BodyContentString": Equal("RawContent")},
+			OnClient, Fields{"BodyContentString": Equal("RawContent")},
 		),
 		Entry(
 			"SetBodyContent",
 			httpclient.SetBodyContent(),
 			"app -a FORM_DATA",
-			OnClient,
-			Fields{"BodyContent": BeAssignableToTypeOf(&httpclient.FormDataContent{})},
+			OnClient, Fields{"BodyContent": BeAssignableToTypeOf(&httpclient.FormDataContent{})},
 		),
+		Entry(
+			"SetFillValue",
+			httpclient.SetFillValue(),
+			"app -a F=V",
+			OnClient, Fields{"BodyForm": HaveKeyWithValue("F", []string{"V"})}),
+		Entry(
+			"SetFollowRedirects",
+			httpclient.SetFollowRedirects(),
+			"app -a",
+			OnClient, Fields{"CheckRedirect": BeNil()}),
+		Entry(
+			"SetHeader",
+			httpclient.SetHeader(),
+			"app -a H:V",
+			OnRequest, Fields{"Header": HaveKeyWithValue("H", []string{"V"})}),
+		Entry(
+			"SetIncludeResponseHeaders",
+			httpclient.SetIncludeResponseHeaders(),
+			"app -a",
+			OnClient, Fields{"IncludeResponseHeaders": BeTrue()}),
+		Entry(
+			"SetMethod",
+			httpclient.SetMethod(),
+			"app -a patch",
+			OnRequest, Fields{"Method": Equal("PATCH")}),
+		Entry(
+			"SetUserAgent",
+			httpclient.SetUserAgent(),
+			"app -a FI",
+			OnRequest,
+			Fields{"Header": HaveKeyWithValue("User-Agent", []string{"FI"})}),
 	)
 
 })
@@ -129,6 +157,11 @@ var _ = Describe("Set actions", func() {
 func OnClient(v *httpclient.ClientAttributes) *httpclient.ClientAttributes {
 	return v
 }
+
+func OnRequest(v *httpclient.ClientAttributes) *httpclient.RequestAttributes {
+	return v.Request
+}
+
 func OnTLSConfig(v *httpclient.ClientAttributes) *tls.Config {
 	return v.TLSConfig
 }
