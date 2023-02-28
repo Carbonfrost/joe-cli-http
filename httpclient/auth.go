@@ -22,6 +22,7 @@ type promptForCredentials struct {
 	auth Authenticator
 }
 
+// Built-in authentication modes
 const (
 	NoAuth AuthMode = iota
 	BasicAuth
@@ -69,11 +70,7 @@ func WithPromptForCredentials(auth Authenticator) Authenticator {
 }
 
 func (m AuthMode) RequiresUserInfo() bool {
-	switch m {
-	case BasicAuth:
-		return true
-	}
-	return false
+	return m == BasicAuth
 }
 
 func (m AuthMode) Authenticate(r *http.Request, ui *UserInfo) error {
@@ -227,12 +224,12 @@ func (*AuthMode) Synopsis() string {
 	return "<mode>"
 }
 
-func (u *AuthMode) Set(arg string) error {
+func (m *AuthMode) Set(arg string) error {
 	i, err := authModeFromName(authStrings, arg)
 	if err != nil {
 		return err
 	}
-	*u = AuthMode(i)
+	*m = AuthMode(i)
 	return nil
 }
 

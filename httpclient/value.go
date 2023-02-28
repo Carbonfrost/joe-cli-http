@@ -62,7 +62,7 @@ func (u *URLValue) URL() (*url.URL, error) {
 	return url.Parse(fixupAddress(u.loc))
 }
 
-// URL interprets the value as a URI Template
+// URITemplate interprets the value as a URI Template
 func (u *URLValue) URITemplate() (*uritemplates.URITemplate, error) {
 	return uritemplates.Parse(fixupAddress(u.loc))
 }
@@ -132,8 +132,7 @@ func (v *HeaderValue) NewCounter() cli.ArgCounter {
 }
 
 func (v *headerValueCounter) Done() error {
-	switch v.count {
-	case 0:
+	if v.count == 0 {
 		return errors.New("missing name and value")
 	}
 	return nil
@@ -145,14 +144,14 @@ func (v *headerValueCounter) Take(arg string, possibleFlag bool) error {
 		if _, _, hasValue := splitValuePair(arg); hasValue {
 			v.count += 2
 		} else {
-			v.count += 1
+			v.count++
 		}
 		return nil
 	case 1:
-		v.count += 1
+		v.count++
 		return nil
 	case 2:
-		v.count += 1
+		v.count++
 		return cli.EndOfArguments
 	}
 

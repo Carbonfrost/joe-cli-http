@@ -193,7 +193,7 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 
 	rsp := make([]*Response, 0, len(urls))
 	for _, u := range urls {
-		r, err := c.doOne(u, ctx)
+		r, err := c.doOne(ctx, u)
 		if err != nil {
 			return rsp, err
 		}
@@ -210,7 +210,7 @@ func (c *Client) generateMiddleware() []Middleware {
 	}, c.middleware...)
 }
 
-func (c *Client) doOne(u *url.URL, ctx context.Context) (*Response, error) {
+func (c *Client) doOne(ctx context.Context, u *url.URL) (*Response, error) {
 	c.Request.URL = u
 	c.Request.Host = u.Host
 	c.Request = c.Request.WithContext(ctx)

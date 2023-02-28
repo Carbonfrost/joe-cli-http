@@ -19,6 +19,7 @@ type directAdapter struct {
 	*cli.File
 }
 
+// Download modes
 const (
 	PreserveRequestFile DownloadMode = iota
 	PreserveRequestPath

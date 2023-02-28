@@ -85,6 +85,7 @@ type traceableTransport struct {
 	Transport http.RoundTripper
 }
 
+// Trace level components, which enumerates the various parts of the roundtrip to trace
 const (
 	TraceConnections = TraceLevel(1 << iota)
 	TraceRequestHeaders
@@ -138,11 +139,11 @@ var (
 	funcs = template.FuncMap{
 
 		// Stub color functions when used outside of Joe-cli
-		"Gray":       func(s ...interface{}) string { return fmt.Sprint(s...) },
-		"Magenta":    func(s ...interface{}) string { return fmt.Sprint(s...) },
-		"Blue":       func(s ...interface{}) string { return fmt.Sprint(s...) },
-		"ResetColor": func(s ...interface{}) string { return fmt.Sprint(s...) },
-		"Color":      func(s ...interface{}) string { return fmt.Sprint(s...) },
+		"Gray":       fmt.Sprint,
+		"Magenta":    fmt.Sprint,
+		"Blue":       fmt.Sprint,
+		"ResetColor": fmt.Sprint,
+		"Color":      fmt.Sprint,
 		"Join": func(v string, args []string) string {
 			return strings.Join(args, v)
 		},
@@ -279,7 +280,7 @@ func (l TraceLevel) String() string {
 			continue
 		}
 		if l&e == e {
-			l = l & ^e
+			l &^= e
 			result = append(result, traceString[i])
 		}
 	}

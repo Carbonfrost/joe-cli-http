@@ -27,7 +27,7 @@ type RawContent struct {
 }
 
 var (
-	rawContentSetError = errors.New("structured form data is not supported for raw content")
+	errRawContentSet = errors.New("structured form data is not supported for raw content")
 )
 
 func NewContent(ct ContentType) Content {
@@ -73,15 +73,15 @@ func (c *RawContent) Write(d []byte) (int, error) {
 }
 
 func (c *RawContent) Query() (url.Values, error) {
-	return nil, rawContentSetError
+	return nil, errRawContentSet
 }
 
 func (c *RawContent) Set(name, value string) error {
-	return rawContentSetError
+	return errRawContentSet
 }
 
 func (c *RawContent) SetFile(name, file io.Reader) error {
-	return rawContentSetError
+	return errRawContentSet
 }
 
 func (c *RawContent) ContentType() string {

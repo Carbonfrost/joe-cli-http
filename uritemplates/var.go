@@ -37,6 +37,7 @@ const (
 	varStateEndState
 )
 
+// Types of variables
 const (
 	String VarType = iota
 	Array

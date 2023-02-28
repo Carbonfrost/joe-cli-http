@@ -94,7 +94,7 @@ func SetPartialExpand(b ...bool) cli.Action {
 		&cli.Prototype{
 			Name:     "partial",
 			Aliases:  []string{"P"},
-			Value: cli.Bool(),
+			Value:    cli.Bool(),
 			HelpText: "When set, partially expand the template by preserving missing variables",
 		},
 		tagged,

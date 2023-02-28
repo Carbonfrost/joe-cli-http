@@ -172,16 +172,18 @@ func parseTerm(term string) (result templateTerm, err error) {
 		term = term[:len(term)-1]
 	}
 	split := strings.Split(term, ":")
-	if len(split) == 1 {
+	switch len(split) {
+	case 1:
 		result.name = term
-	} else if len(split) == 2 {
+	case 2:
 		result.name = split[0]
 		var parsed int64
 		parsed, err = strconv.ParseInt(split[1], 10, 0)
 		result.truncate = int(parsed)
-	} else {
+	default:
 		err = errors.New("multiple colons in same term")
 	}
+
 	if !validname.MatchString(result.name) {
 		err = errors.New("not a valid name: " + result.name)
 	}
