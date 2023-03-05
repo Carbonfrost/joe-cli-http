@@ -60,6 +60,7 @@ type Client struct {
 	LocationResolver       LocationResolver
 
 	downloader     Downloader
+	integrity      *Integrity
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
 	tlsConfig      *tls.Config
@@ -355,6 +356,11 @@ func (c *Client) setOutputFileHelper(f *cli.File) error {
 	return nil
 }
 
+func (c *Client) SetIntegrity(i Integrity) error {
+	c.integrity = &i
+	return nil
+}
+
 func (c *Client) SetInsecureSkipVerify(v bool) error {
 	c.TLSConfig().InsecureSkipVerify = v
 	return nil
@@ -469,8 +475,12 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 	return c.InterfaceResolver.Resolve(v)
 }
 
-func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.Writer, error) {
-	return c.actualDownloader(ctx).OpenDownload(resp)
+func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.WriteCloser, error) {
+	downloader := c.actualDownloader(ctx)
+	if c.integrity != nil {
+		downloader = NewIntegrityDownloader(*c.integrity, downloader)
+	}
+	return downloader.OpenDownload(resp)
 }
 
 func (c *Client) actualDownloader(ctx *cli.Context) Downloader {

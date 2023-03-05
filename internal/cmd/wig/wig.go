@@ -7,6 +7,13 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli/extensions/color"
+
+	// These hash algorithms need to be available for --integrity to work
+	_ "crypto/md5"
+	_ "crypto/sha1"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
+	_ "golang.org/x/crypto/ripemd160"
 )
 
 const wigURL = "https://github.com/Carbonfrost/joe-cli-http/cmd/wig"

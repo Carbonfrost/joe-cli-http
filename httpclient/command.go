@@ -71,6 +71,11 @@ func FetchAndPrint() cli.Action {
 				return err
 			}
 
+			err = output.Close()
+			if err != nil {
+				return err
+			}
+
 			c.Stdout.WriteString(client.writeOutExpr.Expand(response))
 			c.Stderr.WriteString(client.writeErrExpr.Expand(response))
 		}
@@ -97,6 +102,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetDialTimeout()},
 			{Uses: SetIncludeResponseHeaders()},
 			{Uses: SetOutputFile()},
+			{Uses: SetIntegrity()},
 			{Uses: SetDownload()},
 			{Uses: SetTLSv1()},
 			{Uses: SetTLSv1_0()},
@@ -317,6 +323,19 @@ func SetOutputFile(f ...*cli.File) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).setOutputFileHelper, f),
+		tagged,
+	)
+}
+
+func SetIntegrity(i ...Integrity) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "integrity",
+			UsageText: "hash:digest",
+			HelpText:  "Validate the integrity of the download",
+			Category:  responseOptions,
+		},
+		withBinding((*Client).SetIntegrity, i),
 		tagged,
 	)
 }
