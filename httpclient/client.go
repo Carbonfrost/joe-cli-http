@@ -470,10 +470,14 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 }
 
 func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.Writer, error) {
+	return c.actualDownloader(ctx).OpenDownload(resp)
+}
+
+func (c *Client) actualDownloader(ctx *cli.Context) Downloader {
 	if c.downloader == nil {
-		return ctx.Stdout, nil
+		return NewDownloaderTo(ctx.Stdout)
 	}
-	return c.downloader.OpenDownload(resp)
+	return c.downloader
 }
 
 func (c *Client) SetAuth(auth Authenticator) error {

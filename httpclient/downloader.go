@@ -10,7 +10,7 @@ import (
 )
 
 type Downloader interface {
-	OpenDownload(*Response) (io.Writer, error)
+	OpenDownload(*Response) (io.WriteCloser, error)
 }
 
 type DownloadMode int
@@ -19,18 +19,30 @@ type directAdapter struct {
 	*cli.File
 }
 
+type basicDownloader struct {
+	w io.Writer
+}
+
+type nopWriteCloser struct {
+	io.Writer
+}
+
 // Download modes
 const (
 	PreserveRequestFile DownloadMode = iota
 	PreserveRequestPath
 )
 
-func (d *directAdapter) OpenDownload(_ *Response) (io.Writer, error) {
-	w, err := d.Create()
-	return w.(io.Writer), err
+func NewDownloaderTo(w io.Writer) Downloader {
+	return basicDownloader{w}
 }
 
-func (d DownloadMode) OpenDownload(resp *Response) (io.Writer, error) {
+func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
+	w, err := d.Create()
+	return w.(io.WriteCloser), err
+}
+
+func (d DownloadMode) OpenDownload(resp *Response) (io.WriteCloser, error) {
 	fn := d.FileName(resp)
 	ensureDirectory(filepath.Dir(fn))
 	return os.Create(fn)
@@ -48,6 +60,14 @@ func (d DownloadMode) FileName(r *Response) string {
 	default:
 		panic("unreachable!")
 	}
+}
+
+func (b basicDownloader) OpenDownload(*Response) (io.WriteCloser, error) {
+	return nopWriteCloser{b.w}, nil
+}
+
+func (nopWriteCloser) Close() error {
+	return nil
 }
 
 func fileName(s string) string {
