@@ -71,6 +71,8 @@ type Client struct {
 	keyFile        string
 	rootCAs        []string
 	middleware     []Middleware
+	writeOutExpr   Expr
+	writeErrExpr   Expr
 }
 
 type RoundTripperFunc func(req *http.Request) *http.Response
@@ -563,6 +565,16 @@ func (c *Client) SetRequestID(s string) error {
 
 func (c *Client) SetQueryString(n *cli.NameValue) error {
 	c.queryString.Add(n.Name, n.Value)
+	return nil
+}
+
+func (c *Client) SetWriteOut(w Expr) error {
+	c.writeOutExpr = w
+	return nil
+}
+
+func (c *Client) SetWriteErr(w Expr) error {
+	c.writeErrExpr = w
 	return nil
 }
 

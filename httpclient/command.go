@@ -52,13 +52,14 @@ func FetchAndPrint() cli.Action {
 			return err
 		}
 
+		client := FromContext(c)
 		for _, response := range responses {
-			output, err := FromContext(c).openDownload(c, response)
+			output, err := client.openDownload(c, response)
 			if err != nil {
 				return err
 			}
 
-			if FromContext(c).IncludeResponseHeaders {
+			if client.IncludeResponseHeaders {
 				err = response.CopyHeadersTo(output)
 			}
 			if err != nil {
@@ -69,6 +70,9 @@ func FetchAndPrint() cli.Action {
 			if err != nil {
 				return err
 			}
+
+			c.Stdout.WriteString(client.writeOutExpr.Expand(response))
+			c.Stderr.WriteString(client.writeErrExpr.Expand(response))
 		}
 
 		return nil
@@ -122,6 +126,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetNextProtos()},
 			{Uses: SetRequestID()},
 			{Uses: SetQueryString()},
+			{Uses: SetWriteOut()},
+			{Uses: SetWriteErr()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -724,6 +730,32 @@ func SetQueryString(s ...*cli.NameValue) cli.Action {
 			Options:  cli.EachOccurrence,
 		},
 		withBinding((*Client).SetQueryString, s),
+		tagged,
+	)
+}
+
+func SetWriteOut(w ...Expr) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "write-out",
+			HelpText: "Evaluate the expression and print out the result",
+			Aliases:  []string{"w"},
+			Category: requestOptions,
+		},
+		cli.BindContext(FromContext, (*Client).SetWriteOut, w...),
+		tagged,
+	)
+}
+
+func SetWriteErr(w ...Expr) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "write-err",
+			HelpText: "Evaluate the expression and print out the result to stderr",
+			Aliases:  []string{"W"},
+			Category: requestOptions,
+		},
+		cli.BindContext(FromContext, (*Client).SetWriteErr, w...),
 		tagged,
 	)
 }
