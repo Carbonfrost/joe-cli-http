@@ -118,6 +118,10 @@ func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
 }
 
+func (s *Server) HideDirectoryListing() bool {
+	return s.hideDirListings
+}
+
 func (s *Server) ListenAndServe() error {
 	if s.handlerFactory != nil {
 		h, err := s.handlerFactory(s)
