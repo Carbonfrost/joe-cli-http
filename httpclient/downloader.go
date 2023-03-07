@@ -38,6 +38,7 @@ func NewDownloaderTo(w io.Writer) Downloader {
 }
 
 func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
+	ensureDirectory(d.Dir())
 	w, err := d.Create()
 	return w.(io.WriteCloser), err
 }
