@@ -149,3 +149,33 @@ var _ = Describe("HeaderCounter", func() {
 	)
 
 })
+
+var _ = Describe("VirtualPath", func() {
+
+	Describe("ParseVirtualPath", func() {
+		DescribeTable("examples", func(v string, request, real string) {
+			vp, _ := httpclient.ParseVirtualPath(v)
+			Expect(vp.RequestPath).To(Equal(request))
+			Expect(vp.PhysicalPath).To(Equal(real))
+		},
+			Entry("nominal", "nom:./inal", "nom", "./inal"),
+			Entry("bare", "bare", "bare", "bare"),
+			Entry("no real path", "no:", "no", "."),
+		)
+	})
+
+	Describe("Set", func() {
+		DescribeTable("examples", func(value string, expected string) {
+			u := new(httpclient.VirtualPath)
+			err := u.Set(value)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			uu := u.String()
+			Expect(uu).To(Equal(expected))
+		},
+			Entry("nominal", "nom:./inal", "nom:./inal"),
+			Entry("empty", "", ":"),
+		)
+	})
+})

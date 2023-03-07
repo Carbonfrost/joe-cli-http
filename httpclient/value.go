@@ -32,6 +32,15 @@ type UserInfo struct {
 	HasPassword bool
 }
 
+// VirtualPath identifies the mapping between a request path and a real file system path
+type VirtualPath struct {
+	// RequestPath identifies the request path prefix to match
+	RequestPath string
+
+	// PhysicalPath identifies the real path that contains the resource to be served
+	PhysicalPath string
+}
+
 type headerValueCounter struct {
 	count int
 }
@@ -102,6 +111,23 @@ func fixupAddress(addr string) string {
 	return addr
 }
 
+func (v *VirtualPath) Set(arg string) error {
+	a, err := ParseVirtualPath(arg)
+	if err != nil {
+		return err
+	}
+	*v = a
+	return nil
+}
+
+func (v VirtualPath) String() string {
+	return v.RequestPath + ":" + v.PhysicalPath
+}
+
+func (v *VirtualPath) NewCounter() cli.ArgCounter {
+	return cli.ArgCount(1)
+}
+
 func (v *HeaderValue) Reset() {
 	// Reset is required to facilitate use of EachOccurrence
 	v.Name = ""
@@ -156,6 +182,21 @@ func (v *headerValueCounter) Take(arg string, possibleFlag bool) error {
 	}
 
 	return errors.New("too many arguments to header")
+}
+
+func ParseVirtualPath(v string) (VirtualPath, error) {
+	r, s, ok := strings.Cut(string(v), ":")
+	if ok {
+		if s == "" {
+			s = "."
+		}
+	} else {
+		s = r
+	}
+	return VirtualPath{
+		RequestPath:  r,
+		PhysicalPath: s,
+	}, nil
 }
 
 func splitValuePair(arg string) (k, v string, hasValue bool) {
