@@ -67,6 +67,17 @@ func WithHeader(name string, value any) Middleware {
 	})
 }
 
+// WithHeaders sets the specified headers.
+func WithHeaders(headers http.Header) Middleware {
+	return MiddlewareFunc(func(r *http.Request) error {
+		to := ensureHeader(r)
+		for k, v := range headers {
+			to[http.CanonicalHeaderKey(k)] = v
+		}
+		return nil
+	})
+}
+
 func setupBodyContent(c *Client) MiddlewareFunc {
 	return func(r *http.Request) error {
 		if len(c.bodyForm) > 0 {
