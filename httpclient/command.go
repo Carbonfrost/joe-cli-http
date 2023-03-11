@@ -102,6 +102,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetDialTimeout()},
 			{Uses: SetIncludeResponseHeaders()},
 			{Uses: SetOutputFile()},
+			{Uses: SetNoOutput()},
 			{Uses: SetIntegrity()},
 			{Uses: SetDownload()},
 			{Uses: SetTLSv1()},
@@ -323,6 +324,18 @@ func SetOutputFile(f ...*cli.File) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).setOutputFileHelper, f),
+		tagged,
+	)
+}
+
+func SetNoOutput(b ...bool) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "no-output",
+			HelpText: "Don't write the response output to stdout",
+			Category: responseOptions,
+		},
+		withBinding((*Client).SetNoOutput, b),
 		tagged,
 	)
 }

@@ -356,6 +356,15 @@ func (c *Client) setOutputFileHelper(f *cli.File) error {
 	return nil
 }
 
+func (c *Client) SetNoOutput(b bool) error {
+	if b {
+		c.downloader = NewDownloaderTo(io.Discard)
+		return nil
+	}
+	c.downloader = nil
+	return nil
+}
+
 func (c *Client) SetIntegrity(i Integrity) error {
 	c.integrity = &i
 	return nil
