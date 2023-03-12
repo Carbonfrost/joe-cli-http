@@ -113,7 +113,10 @@ func (m *AuthMode) UnmarshalText(b []byte) error {
 }
 
 func (p *promptForCredentials) Authenticate(r *http.Request, ui *UserInfo) error {
-	c := r.Context().(*cli.Context)
+	c, ok := r.Context().(*cli.Context)
+	if !ok {
+		return nil
+	}
 
 	if ui == nil {
 		ui = c.Value("user").(*UserInfo)
