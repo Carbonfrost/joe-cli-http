@@ -17,7 +17,22 @@ type LocationResolver interface {
 	Add(location string) error
 	AddVar(v *uritemplates.Var) error
 	SetBase(base *url.URL) error
-	Resolve(context.Context) ([]*url.URL, error)
+	Resolve(context.Context) ([]Location, error)
+}
+
+// Location specifies the request location.  A location comprises a URL that
+// will be requested by the HTTP client and a context function that helps initialize
+// any context values that might be needed such as by middleware.  This is an
+// indirection typically used to provide behavior dependent upon the request URL.
+type Location interface {
+	// URL derives a context that should be used for the client request for the
+	// given URL, the URL itself to use.  An error can be returned, usually if the
+	// input context ctx is lacking a required service.
+	URL(ctx context.Context) (context.Context, *url.URL, error)
+}
+
+type urlLocation struct {
+	u *url.URL
 }
 
 type defaultResolver struct{}
@@ -32,6 +47,12 @@ func NewDefaultLocationResolver() LocationResolver {
 	return &defaultLocationResolver{
 		vars: uritemplates.Vars{},
 	}
+}
+
+// URLLocation provides a basic implementation of Location for a URL.  It isn't
+// dependent upon and makes no modifications to the context
+func URLLocation(u *url.URL) Location {
+	return urlLocation{u}
 }
 
 func (d *defaultLocationResolver) Add(location string) error {
@@ -54,7 +75,7 @@ func (d *defaultLocationResolver) SetBase(base *url.URL) error {
 	return nil
 }
 
-func (d *defaultLocationResolver) Resolve(context.Context) ([]*url.URL, error) {
+func (d *defaultLocationResolver) Resolve(context.Context) ([]Location, error) {
 	var locations []string
 
 	if d.isURITemplates() {
@@ -97,7 +118,12 @@ func (d *defaultLocationResolver) Resolve(context.Context) ([]*url.URL, error) {
 			res[i] = d.base.ResolveReference(res[i])
 		}
 	}
-	return res, nil
+
+	ll := make([]Location, len(res))
+	for i := range res {
+		ll[i] = URLLocation(res[i])
+	}
+	return ll, nil
 }
 
 func (d *defaultLocationResolver) isURITemplates() bool {
@@ -123,6 +149,10 @@ func (*defaultResolver) Resolve(v string) (*net.TCPAddr, error) {
 		}
 	}
 	return nil, errors.New("failed to resolve " + v)
+}
+
+func (l urlLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
+	return ctx, l.u, nil
 }
 
 func resolveTCP(value string) (*net.TCPAddr, error) {

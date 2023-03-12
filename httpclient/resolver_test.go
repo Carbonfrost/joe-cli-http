@@ -2,7 +2,6 @@ package httpclient_test
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 
@@ -36,10 +35,11 @@ var _ = Describe("Resolver", func() {
 	)
 })
 
-func urisToStrings(results []*url.URL) []string {
+func urisToStrings(results []httpclient.Location) []string {
 	res := make([]string, len(results))
 	for i, item := range results {
-		res[i] = item.String()
+		_, u, _ := item.URL(context.Background())
+		res[i] = u.String()
 	}
 	return res
 }

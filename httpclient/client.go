@@ -213,10 +213,14 @@ func (c *Client) generateMiddleware() []Middleware {
 	}, c.middleware...)
 }
 
-func (c *Client) doOne(ctx context.Context, u *url.URL) (*Response, error) {
+func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
+	rctx, u, err := l.URL(ctx)
+	if err != nil {
+		return nil, err
+	}
 	c.Request.URL = u
 	c.Request.Host = u.Host
-	c.Request = c.Request.WithContext(ctx)
+	c.Request = c.Request.WithContext(rctx)
 
 	for _, m := range c.generateMiddleware() {
 		err := m.Handle(c.Request)
