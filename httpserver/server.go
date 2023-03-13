@@ -230,6 +230,11 @@ func (s *Server) SetIdleTimeout(v time.Duration) error {
 	return nil
 }
 
+func (s *Server) SetMaxHeaderBytes(v int) error {
+	s.Server.MaxHeaderBytes = v
+	return nil
+}
+
 func (s *Server) SetStaticDirectory(path string) error {
 	s.staticDir = path
 	return nil

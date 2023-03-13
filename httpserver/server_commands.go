@@ -36,6 +36,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetReadTimeout()},
 			{Uses: SetReadHeaderTimeout()},
 			{Uses: SetWriteTimeout()},
+			{Uses: SetIdleTimeout()},
+			{Uses: SetMaxHeaderBytes()},
 			{Uses: SetStaticDirectory()},
 			{Uses: SetNoDirectoryListings()},
 			{Uses: SetOpenInBrowser()},
@@ -152,6 +154,20 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetIdleTimeout, d),
+		tagged,
+	)
+}
+
+// SetMaxHeaderBytes sets the maximum header size in bytes
+func SetMaxHeaderBytes(v ...int) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "max-header-bytes",
+			HelpText: "Specify the maximum header bytes allowed for headers",
+			Value:    new(int),
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetMaxHeaderBytes, v),
 		tagged,
 	)
 }
