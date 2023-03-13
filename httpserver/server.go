@@ -50,6 +50,10 @@ type Server struct {
 // Option is an option to configure the server
 type Option func(*Server)
 
+type mux interface {
+	Handle(string, http.Handler)
+}
+
 type contextKey string
 
 const servicesKey contextKey = "httpserver_services"
@@ -113,6 +117,18 @@ func OpenInBrowser(c context.Context) {
 	FromContext(c).OpenInBrowser()
 }
 
+// Handle registers the given handler with the context server
+func Handle(path string, h http.Handler) cli.Action {
+	return cli.ActionFunc(func(c *cli.Context) error {
+		m, err := FromContext(c).ensureMux()
+		if err != nil {
+			return err
+		}
+		m.Handle(path, h)
+		return nil
+	})
+}
+
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
@@ -136,6 +152,18 @@ func (s *Server) ListenAndServe() error {
 
 func (s *Server) schemeAndAddr() string {
 	return s.proto() + s.Server.Addr
+}
+
+func (s *Server) ensureMux() (mux, error) {
+	if m, ok := s.Server.Handler.(mux); ok {
+		return m, nil
+	}
+	if s.Server.Handler == nil {
+		m := http.NewServeMux()
+		s.Server.Handler = m
+		return m, nil
+	}
+	return nil, fmt.Errorf("server handler does not support mux")
 }
 
 // OpenInBrowser opens in the browser.  The request path can also be
