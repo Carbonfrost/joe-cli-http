@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.1 (March 13, 2023)
+
+### Bug fixes and improvements
+
+* Improved error handling in `DownloadMode`, `File` adapter (29422d1)
+* Updates to GitHub actions (83da39c)
+* Update engineering platform (b051f3a)
+* Unit tests for internal URI templates (3c01ddd)
+
 ## v0.3.0 (March 12, 2023)
 
 ### New Features
