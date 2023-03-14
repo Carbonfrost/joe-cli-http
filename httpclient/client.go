@@ -356,7 +356,7 @@ func (c *Client) SetIncludeResponseHeaders(v bool) error {
 }
 
 func (c *Client) setOutputFileHelper(f *cli.File) error {
-	c.SetDownloadFile(&directAdapter{f})
+	c.SetDownloadFile(NewFileDownloader(f))
 	return nil
 }
 

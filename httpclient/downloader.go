@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -37,14 +38,24 @@ func NewDownloaderTo(w io.Writer) Downloader {
 	return basicDownloader{w}
 }
 
+func NewFileDownloader(f *cli.File) Downloader {
+	return &directAdapter{f}
+}
+
 func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
 	ensureDirectory(d.Dir())
 	w, err := d.Create()
+	if err != nil {
+		return nil, err
+	}
 	return w.(io.WriteCloser), err
 }
 
 func (d DownloadMode) OpenDownload(resp *Response) (io.WriteCloser, error) {
 	fn := d.FileName(resp)
+	if fn == "" {
+		return nil, fmt.Errorf("cannot download file: the request path has no file name")
+	}
 	ensureDirectory(filepath.Dir(fn))
 	return os.Create(fn)
 }

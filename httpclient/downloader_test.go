@@ -1,8 +1,9 @@
 package httpclient_test
 
 import (
-	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"net/http"
+
+	"github.com/Carbonfrost/joe-cli-http/httpclient"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,6 +29,21 @@ var _ = Describe("DownloadMode", func() {
 			Entry("empty", httpclient.PreserveRequestPath, "https://example.com/", ""),
 			Entry("simple", httpclient.PreserveRequestPath, "https://example.com/hello/world", "hello/world"),
 			Entry("query string", httpclient.PreserveRequestPath, "https://example.com/hello/world?a=b", "hello/world?a=b"),
+		)
+	})
+
+	Describe("OpenDownload", func() {
+		DescribeTable("examples",
+			func(mode httpclient.DownloadMode, u string, expected string) {
+				request, _ := http.NewRequest("GET", u, nil)
+				_, err := mode.OpenDownload(&httpclient.Response{
+					Response: &http.Response{
+						Request: request,
+					},
+				})
+				Expect(err).To(MatchError(expected))
+			},
+			Entry("empty request file", httpclient.PreserveRequestFile, "https://example.com/", "cannot download file: the request path has no file name"),
 		)
 	})
 })
