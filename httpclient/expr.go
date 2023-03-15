@@ -69,8 +69,30 @@ func expandToken(r *Response, tok string) string {
 		r.Header.Write(&buf)
 		return buf.String()
 	default:
-		return fmt.Sprintf("%%!(unknown token: %s)", tok)
+		if name, ok := strings.CutPrefix(tok, "header."); ok {
+			return r.Header.Get(headerCanonicalName(name))
+		}
+		return fmt.Sprintf("%%!(unknown: %s)", tok)
 	}
+}
+
+func headerCanonicalName(s string) string {
+	if strings.Contains(s, "-") {
+		return s
+	}
+
+	// Convert Pascal and camel case to canonical names
+	var buf bytes.Buffer
+	pat := regexp.MustCompile("(^[a-z]|[A-Z])[^A-Z]*")
+
+	submatchall := pat.FindAllString(s, -1)
+	for i, element := range submatchall {
+		if i > 0 {
+			buf.WriteString("-")
+		}
+		buf.WriteString(element)
+	}
+	return buf.String()
 }
 
 var _ encoding.TextUnmarshaler = (*Expr)(nil)

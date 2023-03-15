@@ -39,5 +39,9 @@ var _ = Describe("Expr", func() {
 		Entry("all response headers", "%(header)", res, And(
 			ContainSubstring("Content-Location: https://example.com/d"),
 			ContainSubstring("X-Request-Id: 3305039"))),
+		Entry("bad token", `unknown %(wut) token`, res, Equal("unknown %!(unknown: wut) token")),
+		Entry("header direct name", "%(header.X-Request-ID)", res, Equal("3305039")),
+		Entry("header non-canonical name", "%(header.x-request-id)", res, Equal("3305039")),
+		Entry("header camel name", "%(header.xRequestId)", res, Equal("3305039")),
 	)
 })
