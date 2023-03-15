@@ -158,9 +158,10 @@ var _ = Describe("VirtualPath", func() {
 			Expect(vp.RequestPath).To(Equal(request))
 			Expect(vp.PhysicalPath).To(Equal(real))
 		},
-			Entry("nominal", "nom:./inal", "nom", "./inal"),
-			Entry("bare", "bare", "bare", "bare"),
-			Entry("no real path", "no:", "no", "."),
+			Entry("nominal", "nom:./inal", "/nom", "./inal"),
+			Entry("bare", "bare", "/bare", "bare"),
+			Entry("relative", "./relative", "/relative", "./relative"),
+			Entry("no real path", "no:", "/no", "."),
 		)
 	})
 
@@ -174,8 +175,8 @@ var _ = Describe("VirtualPath", func() {
 			uu := u.String()
 			Expect(uu).To(Equal(expected))
 		},
-			Entry("nominal", "nom:./inal", "nom:./inal"),
-			Entry("empty", "", ":"),
+			Entry("nominal", "nom:./inal", "/nom:./inal"),
+			Entry("empty", "", "/:"),
 		)
 	})
 })

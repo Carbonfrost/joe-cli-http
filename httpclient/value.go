@@ -193,6 +193,12 @@ func ParseVirtualPath(v string) (VirtualPath, error) {
 	} else {
 		s = r
 	}
+	if stripped, isRelative := strings.CutPrefix(r, "./"); isRelative {
+		r = "/" + stripped
+	}
+	if !strings.HasPrefix(r, "/") {
+		r = "/" + r
+	}
 	return VirtualPath{
 		RequestPath:  r,
 		PhysicalPath: s,
