@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.1 (March 14, 2023)
+
+### New Feature
+
+* Allow header names in write out expr (7bb1314)
+
+### Bug fixes and improvements
+
+* Bug fix: requests in virtual paths are rooted (bf27ca9)
+* Additional tests for write out expressions (7bb1314)
+* Chore: GitHub configuration (4c3d77b)
+
 ## v0.3.1 (March 13, 2023)
 
 ### Bug fixes and improvements
