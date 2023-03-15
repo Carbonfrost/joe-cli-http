@@ -41,28 +41,41 @@ func NewRequestIDMiddleware(v ...any) Middleware {
 
 // WithHeader sets the specified header.  The value may be:
 //   - string
-//   - func()string.
+//   - []string
+//   - func()string
+//   - func()[]string.
 //   - func(*http.Request)(string, error).
+//   - func(*http.Request)([]string, error).
 //
 // Other types using their default string format.
 func WithHeader(name string, value any) Middleware {
 	return MiddlewareFunc(func(r *http.Request) (err error) {
-		var headerValue string
+		var headerValue []string
 		switch v := value.(type) {
 		case string:
+			headerValue = []string{v}
+		case []string:
 			headerValue = v
 		case func() string:
+			headerValue = []string{v()}
+		case func() []string:
 			headerValue = v()
 		case func(*http.Request) (string, error):
+			hv, err := v(r)
+			if err != nil {
+				return err
+			}
+			headerValue = []string{hv}
+		case func(*http.Request) ([]string, error):
 			headerValue, err = v(r)
 			if err != nil {
 				return
 			}
 		default:
-			headerValue = fmt.Sprint(v)
+			headerValue = []string{fmt.Sprint(v)}
 		}
 
-		ensureHeader(r).Set(name, headerValue)
+		ensureHeader(r)[http.CanonicalHeaderKey(name)] = headerValue
 		return
 	})
 }
