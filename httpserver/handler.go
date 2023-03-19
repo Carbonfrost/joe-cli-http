@@ -21,10 +21,20 @@ type HandlerSpec func(context.Context, httpclient.VirtualPath) (http.Handler, er
 var HandlerRegistry = &provider.Registry{
 	Name: "handlers",
 	Providers: provider.Details{
+		"ping": {
+			Factory: provider.Factory(newPingHandlerWithOpts),
+		},
 		"file": {
 			Factory: provider.Factory(newFileServerHandlerWithOpts),
 		},
 	},
+}
+
+// NewPingHandler provides a handler which simply replies with a message
+func NewPingHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ping\n"))
+	})
 }
 
 // FileServerHandlerSpec creates a file server.  The physical path in the virtual path
@@ -76,6 +86,10 @@ func newFileServerHandler(staticDir string, hideDirListing bool) http.Handler {
 		result = hideListing(result)
 	}
 	return result
+}
+
+func newPingHandlerWithOpts(_ any) (http.Handler, error) {
+	return NewPingHandler(), nil
 }
 
 func hideListing(next http.Handler) http.HandlerFunc {
