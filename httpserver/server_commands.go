@@ -3,10 +3,12 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/httpclient"
 )
 
 const (
@@ -208,6 +210,71 @@ func SetOpenInBrowser() cli.Action {
 			HelpText: "When set, open the default Web browser when the server is ready",
 		},
 		withBinding((*Server).setOpenInBrowserHelper, []bool{true}),
+		tagged,
+	)
+}
+
+func setHandlerSpec(spec HandlerSpec, v []httpclient.VirtualPath) cli.ActionFunc {
+	switch len(v) {
+	case 0:
+		return func(c *cli.Context) error {
+			vp := c.Value("").(*httpclient.VirtualPath)
+			handler, err := spec(c, *vp)
+			if err != nil {
+				return err
+			}
+			return FromContext(c).Handle(vp.RequestPath, handler)
+		}
+	case 1:
+		return func(c *cli.Context) error {
+			vp := v[0]
+			handler, err := spec(c, vp)
+			if err != nil {
+				return err
+			}
+			return FromContext(c).Handle(vp.RequestPath, handler)
+		}
+	default:
+		panic(expectedOneArg)
+	}
+}
+
+// SetHandler adds the specified handler to the mux. This can be called multiple
+// times.
+func SetHandler(v ...httpclient.VirtualPath) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "handler",
+			Aliases:   []string{"H"},
+			UsageText: "route:handler[,options]",
+			HelpText:  "Binds a handler to the given route",
+			Value:     new(httpclient.VirtualPath),
+			Options:   cli.EachOccurrence,
+		},
+		cli.At(cli.ActionTiming, setHandlerSpec(RegistryHandlerSpec("handlers"), v)),
+		tagged,
+	)
+}
+
+// Handle registers the given handler with the context server
+func Handle(path string, h http.Handler) cli.Action {
+	return cli.ActionFunc(func(c *cli.Context) error {
+		return FromContext(c).Handle(path, h)
+	})
+}
+
+// SetFileServerHandler adds the specified file server handler to the mux.
+// This can be called multiple times.
+func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "files",
+			UsageText: "[route:]directory",
+			HelpText:  "Binds a handler to the given route",
+			Value:     new(httpclient.VirtualPath),
+			Options:   cli.EachOccurrence,
+		},
+		cli.At(cli.ActionTiming, setHandlerSpec(FileServerHandlerSpec(), v)),
 		tagged,
 	)
 }

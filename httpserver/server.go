@@ -114,18 +114,6 @@ func OpenInBrowser(c context.Context) {
 	FromContext(c).OpenInBrowser()
 }
 
-// Handle registers the given handler with the context server
-func Handle(path string, h http.Handler) cli.Action {
-	return cli.ActionFunc(func(c *cli.Context) error {
-		m, err := FromContext(c).ensureMux()
-		if err != nil {
-			return err
-		}
-		m.Handle(path, h)
-		return nil
-	})
-}
-
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
@@ -136,7 +124,7 @@ func (s *Server) HideDirectoryListing() bool {
 }
 
 func (s *Server) ListenAndServe() error {
-	if s.handlerFactory != nil {
+	if s.Server.Handler == nil && s.handlerFactory != nil {
 		h, err := s.handlerFactory(s)
 		if err != nil {
 			return err
@@ -248,6 +236,15 @@ func (s *Server) setStaticDirectoryHelper(f *cli.File) error {
 
 func (s *Server) setOpenInBrowserHelper(v bool) error {
 	WithReadyFunc(OpenInBrowser)(s)
+	return nil
+}
+
+func (s *Server) Handle(path string, h http.Handler) error {
+	m, err := s.ensureMux()
+	if err != nil {
+		return err
+	}
+	m.Handle(path, h)
 	return nil
 }
 

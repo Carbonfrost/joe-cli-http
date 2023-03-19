@@ -19,6 +19,7 @@ func NewApp() *cli.App {
 			httpserver.DefaultServer(),
 			&color.Options{},
 			httpserver.RunServer(),
+			httpserver.HandlerRegistry,
 			cli.Sorted,
 		),
 		Version: build.Version,
@@ -28,6 +29,17 @@ func NewApp() *cli.App {
 				HelpText: "Change directory into the specified working {DIRECTORY}",
 				Value:    &cli.File{Name: "."},
 				Options:  cli.MustExist | cli.WorkingDirectory,
+			},
+			{
+				Uses: httpserver.SetHandler(),
+			},
+		},
+		Args: []*cli.Arg{
+			{
+				Name:     "directories",
+				HelpText: "Specifies static directories to serve",
+				NArg:     cli.TakeUntilNextFlag,
+				Uses:     httpserver.SetFileServerHandler(),
 			},
 		},
 	}
