@@ -1,3 +1,4 @@
+// Package httpserver can host an HTTP server in the CLI app.
 package httpserver
 
 import (
@@ -19,8 +20,7 @@ import (
 // within the Uses pipeline where it registers itself as a context service.
 // The action RunServer is used to actually run the server.
 //
-// The simplest action to use is FetchAndPrint(), which executes the
-// request(s) and prints (or downloads) the results:
+// The simplest action to use is RunServer(), which runs the server:
 //
 //	&cli.App{
 //	   Name: "goserv",
@@ -28,11 +28,17 @@ import (
 //	   Action: httpserver.RunServer(),
 //	}
 //
-// This simple app has numerous flags to configure connection handling.
+// This simple app has numerous flags to configure connection handling
+// and to dynamically construct the server's router.  Many dynamic server
+// routing actions depend upon the server having a handler which is also a
+// mux that contains a method Handle(string, http.Handler) to register
+// additional handlers.  (This is the same API provided by the built-in Go
+// mux, http.ServeMux).  There are other APIs provided by convention, documented
+// in their respective contexts.
 //
 // The cmd/weave package provides weave, which is a command line utility
-// that hosts a static file directory, which is similar to what the
-// DefaultServer() does
+// that hosts a server for files and some built-in handlers, which is
+// similar to what the DefaultServer() does.
 //
 // If you only want to add the Server to the context (typically in
 // advanced scenarios where you are deeply customizing the behavior),
