@@ -83,16 +83,7 @@ func New(options ...Option) *Server {
 
 func DefaultServer() *Server {
 	return New(WithHandlerFactory(func(s *Server) (http.Handler, error) {
-		staticDir := s.staticDir
-		if staticDir == "" {
-			return nil, nil
-		}
-		handler := http.FileServer(http.Dir(staticDir))
-
-		if s.hideDirListings {
-			handler = hideListing(handler)
-		}
-		return handler, nil
+		return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil
 	}))
 }
 
@@ -274,15 +265,4 @@ func (s *Server) proto() string {
 func (o Option) Execute(c *cli.Context) error {
 	o(FromContext(c))
 	return nil
-}
-
-func hideListing(next http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		if strings.HasSuffix(req.URL.Path, "/") {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-
-		next.ServeHTTP(w, req)
-	}
 }
