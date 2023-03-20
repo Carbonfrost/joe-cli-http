@@ -6,6 +6,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
+	"github.com/onsi/gomega/types"
 )
 
 var _ = Describe("URLValue", func() {
@@ -153,15 +155,50 @@ var _ = Describe("HeaderCounter", func() {
 var _ = Describe("VirtualPath", func() {
 
 	Describe("ParseVirtualPath", func() {
-		DescribeTable("examples", func(v string, request, real string) {
+		DescribeTable("examples", func(v string, expected types.GomegaMatcher) {
 			vp, _ := httpclient.ParseVirtualPath(v)
-			Expect(vp.RequestPath).To(Equal(request))
-			Expect(vp.PhysicalPath).To(Equal(real))
+			Expect(vp).To(expected)
 		},
-			Entry("nominal", "nom:./inal", "/nom", "./inal"),
-			Entry("bare", "bare", "/bare", "bare"),
-			Entry("relative", "./relative", "/relative", "./relative"),
-			Entry("no real path", "no:", "/no", "."),
+			Entry("nominal", "nom:./inal", MatchFields(IgnoreExtras, Fields{
+				"RequestPath":  Equal("/nom"),
+				"PhysicalPath": Equal("./inal"),
+			})),
+			Entry("bare", "bare", MatchFields(IgnoreExtras, Fields{
+				"RequestPath":  Equal("/bare"),
+				"PhysicalPath": Equal("bare"),
+			})),
+			Entry("relative", "./relative", MatchFields(IgnoreExtras, Fields{
+				"RequestPath":  Equal("/relative"),
+				"PhysicalPath": Equal("./relative"),
+			})),
+			Entry("no real path", "no:", MatchFields(IgnoreExtras, Fields{
+				"RequestPath":  Equal("/no"),
+				"PhysicalPath": Equal("."),
+			})),
+			Entry("both empty", ":", MatchFields(IgnoreExtras, Fields{
+				"RequestPath":  Equal("/"),
+				"PhysicalPath": Equal("."),
+			})),
+			Entry("some options", "_:_,option1=a,option2=b", MatchFields(IgnoreExtras, Fields{
+				"Options": Equal(map[string]string{
+					"option1": "a",
+					"option2": "b",
+				}),
+			})),
+		)
+	})
+
+	Describe("String", func() {
+		DescribeTable("examples", func(value httpclient.VirtualPath, expected string) {
+			actual := value.String()
+			Expect(actual).To(Equal(expected))
+		},
+			Entry(
+				"nominal",
+				httpclient.VirtualPath{
+					Options: map[string]string{"a": "b"},
+				},
+				":,a=b"),
 		)
 	})
 

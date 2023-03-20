@@ -8,6 +8,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
+	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
 // URLValue provides ergonomics for entering URLs as values.  When the text looks like
@@ -39,6 +40,9 @@ type VirtualPath struct {
 
 	// PhysicalPath identifies the real path that contains the resource to be served
 	PhysicalPath string
+
+	// Options encapsulates options about the virtual path
+	Options map[string]string
 }
 
 type headerValueCounter struct {
@@ -121,11 +125,36 @@ func (v *VirtualPath) Set(arg string) error {
 }
 
 func (v VirtualPath) String() string {
-	return v.RequestPath + ":" + v.PhysicalPath
+	name := v.RequestPath + ":" + v.PhysicalPath
+	if len(v.Options) == 0 {
+		return name
+	}
+	return (&provider.Value{
+		Name: name,
+		Args: v.Options,
+	}).String()
 }
 
 func (v *VirtualPath) NewCounter() cli.ArgCounter {
 	return cli.ArgCount(1)
+}
+
+func (v *VirtualPath) Reset() {
+	v.PhysicalPath = ""
+	v.RequestPath = ""
+	v.Options = nil
+}
+
+func (v *VirtualPath) Copy() *VirtualPath {
+	opts := map[string]string{}
+	for k, v := range v.Options {
+		opts[k] = v
+	}
+	return &VirtualPath{
+		RequestPath:  v.RequestPath,
+		PhysicalPath: v.PhysicalPath,
+		Options:      opts,
+	}
 }
 
 func (v *HeaderValue) Reset() {
@@ -185,7 +214,8 @@ func (v *headerValueCounter) Take(arg string, possibleFlag bool) error {
 }
 
 func ParseVirtualPath(v string) (VirtualPath, error) {
-	r, s, ok := strings.Cut(string(v), ":")
+	r, pathAndOptions, ok := strings.Cut(string(v), ":")
+	s, opts, _ := strings.Cut(pathAndOptions, ",")
 	if ok {
 		if s == "" {
 			s = "."
@@ -202,6 +232,7 @@ func ParseVirtualPath(v string) (VirtualPath, error) {
 	return VirtualPath{
 		RequestPath:  r,
 		PhysicalPath: s,
+		Options:      cli.SplitMap(opts),
 	}, nil
 }
 
