@@ -398,6 +398,11 @@ func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err err
 		return
 	}
 
+	var cert *x509.Certificate
+	if len(state.PeerCertificates) > 0 {
+		cert = state.PeerCertificates[0]
+	}
+
 	l.render("TLSHandshakeDone", struct {
 		Proto             string
 		CipherSuite       string
@@ -405,7 +410,7 @@ func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err err
 	}{
 		Proto:             tls.VersionName(state.Version),
 		CipherSuite:       tls.CipherSuiteName(state.CipherSuite),
-		ServerCertificate: formatCert(state.PeerCertificates[0]),
+		ServerCertificate: formatCert(cert),
 	})
 }
 
@@ -415,6 +420,9 @@ type NameValue struct {
 }
 
 func formatCert(c *x509.Certificate) []NameValue {
+	if c == nil {
+		return nil
+	}
 	return []NameValue{
 		{"Subject", fmt.Sprint(c.Subject)},
 		{"Not Before", fmt.Sprint(c.NotBefore)},
