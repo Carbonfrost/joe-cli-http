@@ -3,52 +3,33 @@ package httpclient
 import (
 	"bytes"
 	"encoding"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 )
 
 // Expr provides the expression used within the "write out" flag
 type Expr string
 
-var patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
+func (e Expr) Compile() *expr.Pattern {
+	return expr.CompilePattern(string(e), "%(", ")")
+}
 
-func (w *Expr) UnmarshalText(b []byte) error {
-	*w = Expr(string(b))
+func (e *Expr) UnmarshalText(b []byte) error {
+	*e = Expr(string(b))
 	return nil
 }
 
-func (w Expr) Expand(r *Response) string {
-	str := string(w)
-
-	// Handle escape sequences
-	if s, err := strconv.Unquote(`"` + str + `"`); err == nil {
-		str = s
-	}
-	content := []byte(str)
-	allIndexes := patternRegexp.FindAllSubmatchIndex(content, -1)
-	var buf bytes.Buffer
-
-	var index int
-	for _, loc := range allIndexes {
-		if index < loc[0] {
-			buf.Write(content[index:loc[0]])
-		}
-
-		// Expressions
-		key := content[loc[2]:loc[3]]
-		buf.WriteString(expandToken(r, string(key)))
-		index = loc[1]
-	}
-	if index < len(content) {
-		buf.Write(content[index:])
-	}
-
-	return buf.String()
+func (e Expr) Expand(r *Response) string {
+	c := e.Compile()
+	return c.Expand(func(s string) any {
+		return expandToken(r, s)
+	})
 }
 
-func expandToken(r *Response, tok string) string {
+func expandToken(r *Response, tok string) any {
 	switch tok {
 	case "status":
 		return r.Status // "200 OK"
@@ -72,7 +53,7 @@ func expandToken(r *Response, tok string) string {
 		if name, ok := strings.CutPrefix(tok, "header."); ok {
 			return r.Header.Get(headerCanonicalName(name))
 		}
-		return fmt.Sprintf("%%!(unknown: %s)", tok)
+		return expr.UnknownToken(tok)
 	}
 }
 

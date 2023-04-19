@@ -43,6 +43,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetStaticDirectory()},
 			{Uses: SetNoDirectoryListings()},
 			{Uses: SetOpenInBrowser()},
+			{Uses: SetAccessLog()},
+			{Uses: SetNoAccessLog()},
 		}...),
 	)
 }
@@ -275,6 +277,31 @@ func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
 			Options:   cli.EachOccurrence,
 		},
 		cli.At(cli.ActionTiming, setHandlerSpec(FileServerHandlerSpec(), v)),
+		tagged,
+	)
+}
+
+func SetAccessLog(v ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "access-log",
+			Aliases:  []string{"a"},
+			HelpText: "Set access log format",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetAccessLog, v),
+		tagged,
+	)
+}
+
+func SetNoAccessLog(v ...bool) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "no-access-log",
+			HelpText: "Disable the access log",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetNoAccessLog, v),
 		tagged,
 	)
 }

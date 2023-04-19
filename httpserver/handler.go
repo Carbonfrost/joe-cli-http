@@ -4,12 +4,17 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
+
+const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(status) -\n`
 
 // HandlerSpec creates a handler from a virtual path.  The virtual path
 // defines how the handler works.  Typically, the physical path
@@ -28,6 +33,15 @@ var HandlerRegistry = &provider.Registry{
 			Factory: provider.Factory(newFileServerHandlerWithOpts),
 		},
 	},
+}
+
+// NewRequestLogger provides handler middleware to write to access log
+func NewRequestLogger(format string, next http.Handler) http.Handler {
+	if format == "" {
+		format = defaultAccessLog
+	}
+	logFormat := expr.Compile(format)
+	return requestLoggerHandler(next, logFormat)
 }
 
 // NewPingHandler provides a handler which simply replies with a message
@@ -90,6 +104,30 @@ func newFileServerHandler(staticDir string, hideDirListing bool) http.Handler {
 
 func newPingHandlerWithOpts(_ any) (http.Handler, error) {
 	return NewPingHandler(), nil
+}
+
+func requestLoggerHandler(next http.Handler, format *expr.Pattern) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ww := newWrapResponseWriter(w, r.ProtoMajor)
+		t1 := time.Now()
+
+		defer func() {
+			vars := map[string]interface{}{
+				"bytesWritten": ww.BytesWritten(),
+				"duration":     time.Since(t1),
+				"end":          time.Now(),
+				"headers":      ww.Header(),
+				"method":       r.Method,
+				"protocol":     r.Proto,
+				"start":        t1,
+				"status":       ww.Status(),
+				"urlPath":      r.URL.Path,
+			}
+			format.Fprint(os.Stderr, expr.ExpandMap(vars))
+		}()
+
+		next.ServeHTTP(ww, r)
+	}
 }
 
 func hideListing(next http.Handler) http.HandlerFunc {

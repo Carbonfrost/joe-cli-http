@@ -52,6 +52,7 @@ type Server struct {
 	ready           func(context.Context)
 	hideDirListings bool
 	middleware      []MiddlewareFunc
+	accessLog       string
 }
 
 // Option is an option to configure the server
@@ -79,7 +80,15 @@ func New(options ...Option) *Server {
 		Server: &http.Server{
 			Addr: "localhost:8000",
 		},
+		accessLog: defaultAccessLog,
 	}
+	s.AddMiddleware(func(h http.Handler) http.Handler {
+		if s.accessLog != "" {
+			return NewRequestLogger(s.accessLog, h)
+		}
+		return h
+	})
+
 	for _, o := range options {
 		o(s)
 	}
@@ -253,6 +262,20 @@ func (s *Server) SetStaticDirectory(path string) error {
 
 func (s *Server) SetNoDirectoryListings(v bool) error {
 	s.hideDirListings = true
+	return nil
+}
+
+func (s *Server) SetAccessLog(v string) error {
+	s.accessLog = v
+	return nil
+}
+
+func (s *Server) SetNoAccessLog(v bool) error {
+	if v {
+		s.accessLog = ""
+	} else {
+		s.accessLog = defaultAccessLog
+	}
 	return nil
 }
 
