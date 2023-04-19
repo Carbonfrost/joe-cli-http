@@ -6,90 +6,70 @@ builds:
   - main: ./cmd/toupee
     id: toupee
     binary: toupee
-    goos: &platforms
-      - linux
-      - windows
-      - darwin
-    env: &env
-      - CGO_ENABLED=0
-    ldflags: &ldflags
-      - -s -w -X github.com/Carbonfrost/joe-cli-http/internal/build.Version={{.Version}}
+    <<: &build_defaults
+      goos:
+        - linux
+        - windows
+        - darwin
+      env:
+        - CGO_ENABLED=0
+      ldflags:
+        - -s -w -X github.com/Carbonfrost/joe-cli-http/internal/build.Version={{.Version}}
 
   - main: ./cmd/weave
     id: weave
     binary: weave
-    goos: *platforms
-    env: *env
-    ldflags: *ldflags
+    <<: *build_defaults
 
   - main: ./cmd/wig
     id: wig
     binary: wig
-    goos: *platforms
-    env: *env
-    ldflags: *ldflags
+    <<: *build_defaults
 
 archives:
   - id: toupee
     builds:
       - toupee
-    name_template: "toupee_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      "386": i386
-      amd64: x86_64
-    format_overrides:
-      - goos: windows
-        format: zip
+    <<: &archive_defaults
+      name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+      format_overrides:
+        - goos: windows
+          format: zip
 
   - id: weave
     builds:
       - weave
-    name_template: "weave_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      "386": i386
-      amd64: x86_64
-    format_overrides:
-      - goos: windows
-        format: zip
+    <<: *archive_defaults
 
   - id: wig
     builds:
       - wig
-    name_template: "wig_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      "386": i386
-      amd64: x86_64
-    format_overrides:
-      - goos: windows
-        format: zip
+    <<: *archive_defaults
 
 brews:
   - name: toupee
     ids:
     - toupee
-    tap: &tap
-      owner: Carbonfrost
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    <<: &brew_defaults
+      tap:
+        owner: Carbonfrost
+        name: homebrew-tap
+        token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+      homepage: "https://github.com/Carbonfrost/joe-cli-http"
     description: "Expands RFC 6570 (level 4) URI templates"
-    homepage: "https://github.com/Carbonfrost/joe-cli-http"
 
   - name: weave
     ids:
     - weave
-    tap: *tap
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     description: "Provides access to a simple Go HTTP server for files and proxy handling"
-    homepage: "https://github.com/Carbonfrost/joe-cli-http"
+    <<: *brew_defaults
 
   - name: wig
     ids:
     - wig
-    tap: *tap
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     description: "Provides access to the Go HTTP client with some cURL compatibility"
-    homepage: "https://github.com/Carbonfrost/joe-cli-http"
+    <<: *brew_defaults
 
 changelog:
   skip: true
