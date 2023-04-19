@@ -51,10 +51,15 @@ type Server struct {
 	handlerFactory  func(*Server) (http.Handler, error)
 	ready           func(context.Context)
 	hideDirListings bool
+	middleware      []MiddlewareFunc
 }
 
 // Option is an option to configure the server
 type Option func(*Server)
+
+// MiddlewareFunc defines a function that creates a middleware wrapper around another
+// handler
+type MiddlewareFunc func(next http.Handler) http.Handler
 
 type mux interface {
 	Handle(string, http.Handler)
@@ -108,6 +113,13 @@ func WithReadyFunc(ready func(context.Context)) Option {
 	}
 }
 
+// WithMiddleware adds handler middleware
+func WithMiddleware(m MiddlewareFunc) Option {
+	return func(s *Server) {
+		s.AddMiddleware(m)
+	}
+}
+
 // OpenInBrowser is a function to open the server in the browser.  This
 // function is passed as a value to WithReadyFunc
 func OpenInBrowser(c context.Context) {
@@ -117,6 +129,11 @@ func OpenInBrowser(c context.Context) {
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
+}
+
+// AddMiddleware appends additional middleware to the server
+func (s *Server) AddMiddleware(m MiddlewareFunc) {
+	s.middleware = append(s.middleware, m)
 }
 
 func (s *Server) HideDirectoryListing() bool {
@@ -131,7 +148,8 @@ func (s *Server) ListenAndServe() error {
 		}
 		s.Server.Handler = h
 	}
-	fmt.Fprintf(os.Stderr, "Listening on %s... (Press ^C to exit)", s.schemeAndAddr())
+	s.applyMiddleware()
+	fmt.Fprintf(os.Stderr, "Listening on %s... (Press ^C to exit)\n", s.schemeAndAddr())
 	return s.Server.ListenAndServe()
 }
 
@@ -149,6 +167,14 @@ func (s *Server) ensureMux() (mux, error) {
 		return m, nil
 	}
 	return nil, fmt.Errorf("server handler does not support mux")
+}
+
+func (s *Server) applyMiddleware() {
+	h := s.Server.Handler
+	for _, m := range s.middleware {
+		h = m(h)
+	}
+	s.Server.Handler = h
 }
 
 // OpenInBrowser opens in the browser.  The request path can also be
