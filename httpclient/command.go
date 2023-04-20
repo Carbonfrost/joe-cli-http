@@ -468,7 +468,7 @@ func ListCiphers() cli.Action {
 			HelpText: "List the cipher suites available and exit",
 			Category: tlsOptions,
 		},
-		cli.AtTiming(cli.ActionOf(doListCiphers), cli.ActionTiming),
+		cli.At(cli.ActionTiming, cli.ActionOf(doListCiphers)),
 		tagged,
 	)
 }
@@ -482,7 +482,7 @@ func ListCurves() cli.Action {
 			HelpText: "List the key exchange algorithms and exit",
 			Category: tlsOptions,
 		},
-		cli.AtTiming(cli.ActionOf(doListCurves), cli.ActionTiming),
+		cli.At(cli.ActionTiming, cli.ActionOf(doListCurves)),
 		tagged,
 	)
 }

@@ -618,11 +618,10 @@ func indexTraceString(j string) int {
 }
 
 func traceTemplate(ctx context.Context) *template.Template {
-	if c, ok := ctx.(*cli.Context); ok {
-		tpl := c.Template("HTTPTrace")
-		if tpl != nil {
-			return tpl.Template
-		}
+	c := cli.FromContext(ctx)
+	tpl := c.Template("HTTPTrace")
+	if tpl != nil {
+		return tpl.Template
 	}
 
 	return outputTemplate
