@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -31,8 +32,9 @@ func SourceAnnotation() (string, string) {
 	return "Source", "joe-cli-http/httpclient"
 }
 
-func (c *Client) Execute(ctx *cli.Context) error {
-	return ctx.Do(
+func (c *Client) Execute(ctx context.Context) error {
+	return cli.Do(
+		ctx,
 		FlagsAndArgs(),
 		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
 		ContextValue(c),

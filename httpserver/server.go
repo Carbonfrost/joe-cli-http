@@ -194,8 +194,9 @@ func (s *Server) OpenInBrowser(path ...string) error {
 	return exec.Open(bind)
 }
 
-func (s *Server) Execute(c *cli.Context) error {
-	return c.Do(
+func (s *Server) Execute(c context.Context) error {
+	return cli.Do(
+		c,
 		FlagsAndArgs(),
 		ContextValue(s),
 	)
@@ -308,7 +309,7 @@ func (s *Server) proto() string {
 	return "http://"
 }
 
-func (o Option) Execute(c *cli.Context) error {
+func (o Option) Execute(c context.Context) error {
 	o(FromContext(c))
 	return nil
 }

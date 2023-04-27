@@ -605,7 +605,7 @@ func (c *Client) SetWriteErr(w Expr) error {
 	return nil
 }
 
-func (o Option) Execute(c *cli.Context) error {
+func (o Option) Execute(c context.Context) error {
 	o(FromContext(c))
 	return nil
 }
