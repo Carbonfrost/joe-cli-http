@@ -109,6 +109,6 @@ var _ = Describe("IntegrityDownloader", func() {
 		_ = testResponse.CopyTo(writer)
 		_ = writer.Close()
 
-		Expect(string(buf.Bytes())).To(Equal("this the response body"))
+		Expect(buf.String()).To(Equal("this the response body"))
 	})
 })

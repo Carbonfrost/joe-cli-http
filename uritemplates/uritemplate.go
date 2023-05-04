@@ -10,7 +10,7 @@ import (
 // URITemplate is a parsed representation of a URI template, which can
 // also be used as a flag Value
 type URITemplate struct {
-	u *uritemplates.UriTemplate
+	u *uritemplates.URITemplate
 }
 
 func Parse(text string) (*URITemplate, error) {

@@ -2,9 +2,9 @@ package httpclient
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"net/http"
 )
 

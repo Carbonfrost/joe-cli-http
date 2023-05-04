@@ -7,7 +7,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.3
 	github.com/spf13/afero v1.6.0
-	golang.org/x/crypto v0.7.0
 	honnef.co/go/tools v0.4.3
 )
 

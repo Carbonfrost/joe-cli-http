@@ -15,6 +15,6 @@ var _ = Describe("NewPingHandler", func() {
 		p := httpserver.NewPingHandler()
 		p.ServeHTTP(recorder, nil)
 
-		Expect(string(recorder.Body.Bytes())).To(Equal("ping\n"))
+		Expect(recorder.Body.String()).To(Equal("ping\n"))
 	})
 })

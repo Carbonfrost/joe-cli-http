@@ -14,7 +14,6 @@ var _ = Describe("Wig", func() {
 		// so that various --integrity hashes can be used
 		hashes := []crypto.Hash{
 			crypto.MD5,
-			crypto.RIPEMD160,
 			crypto.SHA1,
 			crypto.SHA224,
 			crypto.SHA256,

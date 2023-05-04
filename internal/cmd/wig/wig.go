@@ -13,7 +13,6 @@ import (
 	_ "crypto/sha1"
 	_ "crypto/sha256"
 	_ "crypto/sha512"
-	_ "golang.org/x/crypto/ripemd160"
 )
 
 const wigURL = "https://github.com/Carbonfrost/joe-cli-http/cmd/wig"
