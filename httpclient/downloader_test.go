@@ -30,6 +30,30 @@ var _ = Describe("DownloadMode", func() {
 			Entry("simple", httpclient.PreserveRequestPath, "https://example.com/hello/world", "hello/world"),
 			Entry("query string", httpclient.PreserveRequestPath, "https://example.com/hello/world?a=b", "hello/world?a=b"),
 		)
+
+		Context("when stripping components", func() {
+			DescribeTable("examples", func(count int, expected string) {
+				mode := httpclient.PreserveRequestPath
+				request, _ := http.NewRequest("GET", "https://example.com/a/b/c/d/e/f.txt", nil)
+
+				downloader := mode.WithStripComponents(count)
+				downloader.(interface {
+					FileName(*httpclient.Response) string
+				}).FileName(&httpclient.Response{
+					Response: &http.Response{
+						Request: request,
+					},
+				})
+			},
+				Entry("zero", 0, "a/b/c/d/e/f.txt"),
+				Entry("nominal", 1, "b/c/d/e/f.txt"),
+				Entry("negative", -1, "e/f.txt"),
+				Entry("exceeds limit", 99, "f.txt"),
+				Entry("negative exceeds limit", -99, "a/b/c/d/e/f.txt"),
+				Entry("negative exceeds limit (boundary)", -6, "a/b/c/d/e/f.txt"),
+				Entry("negative (boundary)", -5, "b/c/d/e/f.txt"),
+			)
+		})
 	})
 
 	Describe("OpenDownload", func() {

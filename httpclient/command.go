@@ -137,6 +137,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetQueryString()},
 			{Uses: SetWriteOut()},
 			{Uses: SetWriteErr()},
+			{Uses: SetStripComponents()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -378,6 +379,18 @@ func SetDownload() cli.Action {
 				return nil
 			},
 		},
+		tagged,
+	)
+}
+
+func SetStripComponents(i ...int) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "strip-components",
+			HelpText: "Remove the specified number of leading path elements when downloading files",
+			Category: responseOptions,
+		},
+		withBinding((*Client).SetStripComponents, i),
 		tagged,
 	)
 }

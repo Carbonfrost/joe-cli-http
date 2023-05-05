@@ -613,6 +613,14 @@ func (c *Client) UseDownloadMiddleware(fn func(Downloader) Downloader) {
 	c.downloadMiddleware = append(c.downloadMiddleware, fn)
 }
 
+func (c *Client) SetStripComponents(count int) error {
+	c.SetDownloadFile(PreserveRequestPath)
+	c.UseDownloadMiddleware(func(d Downloader) Downloader {
+		return d.(DownloadMode).WithStripComponents(count)
+	})
+	return nil
+}
+
 func NewIntegrityDownloadMiddleware(i Integrity) func(Downloader) Downloader {
 	return func(d Downloader) Downloader {
 		return NewIntegrityDownloader(i, d)

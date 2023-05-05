@@ -16,6 +16,11 @@ type Downloader interface {
 
 type DownloadMode int
 
+type downloaderWithFileName interface {
+	Downloader
+	FileName(*Response) string
+}
+
 type directAdapter struct {
 	*cli.File
 }
@@ -28,11 +33,63 @@ type nopWriteCloser struct {
 	io.Writer
 }
 
+type stripComponents struct {
+	count int
+	mode  DownloadMode
+}
+
 // Download modes
 const (
 	PreserveRequestFile DownloadMode = iota
 	PreserveRequestPath
 )
+
+// WithStripComponents returns a Downloader which strips the specified
+// number of leading path elements from the resulting file name.  This
+// only pertains to PreserveRequestPath.
+func (d DownloadMode) WithStripComponents(count int) Downloader {
+	if d == PreserveRequestPath {
+		return stripComponents{count: count, mode: d}
+	}
+	return d
+}
+
+func (s stripComponents) FileName(r *Response) string {
+	count := s.count
+	res := s.mode.FileName(r)
+	if count == 0 {
+		return res
+	}
+
+	dir, base := filepath.Split(res)
+	dirs := strings.Split(dir, string(filepath.Separator))
+	switch {
+	case count > len(dirs):
+		dirs = nil
+	case count < -len(dirs):
+		// No change to dirs
+	case count < 0:
+		dirs = dirs[(len(dirs)+count)%len(dirs):]
+	default:
+		dirs = dirs[count:]
+	}
+	dirs = append(dirs, base)
+
+	return filepath.Join(dirs...)
+}
+
+func (s stripComponents) OpenDownload(resp *Response) (io.WriteCloser, error) {
+	return openFileName(s, resp)
+}
+
+func openFileName(d downloaderWithFileName, resp *Response) (io.WriteCloser, error) {
+	fn := d.FileName(resp)
+	if fn == "" {
+		return nil, fmt.Errorf("cannot download file: the request path has no file name")
+	}
+	ensureDirectory(filepath.Dir(fn))
+	return os.Create(fn)
+}
 
 func NewDownloaderTo(w io.Writer) Downloader {
 	return basicDownloader{w}
@@ -52,12 +109,7 @@ func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
 }
 
 func (d DownloadMode) OpenDownload(resp *Response) (io.WriteCloser, error) {
-	fn := d.FileName(resp)
-	if fn == "" {
-		return nil, fmt.Errorf("cannot download file: the request path has no file name")
-	}
-	ensureDirectory(filepath.Dir(fn))
-	return os.Create(fn)
+	return openFileName(d, resp)
 }
 
 func (d DownloadMode) FileName(r *Response) string {

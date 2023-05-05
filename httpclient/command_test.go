@@ -150,6 +150,12 @@ var _ = Describe("Set actions", func() {
 			"app -a FI",
 			OnRequest,
 			Fields{"Header": HaveKeyWithValue("User-Agent", []string{"FI"})}),
+		Entry(
+			"SetStripComponents",
+			httpclient.SetStripComponents(),
+			"app -a 3",
+			OnClient,
+			Fields{"DownloaderWithMiddleware": Equal(httpclient.PreserveRequestPath.WithStripComponents(3))}),
 	)
 
 })
