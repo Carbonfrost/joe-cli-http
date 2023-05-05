@@ -59,8 +59,9 @@ type Client struct {
 	UserInfo               *UserInfo
 	LocationResolver       LocationResolver
 
-	downloader     Downloader
-	integrity      *Integrity
+	downloader         Downloader
+	downloadMiddleware []func(Downloader) Downloader
+
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
 	tlsConfig      *tls.Config
@@ -370,7 +371,9 @@ func (c *Client) SetNoOutput(b bool) error {
 }
 
 func (c *Client) SetIntegrity(i Integrity) error {
-	c.integrity = &i
+	c.UseDownloadMiddleware(func(downloader Downloader) Downloader {
+		return NewIntegrityDownloader(i, downloader)
+	})
 	return nil
 }
 
@@ -490,17 +493,18 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 
 func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.WriteCloser, error) {
 	downloader := c.actualDownloader(ctx)
-	if c.integrity != nil {
-		downloader = NewIntegrityDownloader(*c.integrity, downloader)
-	}
 	return downloader.OpenDownload(resp)
 }
 
 func (c *Client) actualDownloader(ctx *cli.Context) Downloader {
+	downloader := c.downloader
 	if c.downloader == nil {
-		return NewDownloaderTo(ctx.Stdout)
+		downloader = NewDownloaderTo(ctx.Stdout)
 	}
-	return c.downloader
+	for _, d := range c.downloadMiddleware {
+		downloader = d(downloader)
+	}
+	return downloader
 }
 
 func (c *Client) SetAuth(auth Authenticator) error {
@@ -603,6 +607,16 @@ func (c *Client) SetWriteOut(w Expr) error {
 func (c *Client) SetWriteErr(w Expr) error {
 	c.writeErrExpr = w
 	return nil
+}
+
+func (c *Client) UseDownloadMiddleware(fn func(Downloader) Downloader) {
+	c.downloadMiddleware = append(c.downloadMiddleware, fn)
+}
+
+func NewIntegrityDownloadMiddleware(i Integrity) func(Downloader) Downloader {
+	return func(d Downloader) Downloader {
+		return NewIntegrityDownloader(i, d)
+	}
 }
 
 func (o Option) Execute(c context.Context) error {

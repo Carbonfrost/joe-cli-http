@@ -1,11 +1,14 @@
 package httpclient // intentional
 
 import (
+	"bytes"
 	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/Carbonfrost/joe-cli"
 )
 
 type ClientAttributes struct {
@@ -19,6 +22,9 @@ type ClientAttributes struct {
 	IncludeResponseHeaders bool
 	CheckRedirect          any
 	Request                *RequestAttributes
+
+	Downloader               Downloader
+	DownloaderWithMiddleware Downloader
 }
 
 type RequestAttributes struct {
@@ -60,6 +66,10 @@ func Attributes(c *Client) *ClientAttributes {
 		IncludeResponseHeaders: c.IncludeResponseHeaders,
 		CheckRedirect:          c.Client.CheckRedirect,
 		Request:                newRequestAttributes(c.Request),
+		Downloader:             c.downloader,
+		DownloaderWithMiddleware: c.actualDownloader(&cli.Context{
+			Stdout: cli.NewWriter(new(bytes.Buffer)),
+		}),
 	}
 }
 
