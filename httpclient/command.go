@@ -56,6 +56,12 @@ func FetchAndPrint() cli.Action {
 		}
 
 		client := FromContext(c)
+
+		// Note that errRender always writes to stderr even if %(stdout) expr
+		// is present
+		outRender := expr.NewRenderer(c.Stdout, c.Stderr)
+		errRender := expr.NewRenderer(c.Stderr, c.Stderr)
+
 		outExpr := client.writeOutExpr.Compile()
 		errExpr := client.writeErrExpr.Compile()
 		for _, response := range responses {
@@ -87,8 +93,8 @@ func FetchAndPrint() cli.Action {
 				ExpandResponse(response),
 			)
 
-			outExpr.Fprint(c.Stdout, expander)
-			errExpr.Fprint(c.Stderr, expander)
+			expr.Fprint(outRender, outExpr, expander)
+			expr.Fprint(errRender, errExpr, expander)
 		}
 
 		return nil

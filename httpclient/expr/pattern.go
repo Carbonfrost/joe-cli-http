@@ -56,6 +56,48 @@ type literal struct {
 	text string
 }
 
+// Renderer is a specialized writer that understands writing to multiple
+// files and the corresponding variable support
+type Renderer struct {
+	io.Writer
+	out, err io.Writer
+}
+
+func (r *Renderer) expandFiles(k string) any {
+	switch k {
+	case "stderr":
+		r.Writer = r.err
+		return ""
+
+	case "stdout":
+		r.Writer = r.out
+		return ""
+	}
+	return nil
+}
+
+func NewRenderer(stdout, stderr io.Writer) *Renderer {
+	return &Renderer{
+		Writer: stdout,
+		out:    stdout,
+		err:    stderr,
+	}
+}
+
+func Fprint(w io.Writer, pattern *Pattern, e Expander) (count int, err error) {
+	// Implicitly upgrade w to *Renderer
+	if r, ok := w.(*Renderer); ok {
+		e = ComposeExpanders(r.expandFiles, e)
+	}
+	for _, item := range pattern.exprs {
+		count, err = fmt.Fprint(w, item.Format(e))
+		if err != nil {
+			break
+		}
+	}
+	return
+}
+
 func Compile(pattern string) *Pattern {
 	return compilePatternCore([]byte(pattern), patternRegexp)
 }
@@ -126,15 +168,9 @@ func (f *formatExpr) Format(expand Expander) any {
 	return fmt.Sprintf("%"+f.format, value)
 }
 
-func (f *Pattern) Fprint(w io.Writer, expand Expander) {
-	for _, item := range f.exprs {
-		fmt.Fprint(w, item.Format(expand))
-	}
-}
-
 func (f *Pattern) Expand(expand Expander) string {
 	var b strings.Builder
-	f.Fprint(&b, expand)
+	Fprint(&b, f, expand)
 	return b.String()
 }
 

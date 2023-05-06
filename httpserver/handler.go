@@ -123,7 +123,7 @@ func requestLoggerHandler(next http.Handler, format *expr.Pattern) http.HandlerF
 				"status":       ww.Status(),
 				"urlPath":      r.URL.Path,
 			}
-			format.Fprint(os.Stderr, expr.ExpandMap(vars))
+			expr.Fprint(os.Stderr, format, expr.ExpandMap(vars))
 		}()
 
 		next.ServeHTTP(ww, r)
