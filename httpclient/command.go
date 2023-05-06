@@ -83,6 +83,7 @@ func FetchAndPrint() cli.Action {
 
 			expander := expr.ComposeExpanders(
 				expr.ExpandGlobals,
+				expr.ExpandColors,
 				ExpandResponse(response),
 			)
 

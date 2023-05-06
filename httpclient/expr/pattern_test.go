@@ -30,4 +30,15 @@ var _ = Describe("Compile", func() {
 		Entry("nominal", "hello %(hello)", "hello world"),
 		Entry("missing value", "hello %(planet)", "hello %!(unknown: planet)"),
 	)
+
+	Context("when using colors", func() {
+		DescribeTable("example",
+			func(pattern, expected string) {
+				pat := expr.Compile(pattern)
+				actual := pat.Expand(expr.ExpandColors)
+				Expect(actual).To(Equal(expected))
+			},
+			Entry("yellow", "%(color.yellow)", "\x1b[33m"),
+		)
+	})
 })

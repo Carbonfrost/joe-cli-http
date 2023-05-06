@@ -14,6 +14,27 @@ import (
 
 var (
 	patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
+
+	// vt100 ansi codes
+	colors = map[string]int{
+		"default":       39,
+		"black":         30,
+		"red":           31,
+		"green":         32,
+		"yellow":        33,
+		"blue":          34,
+		"magenta":       35,
+		"cyan":          36,
+		"gray":          37,
+		"darkGray":      90,
+		"brightRed":     91,
+		"brightGreen":   92,
+		"brightYellow":  93,
+		"brightBlue":    94,
+		"brightMagenta": 95,
+		"brightCyan":    96,
+		"white":         97,
+	}
 )
 
 type Pattern struct {
@@ -60,6 +81,15 @@ func ExpandGlobals(k string) any {
 		return runtime.Version()
 	case "wig.version":
 		return build.Version
+	}
+	return nil
+}
+
+func ExpandColors(k string) any {
+	if name, ok := strings.CutPrefix(k, "color."); ok {
+		if a, ok := colors[name]; ok {
+			return fmt.Sprintf("\x1b[%dm", a)
+		}
 	}
 	return nil
 }
@@ -149,4 +179,7 @@ func newExpr(token []byte) expr {
 	return &formatExpr{name: name, format: nameAndFormat[1]}
 }
 
-var _ Expander = ExpandGlobals
+var (
+	_ Expander = ExpandGlobals
+	_ Expander = ExpandColors
+)
