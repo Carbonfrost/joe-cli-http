@@ -280,6 +280,11 @@ func (s *Server) SetNoAccessLog(v bool) error {
 	return nil
 }
 
+func (s *Server) SetServer(name string) error {
+	s.AddMiddleware(NewHeaderMiddleware("Server", name))
+	return nil
+}
+
 func (s *Server) setStaticDirectoryHelper(f *cli.File) error {
 	return s.SetStaticDirectory(f.Name)
 }

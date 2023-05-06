@@ -45,6 +45,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetOpenInBrowser()},
 			{Uses: SetAccessLog()},
 			{Uses: SetNoAccessLog()},
+			{Uses: SetServer()},
 		}...),
 	)
 }
@@ -302,6 +303,19 @@ func SetNoAccessLog(v ...bool) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetNoAccessLog, v),
+		tagged,
+	)
+}
+
+func SetServer(v ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "server",
+			Aliases:  []string{"S"},
+			HelpText: "Set value of the Server response header",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetServer, v),
 		tagged,
 	)
 }

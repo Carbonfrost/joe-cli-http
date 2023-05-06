@@ -51,6 +51,17 @@ func NewPingHandler() http.Handler {
 	})
 }
 
+// NewHeaderMiddleware provides handler middleware which simply adds the given
+// header
+func NewHeaderMiddleware(name, value string) func(http.Handler) http.Handler {
+	return func(inner http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add(name, value)
+			inner.ServeHTTP(w, r)
+		})
+	}
+}
+
 // FileServerHandlerSpec creates a file server.  The physical path in the virtual path
 // specifies the base directory for the file server.  An option named
 // no_directory_listing controls whether the directory listing response is served.

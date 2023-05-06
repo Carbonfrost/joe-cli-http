@@ -18,3 +18,27 @@ var _ = Describe("NewPingHandler", func() {
 		Expect(recorder.Body.String()).To(Equal("ping\n"))
 	})
 })
+
+var _ = Describe("NewHeaderMiddleware", func() {
+
+	It("sets up header with name", func() {
+		recorder := httptest.NewRecorder()
+
+		p := httpserver.NewHeaderMiddleware("Server", "Albatross")
+		handler := p(httpserver.NewPingHandler())
+		handler.ServeHTTP(recorder, nil)
+
+		Expect(recorder.Header()).To(HaveKeyWithValue("Server", []string{"Albatross"}))
+	})
+
+	It("adds additional headers", func() {
+		recorder := httptest.NewRecorder()
+
+		handler := httpserver.NewPingHandler()
+		handler = httpserver.NewHeaderMiddleware("Server", "A")(handler)
+		handler = httpserver.NewHeaderMiddleware("Server", "B")(handler)
+		handler.ServeHTTP(recorder, nil)
+
+		Expect(recorder.Header()).To(HaveKeyWithValue("Server", []string{"B", "A"}))
+	})
+})
