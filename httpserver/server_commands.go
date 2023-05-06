@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
+	"syscall"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -310,7 +310,7 @@ func SetNoAccessLog(v ...bool) cli.Action {
 // is detected
 func RunServer() cli.Action {
 	return cli.Setup{
-		Uses: cli.HandleSignal(os.Interrupt),
+		Uses: cli.HandleSignal(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT),
 		Action: func(c *cli.Context) error {
 			srv := FromContext(c)
 			c.After(func() {
