@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
@@ -55,6 +56,8 @@ func FetchAndPrint() cli.Action {
 		}
 
 		client := FromContext(c)
+		outExpr := client.writeOutExpr.Compile()
+		errExpr := client.writeErrExpr.Compile()
 		for _, response := range responses {
 			output, err := client.openDownload(c, response)
 			if err != nil {
@@ -78,8 +81,13 @@ func FetchAndPrint() cli.Action {
 				return err
 			}
 
-			c.Stdout.WriteString(client.writeOutExpr.Expand(response))
-			c.Stderr.WriteString(client.writeErrExpr.Expand(response))
+			expander := expr.ComposeExpanders(
+				expr.ExpandGlobals,
+				ExpandResponse(response),
+			)
+
+			outExpr.Fprint(c.Stdout, expander)
+			errExpr.Fprint(c.Stderr, expander)
 		}
 
 		return nil

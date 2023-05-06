@@ -25,8 +25,9 @@ var _ = Describe("Expr", func() {
 		ContentLength: 80,
 	}
 	DescribeTable("examples", func(text string, res *http.Response, expected types.GomegaMatcher) {
-		e := httpclient.Expr(text)
-		Expect(e.Expand(&httpclient.Response{Response: res})).To(expected)
+		e := httpclient.Expr(text).Compile()
+		expander := httpclient.ExpandResponse(&httpclient.Response{Response: res})
+		Expect(e.Expand(expander)).To(expected)
 	},
 		Entry("status", "%(status)", res, Equal("200 OK")),
 		Entry("status code", "%(statusCode)", res, Equal("200")),

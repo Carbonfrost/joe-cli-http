@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
 
 var (
@@ -17,8 +20,10 @@ type Pattern struct {
 	exprs []expr
 }
 
+type Expander func(string) any
+
 type expr interface {
-	Format(expand func(string) any) any
+	Format(expand Expander) any
 }
 
 type formatExpr struct {
@@ -39,7 +44,7 @@ func CompilePattern(pattern string, start string, end string) *Pattern {
 	return compilePatternCore([]byte(pattern), pp)
 }
 
-func ExpandMap(m map[string]any) func(string) any {
+func ExpandMap(m map[string]any) Expander {
 	return func(k string) any {
 		v, ok := m[k]
 		if !ok {
@@ -49,15 +54,37 @@ func ExpandMap(m map[string]any) func(string) any {
 	}
 }
 
+func ExpandGlobals(k string) any {
+	switch k {
+	case "go.version":
+		return runtime.Version()
+	case "wig.version":
+		return build.Version
+	}
+	return nil
+}
+
+func ComposeExpanders(expanders ...Expander) Expander {
+	return func(k string) any {
+		for _, x := range expanders {
+			v := x(k)
+			if v != nil {
+				return v
+			}
+		}
+		return nil
+	}
+}
+
 func UnknownToken(tok string) error {
 	return fmt.Errorf("unknown: %s", tok)
 }
 
-func (l *literal) Format(expand func(string) any) any {
+func (l *literal) Format(expand Expander) any {
 	return l.text
 }
 
-func (f *formatExpr) Format(expand func(string) any) any {
+func (f *formatExpr) Format(expand Expander) any {
 	value := expand(f.name)
 	switch t := value.(type) {
 	case time.Time:
@@ -69,13 +96,13 @@ func (f *formatExpr) Format(expand func(string) any) any {
 	return fmt.Sprintf("%"+f.format, value)
 }
 
-func (f *Pattern) Fprint(w io.Writer, expand func(string) any) {
+func (f *Pattern) Fprint(w io.Writer, expand Expander) {
 	for _, item := range f.exprs {
 		fmt.Fprint(w, item.Format(expand))
 	}
 }
 
-func (f *Pattern) Expand(expand func(string) any) string {
+func (f *Pattern) Expand(expand Expander) string {
 	var b strings.Builder
 	f.Fprint(&b, expand)
 	return b.String()
@@ -121,3 +148,5 @@ func newExpr(token []byte) expr {
 
 	return &formatExpr{name: name, format: nameAndFormat[1]}
 }
+
+var _ Expander = ExpandGlobals

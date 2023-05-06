@@ -22,11 +22,10 @@ func (e *Expr) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func (e Expr) Expand(r *Response) string {
-	c := e.Compile()
-	return c.Expand(func(s string) any {
+func ExpandResponse(r *Response) expr.Expander {
+	return func(s string) any {
 		return expandToken(r, s)
-	})
+	}
 }
 
 func expandToken(r *Response, tok string) any {
