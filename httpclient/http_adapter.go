@@ -10,6 +10,10 @@ type Response struct {
 	*http.Response
 }
 
+func (r *Response) Success() bool {
+	return r.Response.StatusCode < 400
+}
+
 func (r *Response) CopyTo(w io.Writer) error {
 	body := r.Response.Body
 	defer body.Close()

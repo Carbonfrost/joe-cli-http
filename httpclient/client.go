@@ -59,6 +59,9 @@ type Client struct {
 	UserInfo               *UserInfo
 	LocationResolver       LocationResolver
 
+	// FailFast causes no response output in the case of a failure
+	FailFast bool
+
 	downloader         Downloader
 	downloadMiddleware []func(Downloader) Downloader
 
@@ -618,6 +621,11 @@ func (c *Client) SetStripComponents(count int) error {
 	c.UseDownloadMiddleware(func(d Downloader) Downloader {
 		return d.(DownloadMode).WithStripComponents(count)
 	})
+	return nil
+}
+
+func (c *Client) SetFailFast(v bool) error {
+	c.FailFast = v
 	return nil
 }
 

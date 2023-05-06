@@ -56,6 +56,7 @@ func FetchAndPrint() cli.Action {
 		}
 
 		client := FromContext(c)
+		failFast := client.FailFast
 
 		// Note that errRender always writes to stderr even if %(stdout) expr
 		// is present
@@ -65,6 +66,10 @@ func FetchAndPrint() cli.Action {
 		outExpr := client.writeOutExpr.Compile()
 		errExpr := client.writeErrExpr.Compile()
 		for _, response := range responses {
+			if failFast && !response.Success() {
+				return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
+			}
+
 			output, err := client.openDownload(c, response)
 			if err != nil {
 				return err
@@ -153,6 +158,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetWriteOut()},
 			{Uses: SetWriteErr()},
 			{Uses: SetStripComponents()},
+			{Uses: SetFailFast()},
 		}...),
 
 		cli.AddArg(&cli.Arg{
@@ -406,6 +412,19 @@ func SetStripComponents(i ...int) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).SetStripComponents, i),
+		tagged,
+	)
+}
+
+func SetFailFast(i ...bool) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "fail",
+			Aliases:  []string{"f"},
+			HelpText: "Fail fast with no output on HTTP errors",
+			Category: responseOptions,
+		},
+		withBinding((*Client).SetFailFast, i),
 		tagged,
 	)
 }
