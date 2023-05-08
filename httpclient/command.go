@@ -96,6 +96,7 @@ func FetchAndPrint() cli.Action {
 				expr.ExpandGlobals,
 				expr.ExpandColors,
 				ExpandResponse(response),
+				expr.Unknown,
 			)
 
 			expr.Fprint(outRender, outExpr, expander)

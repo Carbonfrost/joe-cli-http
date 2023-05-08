@@ -3,6 +3,7 @@ package httpclient
 import (
 	"bytes"
 	"encoding"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,7 +29,16 @@ func ExpandResponse(r *Response) expr.Expander {
 	}
 }
 
+func ExpandHeader(h http.Header) expr.Expander {
+	return func(s string) any {
+		return expandHeader(h, s)
+	}
+}
+
 func expandToken(r *Response, tok string) any {
+	if strings.HasPrefix(tok, "header") {
+		return expandHeader(r.Header, tok)
+	}
 	switch tok {
 	case "status":
 		return r.Status // "200 OK"
@@ -44,15 +54,21 @@ func expandToken(r *Response, tok string) any {
 		return strconv.Itoa(r.ProtoMinor)
 	case "contentLength":
 		return strconv.FormatInt(r.ContentLength, 10)
+	}
+	return nil
+}
+
+func expandHeader(h http.Header, tok string) any {
+	switch tok {
 	case "header":
 		var buf bytes.Buffer
-		r.Header.Write(&buf)
+		h.Write(&buf)
 		return buf.String()
 	default:
 		if name, ok := strings.CutPrefix(tok, "header."); ok {
-			return r.Header.Get(headerCanonicalName(name))
+			return h.Get(headerCanonicalName(name))
 		}
-		return expr.UnknownToken(tok)
+		return nil
 	}
 }
 

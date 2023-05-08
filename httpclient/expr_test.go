@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,7 +27,10 @@ var _ = Describe("Expr", func() {
 	}
 	DescribeTable("examples", func(text string, res *http.Response, expected types.GomegaMatcher) {
 		e := httpclient.Expr(text).Compile()
-		expander := httpclient.ExpandResponse(&httpclient.Response{Response: res})
+		expander := expr.ComposeExpanders(
+			httpclient.ExpandResponse(&httpclient.Response{Response: res}),
+			expr.Unknown,
+		)
 		Expect(e.Expand(expander)).To(expected)
 	},
 		Entry("status", "%(status)", res, Equal("200 OK")),

@@ -148,6 +148,10 @@ func ComposeExpanders(expanders ...Expander) Expander {
 	}
 }
 
+func Unknown(s string) any {
+	return UnknownToken(s)
+}
+
 func UnknownToken(tok string) error {
 	return fmt.Errorf("unknown: %s", tok)
 }
@@ -218,4 +222,5 @@ func newExpr(token []byte) expr {
 var (
 	_ Expander = ExpandGlobals
 	_ Expander = ExpandColors
+	_ Expander = Unknown
 )

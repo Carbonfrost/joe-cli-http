@@ -3,8 +3,8 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -36,12 +36,12 @@ var HandlerRegistry = &provider.Registry{
 }
 
 // NewRequestLogger provides handler middleware to write to access log
-func NewRequestLogger(format string, next http.Handler) http.Handler {
+func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Handler {
 	if format == "" {
 		format = defaultAccessLog
 	}
 	logFormat := expr.Compile(format)
-	return requestLoggerHandler(next, logFormat)
+	return requestLoggerHandler(out, next, logFormat)
 }
 
 // NewPingHandler provides a handler which simply replies with a message
@@ -117,28 +117,49 @@ func newPingHandlerWithOpts(_ any) (http.Handler, error) {
 	return NewPingHandler(), nil
 }
 
-func requestLoggerHandler(next http.Handler, format *expr.Pattern) http.HandlerFunc {
+func requestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ww := newWrapResponseWriter(w, r.ProtoMajor)
 		t1 := time.Now()
 
 		defer func() {
-			vars := map[string]interface{}{
-				"bytesWritten": ww.BytesWritten(),
-				"duration":     time.Since(t1),
-				"end":          time.Now(),
-				"headers":      ww.Header(),
-				"method":       r.Method,
-				"protocol":     r.Proto,
-				"start":        t1,
-				"status":       ww.Status(),
-				"urlPath":      r.URL.Path,
-			}
-			expr.Fprint(os.Stderr, format, expr.ExpandMap(vars))
+			expander := expr.ComposeExpanders(
+				expr.ExpandGlobals,
+				expr.ExpandColors,
+				ExpandRequest(r, ww),
+				expandTiming(t1, time.Now()),
+			)
+			expr.Fprint(out, format, expander)
 		}()
 
 		next.ServeHTTP(ww, r)
 	}
+}
+
+func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
+	return func(s string) any {
+		switch s {
+		case "bytesWritten":
+			return ww.BytesWritten()
+		case "method":
+			return r.Method
+		case "protocol":
+			return r.Proto
+		case "status":
+			return ww.Status()
+		case "urlPath":
+			return r.URL.Path
+		}
+		return httpclient.ExpandHeader(ww.Header())(s)
+	}
+}
+
+func expandTiming(start, end time.Time) expr.Expander {
+	return expr.ExpandMap(map[string]any{
+		"duration": end.Sub(start),
+		"end":      end,
+		"start":    start,
+	})
 }
 
 func hideListing(next http.Handler) http.HandlerFunc {

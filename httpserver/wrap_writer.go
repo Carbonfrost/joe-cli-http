@@ -43,6 +43,8 @@ func newWrapResponseWriter(w http.ResponseWriter, protoMajor int) wrapResponseWr
 	return &bw
 }
 
+//counterfeiter:generate . wrapResponseWriter
+
 // wrapResponseWriter is a proxy around an http.ResponseWriter that allows you to hook
 // into various parts of the response process.
 type wrapResponseWriter interface {

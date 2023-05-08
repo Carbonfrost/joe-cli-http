@@ -21,6 +21,7 @@ require (
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.9.0 // indirect
