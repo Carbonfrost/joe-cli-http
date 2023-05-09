@@ -62,3 +62,17 @@ var _ = Describe("Compile", func() {
 		)
 	})
 })
+
+var _ = Describe("String", func() {
+
+	DescribeTable("examples",
+		func(pattern, expected string) {
+			pat := expr.Compile(pattern)
+			Expect(pat.String()).To(Equal(expected))
+		},
+		Entry("literal", "hello", "hello"),
+		Entry("expansion", "hello %(planet)", "hello %(planet)"),
+		Entry("untruncated expansion", "hello %(p", "hello %(p"),
+		Entry("default access log", "%(accessLog.default)", `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(status) -`),
+	)
+})

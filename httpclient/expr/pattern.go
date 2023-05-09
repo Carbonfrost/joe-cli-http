@@ -1,6 +1,7 @@
 package expr
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"regexp"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
+
+const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(status) -`
 
 var (
 	patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
@@ -35,7 +38,13 @@ var (
 		"brightCyan":    96,
 		"white":         97,
 	}
+
+	meta = map[string]*Pattern{}
 )
+
+func init() {
+	meta["accessLog.default"] = Compile(defaultAccessLog)
+}
 
 type Pattern struct {
 	exprs []expr
@@ -45,6 +54,7 @@ type Expander func(string) any
 
 type expr interface {
 	Format(expand Expander) any
+	WriteTo(io.StringWriter)
 }
 
 type formatExpr struct {
@@ -160,6 +170,10 @@ func (l *literal) Format(expand Expander) any {
 	return l.text
 }
 
+func (l *literal) WriteTo(w io.StringWriter) {
+	w.WriteString(l.text)
+}
+
 func (f *formatExpr) Format(expand Expander) any {
 	value := expand(f.name)
 	switch t := value.(type) {
@@ -172,9 +186,27 @@ func (f *formatExpr) Format(expand Expander) any {
 	return fmt.Sprintf("%"+f.format, value)
 }
 
-func (f *Pattern) Expand(expand Expander) string {
+func (f *formatExpr) WriteTo(w io.StringWriter) {
+	w.WriteString("%(")
+	w.WriteString(f.name)
+	if f.format != "" && f.format != "v" {
+		w.WriteString(":")
+		w.WriteString(f.format)
+	}
+	w.WriteString(")")
+}
+
+func (p *Pattern) Expand(expand Expander) string {
 	var b strings.Builder
-	Fprint(&b, f, expand)
+	Fprint(&b, p, expand)
+	return b.String()
+}
+
+func (p *Pattern) String() string {
+	var b bytes.Buffer
+	for _, e := range p.exprs {
+		e.WriteTo(&b)
+	}
 	return b.String()
 }
 
@@ -188,7 +220,12 @@ func compilePatternCore(content []byte, pat *regexp.Regexp) *Pattern {
 			result = append(result, newLiteral(content[index:loc[0]]))
 		}
 		key := content[loc[2]:loc[3]]
-		result = append(result, newExpr(key))
+
+		if m, ok := meta[string(key)]; ok {
+			result = append(result, m.exprs...)
+		} else {
+			result = append(result, newExpr(key))
+		}
 		index = loc[1]
 	}
 	if index < len(content) {

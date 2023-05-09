@@ -14,7 +14,7 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
-const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(status) -\n`
+const defaultAccessLog = `%(accessLog.default)\n`
 
 // HandlerSpec creates a handler from a virtual path.  The virtual path
 // defines how the handler works.  Typically, the physical path
