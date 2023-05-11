@@ -94,12 +94,13 @@ const (
 	TraceHTTP1XX
 	TraceRequestBody
 	TraceResponseStatus
+	TraceResponseHeaders
 
 	// TraceOff causes all tracing to be switched off
 	TraceOff TraceLevel = 0
 
 	// TraceOn enables tracing of when connections are made and header
-	TraceOn = TraceConnections | TraceRequestHeaders | TraceResponseStatus
+	TraceOn = TraceConnections | TraceRequestHeaders | TraceResponseStatus | TraceResponseHeaders
 
 	// TraceVerbose enables tracing of DNS, TLS, HTTP 1xx responses
 	TraceVerbose = TraceOn | TraceDNS | TraceTLS | TraceHTTP1XX
@@ -118,6 +119,7 @@ var (
 		"http1xx",
 		"requestBody",
 		"responseStatus",
+		"responseHeaders",
 		"off",
 	}
 	traceEnum = [...]TraceLevel{
@@ -131,6 +133,7 @@ var (
 		TraceHTTP1XX,
 		TraceRequestBody,
 		TraceResponseStatus,
+		TraceResponseHeaders,
 		TraceOff,
 	}
 )
@@ -171,7 +174,8 @@ const (
 {{ end -}}
 
 {{- define "WroteHeaderField" -}}
-{{ Gray }}> {{ .Key | Magenta }}: {{ .Value | Join ", " | Gray }}{{ResetColor}}
+{{ Gray }}{{ if .Response }}< {{ else }}> {{ end -}}
+{{ .Key | Magenta }}: {{ .Value | Join ", " | Gray }}{{ResetColor}}
 {{ end -}}
 
 {{- define "StartRequest" -}}
@@ -296,6 +300,10 @@ func (l TraceLevel) connections() bool {
 
 func (l TraceLevel) requestHeaders() bool {
 	return l&TraceRequestHeaders == TraceRequestHeaders
+}
+
+func (l TraceLevel) responseHeaders() bool {
+	return l&TraceResponseHeaders == TraceResponseHeaders
 }
 
 func (l TraceLevel) dns() bool {
@@ -545,6 +553,18 @@ func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
 	}{
 		Status: httpStatus(resp.StatusCode),
 	})
+
+	for k, v := range resp.Header {
+		l.render("WroteHeaderField", struct {
+			Key      string
+			Value    []string
+			Response bool
+		}{
+			Key:      k,
+			Value:    v,
+			Response: true,
+		})
+	}
 }
 
 func (nopTraceLogger) ConnectDone(network, addr string, err error) {

@@ -21,6 +21,7 @@ var _ = Describe("TraceLevel", func() {
 		Entry("verbose", httpclient.TraceVerbose, "verbose"),
 		Entry("connections", httpclient.TraceConnections, "connections"),
 		Entry("requestHeaders", httpclient.TraceRequestHeaders, "requestHeaders"),
+		Entry("responseHeaders", httpclient.TraceResponseHeaders, "responseHeaders"),
 		Entry("DNS", httpclient.TraceDNS, "dns"),
 		Entry("TLS", httpclient.TraceTLS, "tls"),
 		Entry("http1xx", httpclient.TraceHTTP1XX, "http1xx"),
