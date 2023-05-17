@@ -1,6 +1,40 @@
 # Changelog
 
-## v0.3.1 (March 14, 2023)
+## v0.4.0 (May 15, 2023)
+
+### New Features
+
+* Add support for `Options` to `VirtualPath` (f30ce84)
+* Trace out response header (26a4191)
+* Support meta expr format to support built-in access log formats (a9c0509)
+* Allow string slices in `WithHeader` (4d853b4)
+* Server header middleware; `--server` option (27ef2bd)
+* Support fail fast mode (f67d7b0)
+* Support expression toggling between writers (850d9a4)
+* Support color variables within write-out expressions (53104d2)
+* Expand global variables (5f8bde7)
+* `StripComponents` (acd1c0e)
+* Introduce download middleware (4b318d2)
+* Support compiling expressions; access log (1524efc)
+* Server middleware (2412dbd)
+* Ping handler (0fcdf2a)
+* `HandlerSpec` (ba59818)
+* Encapsulate file server handler (9e60373)
+* Redirect handler (508c3ae)
+
+### Bug fixes and improvements
+
+* Request logger format refactor (c8218ee)
+* Support additional interrupts on server (9c61f83)
+* Update documentation httpserver (b9474fd)
+* Chores:
+    * Update dependent versions (e766cf9, a7292dc)
+    * GitHub CI configuration (8975b61)
+    * Goreleaser refactoring (c43c7db)
+    * Addresses issues of style, deprecation warnings (a3429bd)
+    * Makefile: collapse output from go generate (2a5040f)
+
+## v0.3.2 (March 14, 2023)
 
 ### New Feature
 
