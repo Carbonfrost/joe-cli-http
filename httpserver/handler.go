@@ -32,6 +32,9 @@ var HandlerRegistry = &provider.Registry{
 		"file": {
 			Factory: provider.Factory(newFileServerHandlerWithOpts),
 		},
+		"redirect": {
+			Factory: provider.Factory(newRedirectServerHandlerWithOpts),
+		},
 	},
 }
 
@@ -115,6 +118,17 @@ func newFileServerHandler(staticDir string, hideDirListing bool) http.Handler {
 
 func newPingHandlerWithOpts(_ any) (http.Handler, error) {
 	return NewPingHandler(), nil
+}
+
+func newRedirectServerHandlerWithOpts(opts struct {
+	To   string `mapstructure:"to"`
+	Code int    `mapstructure:"code"`
+}) (http.Handler, error) {
+	code := opts.Code
+	if code == 0 {
+		code = http.StatusTemporaryRedirect
+	}
+	return http.RedirectHandler(opts.To, code), nil
 }
 
 func requestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern) http.HandlerFunc {
