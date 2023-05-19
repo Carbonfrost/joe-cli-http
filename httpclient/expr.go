@@ -24,51 +24,34 @@ func (e *Expr) UnmarshalText(b []byte) error {
 }
 
 func ExpandResponse(r *Response) expr.Expander {
-	return func(s string) any {
-		return expandToken(r, s)
-	}
+	return expr.ComposeExpanders(func(s string) any {
+		switch s {
+		case "status":
+			return r.Status // "200 OK"
+		case "statusCode":
+			return strconv.Itoa(r.StatusCode)
+		case "http.version":
+			return strings.TrimPrefix(r.Proto, "HTTP/")
+		case "http.proto":
+			return r.Proto
+		case "http.protoMajor":
+			return strconv.Itoa(r.ProtoMajor)
+		case "http.protoMinor":
+			return strconv.Itoa(r.ProtoMinor)
+		case "contentLength":
+			return strconv.FormatInt(r.ContentLength, 10)
+		case "header":
+			var buf bytes.Buffer
+			r.Header.Write(&buf)
+			return buf.String()
+		}
+		return nil
+	}, expr.Prefix("header", ExpandHeader(r.Header)))
 }
 
 func ExpandHeader(h http.Header) expr.Expander {
 	return func(s string) any {
-		return expandHeader(h, s)
-	}
-}
-
-func expandToken(r *Response, tok string) any {
-	if strings.HasPrefix(tok, "header") {
-		return expandHeader(r.Header, tok)
-	}
-	switch tok {
-	case "status":
-		return r.Status // "200 OK"
-	case "statusCode":
-		return strconv.Itoa(r.StatusCode)
-	case "http.version":
-		return strings.TrimPrefix(r.Proto, "HTTP/")
-	case "http.proto":
-		return r.Proto
-	case "http.protoMajor":
-		return strconv.Itoa(r.ProtoMajor)
-	case "http.protoMinor":
-		return strconv.Itoa(r.ProtoMinor)
-	case "contentLength":
-		return strconv.FormatInt(r.ContentLength, 10)
-	}
-	return nil
-}
-
-func expandHeader(h http.Header, tok string) any {
-	switch tok {
-	case "header":
-		var buf bytes.Buffer
-		h.Write(&buf)
-		return buf.String()
-	default:
-		if name, ok := strings.CutPrefix(tok, "header."); ok {
-			return h.Get(headerCanonicalName(name))
-		}
-		return nil
+		return h.Get(headerCanonicalName(s))
 	}
 }
 

@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -151,7 +152,7 @@ func requestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern
 }
 
 func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
-	return func(s string) any {
+	return expr.ComposeExpanders(func(s string) any {
 		switch s {
 		case "bytesWritten":
 			return ww.BytesWritten()
@@ -163,9 +164,13 @@ func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
 			return ww.Status()
 		case "urlPath":
 			return r.URL.Path
+		case "header":
+			var buf bytes.Buffer
+			ww.Header().Write(&buf)
+			return buf.String()
 		}
-		return httpclient.ExpandHeader(ww.Header())(s)
-	}
+		return nil
+	}, expr.Prefix("header", httpclient.ExpandHeader(ww.Header())))
 }
 
 func expandTiming(start, end time.Time) expr.Expander {

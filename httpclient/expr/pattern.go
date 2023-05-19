@@ -50,6 +50,7 @@ type Pattern struct {
 	exprs []expr
 }
 
+// Expander converts the given string key into its variable expansion
 type Expander func(string) any
 
 type expr interface {
@@ -117,6 +118,18 @@ func CompilePattern(pattern string, start string, end string) *Pattern {
 	return compilePatternCore([]byte(pattern), pp)
 }
 
+// Prefix provides an expander which looks for and cuts a given prefix
+// and delegates the result to the underlying expander
+func Prefix(p string, e Expander) Expander {
+	prefix := p + "."
+	return func(k string) any {
+		if name, ok := strings.CutPrefix(k, prefix); ok {
+			return e(name)
+		}
+		return nil
+	}
+}
+
 func ExpandMap(m map[string]any) Expander {
 	return func(k string) any {
 		v, ok := m[k]
@@ -138,10 +151,8 @@ func ExpandGlobals(k string) any {
 }
 
 func ExpandColors(k string) any {
-	if name, ok := strings.CutPrefix(k, "color."); ok {
-		if a, ok := colors[name]; ok {
-			return fmt.Sprintf("\x1b[%dm", a)
-		}
+	if a, ok := colors[k]; ok {
+		return fmt.Sprintf("\x1b[%dm", a)
 	}
 	return nil
 }

@@ -37,7 +37,7 @@ var _ = Describe("Compile", func() {
 		DescribeTable("example",
 			func(pattern, expected string) {
 				pat := expr.Compile(pattern)
-				actual := pat.Expand(expr.ExpandColors)
+				actual := pat.Expand(expr.Prefix("color", expr.ExpandColors))
 				Expect(actual).To(Equal(expected))
 			},
 			Entry("yellow", "%(color.yellow)", "\x1b[33m"),
