@@ -2,11 +2,13 @@ package expr_test
 
 import (
 	"bytes"
+	"net/url"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var _ = Describe("CompilePattern", func() {
@@ -74,5 +76,25 @@ var _ = Describe("String", func() {
 		Entry("expansion", "hello %(planet)", "hello %(planet)"),
 		Entry("untruncated expansion", "hello %(p", "hello %(p"),
 		Entry("default access log", "%(accessLog.default)", `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(statusCode) -`),
+	)
+})
+
+var _ = Describe("ExpandURL", func() {
+
+	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
+		u, _ := url.Parse("https://me:password@example.com/whistle?query=1#fragment")
+		e := expr.Compile(text)
+
+		expander := expr.Prefix("url", expr.ExpandURL(u))
+		Expect(e.Expand(expander)).To(expected)
+	},
+		Entry("scheme", "%(url.scheme)", Equal("https")),
+		Entry("authority", "%(url.authority)", Equal("me:password@example.com")),
+		Entry("query", "%(url.query)", Equal("query=1")),
+		Entry("userInfo", "%(url.userInfo)", Equal("me:password")),
+		Entry("user", "%(url.user)", Equal("me")),
+		Entry("host", "%(url.host)", Equal("example.com")),
+		Entry("path", "%(url.path)", Equal("/whistle")),
+		Entry("fragment", "%(url.fragment)", Equal("fragment")),
 	)
 })

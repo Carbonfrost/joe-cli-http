@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -155,6 +157,39 @@ func ExpandColors(k string) any {
 		return fmt.Sprintf("\x1b[%dm", a)
 	}
 	return nil
+}
+
+func ExpandURL(u *url.URL) Expander {
+	return func(k string) any {
+		switch k {
+		case "scheme":
+			return u.Scheme
+		case "user":
+			return u.User.Username()
+		case "userInfo":
+			return u.User.String()
+		case "host":
+			return u.Host
+		case "path":
+			return u.Path
+		case "query":
+			return u.Query().Encode()
+		case "fragment":
+			return u.Fragment
+		case "authority":
+			var res string
+			if u.User != nil {
+				res = u.User.String() + "@"
+			}
+			if u.Port() == "" {
+				res += u.Host
+			} else {
+				res += net.JoinHostPort(u.Host, u.Port())
+			}
+			return res
+		}
+		return nil
+	}
 }
 
 func ComposeExpanders(expanders ...Expander) Expander {
