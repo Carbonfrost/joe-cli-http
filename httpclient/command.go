@@ -128,6 +128,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetNoOutput()},
 			{Uses: SetIntegrity()},
 			{Uses: SetDownload()},
+
+			// TLS options
 			{Uses: SetTLSv1()},
 			{Uses: SetTLSv1_0()},
 			{Uses: SetTLSv1_1()},
@@ -138,13 +140,20 @@ func FlagsAndArgs() cli.Action {
 			{Uses: ListCiphers()},
 			{Uses: SetCurves()},
 			{Uses: ListCurves()},
+
+			// DNS options
 			{Uses: SetDNSInterface()},
 			{Uses: SetPreferGo()},
+
 			{Uses: SetDialKeepAlive()},
 			{Uses: SetDisableDialKeepAlive()},
 			{Uses: SetStrictErrorsDNS()},
+
+			// Network interface options
+			{Uses: SetBindAddress()},
 			{Uses: SetInterface()},
 			{Uses: ListInterfaces()},
+
 			{Uses: SetVerbose()},
 			{Uses: SetTraceLevel()},
 			{Uses: SetClientCertFile()},
@@ -594,6 +603,19 @@ func SetStrictErrorsDNS() cli.Action {
 			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).SetStrictErrorsDNS)),
 			Category: dnsOptions,
 		},
+		tagged,
+	)
+}
+
+func SetBindAddress(v ...string) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "bind-address",
+			UsageText: "HOSTNAME|IP",
+			HelpText:  "Bind client TCP/IP connections to ADDRESS on the local machine",
+			Category:  networkOptions,
+		},
+		withBinding((*Client).SetBindAddress, v),
 		tagged,
 	)
 }

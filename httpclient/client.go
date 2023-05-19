@@ -417,6 +417,15 @@ func (c *Client) SetHeader(n *HeaderValue) error {
 	return nil
 }
 
+func (c *Client) SetBindAddress(value string) error {
+	addr, err := net.ResolveTCPAddr("tcp", value)
+	if err != nil {
+		return err
+	}
+	c.Dialer().LocalAddr = addr
+	return nil
+}
+
 func (c *Client) SetInterface(value string) error {
 	addr, err := c.resolveInterface(value)
 	if err != nil {
