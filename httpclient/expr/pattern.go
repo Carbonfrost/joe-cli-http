@@ -13,7 +13,7 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
 
-const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(status) -`
+const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(statusCode) -`
 
 var (
 	patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
