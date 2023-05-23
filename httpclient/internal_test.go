@@ -21,6 +21,7 @@ type ClientAttributes struct {
 	BodyForm               url.Values
 	IncludeResponseHeaders bool
 	CheckRedirect          any
+	Transport              http.RoundTripper
 	Request                *RequestAttributes
 
 	Downloader               Downloader
@@ -64,7 +65,8 @@ func Attributes(c *Client) *ClientAttributes {
 			return m
 		}(),
 		IncludeResponseHeaders: c.IncludeResponseHeaders,
-		CheckRedirect:          c.Client.CheckRedirect,
+		CheckRedirect:          c.CheckRedirect,
+		Transport:              c.Transport,
 		Request:                newRequestAttributes(c.Request),
 		Downloader:             c.downloader,
 		DownloaderWithMiddleware: c.actualDownloader(&cli.Context{

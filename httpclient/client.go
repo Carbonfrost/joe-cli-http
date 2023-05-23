@@ -52,7 +52,8 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // you only use the action httpclient.ContextValue() with the client
 // you want to add instead of add the client to the pipeline directly.
 type Client struct {
-	Client                 *http.Client
+	Transport              http.RoundTripper
+	CheckRedirect          func(*http.Request, []*http.Request) error
 	Request                *http.Request
 	IncludeResponseHeaders bool
 	InterfaceResolver      InterfaceResolver
@@ -115,7 +116,10 @@ func New(options ...Option) *Client {
 	}
 
 	h.tlsConfig = &tls.Config{}
-	h.Client = &http.Client{}
+	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+	defaultTransport.DialContext = h.dialer.DialContext
+	defaultTransport.Proxy = http.ProxyFromEnvironment
+	h.Transport = defaultTransport
 
 	for _, o := range append(impliedOptions, options...) {
 		o(h)
@@ -211,13 +215,10 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 		return nil, err
 	}
 
-	c.Client = &http.Client{
-		Transport: c.actualTransport(ctx),
-	}
-
 	rsp := make([]*Response, 0, len(urls))
+	client := c.ensureClient(ctx)
 	for _, u := range urls {
-		r, err := c.doOne(ctx, u)
+		r, err := c.doOne(ctx, client, u)
 		if err != nil {
 			return rsp, err
 		}
@@ -238,6 +239,13 @@ func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
 		t = m(ctx, t)
 	}
 	return t
+}
+
+func (c *Client) ensureClient(ctx context.Context) *http.Client {
+	return &http.Client{
+		Transport:     c.actualTransport(ctx),
+		CheckRedirect: c.CheckRedirect,
+	}
 }
 
 func (c *Client) generateMiddleware() []Middleware {
@@ -271,7 +279,7 @@ func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripp
 	}
 }
 
-func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
+func (c *Client) doOne(ctx context.Context, client *http.Client, l Location) (*Response, error) {
 	rctx, u, err := l.URL(ctx)
 	if err != nil {
 		return nil, err
@@ -287,7 +295,7 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 		}
 	}
 
-	netResp, err := c.Client.Do(c.Request)
+	netResp, err := client.Do(c.Request)
 	if err != nil {
 		return nil, err
 	}
@@ -409,12 +417,12 @@ func (c *Client) SetMethod(s string) error {
 
 func (c *Client) SetFollowRedirects(value bool) error {
 	if value {
-		c.Client.CheckRedirect = nil // default policy to follow 10 times
+		c.CheckRedirect = nil // default policy to follow 10 times
 		return nil
 	}
 
 	// Follow no redirects
-	c.Client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+	c.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 	return nil
