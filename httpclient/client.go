@@ -65,6 +65,10 @@ type Client struct {
 	downloader         Downloader
 	downloadMiddleware []func(Downloader) Downloader
 
+	transport           http.RoundTripper
+	transportMiddleware []TransportMiddleware
+	traceLevel          TraceLevel
+
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
 	tlsConfig      *tls.Config
@@ -79,6 +83,9 @@ type Client struct {
 	writeOutExpr   Expr
 	writeErrExpr   Expr
 }
+
+// TransportMiddleware provides middleware to the roundtripper
+type TransportMiddleware func(context.Context, http.RoundTripper) http.RoundTripper
 
 type RoundTripperFunc func(req *http.Request) *http.Response
 
@@ -107,14 +114,7 @@ func New(options ...Option) *Client {
 	}
 
 	h.tlsConfig = &tls.Config{}
-	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
-	defaultTransport.DialContext = h.dialer.DialContext
-	defaultTransport.Proxy = http.ProxyFromEnvironment
-	h.Client = &http.Client{
-		Transport: &traceableTransport{
-			Transport: defaultTransport,
-		},
-	}
+	h.Client = &http.Client{}
 
 	for _, o := range append(impliedOptions, options...) {
 		o(h)
@@ -142,6 +142,13 @@ func WithMiddleware(m Middleware) Option {
 	}
 }
 
+// WithTransportMiddleware adds middleware to the transport
+func WithTransportMiddleware(m TransportMiddleware) Option {
+	return func(c *Client) {
+		c.AddTransportMiddleware(m)
+	}
+}
+
 // WithRequestID provides middleware to the client that adds a header
 // X-Request-ID to the request.  The optional argument defines how to generate
 // the ID.  When specified, it must be one of these types:
@@ -157,9 +164,10 @@ func WithRequestID(v ...any) Option {
 	return WithMiddleware(mw)
 }
 
+// WithTransport sets the default transport
 func WithTransport(t http.RoundTripper) Option {
 	return func(c *Client) {
-		c.Client.Transport.(*traceableTransport).Transport = t
+		c.transport = t
 	}
 }
 
@@ -176,8 +184,12 @@ func (c *Client) AddMiddleware(m Middleware) {
 	c.middleware = append(c.middleware, m)
 }
 
+func (c *Client) AddTransportMiddleware(m TransportMiddleware) {
+	c.transportMiddleware = append(c.transportMiddleware, m)
+}
+
 func (c *Client) SetTraceLevel(v TraceLevel) error {
-	c.Client.Transport.(*traceableTransport).level = v
+	c.traceLevel = v
 	return nil
 }
 
@@ -198,6 +210,10 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 		return nil, err
 	}
 
+	c.Client = &http.Client{
+		Transport: c.actualTransport(ctx),
+	}
+
 	rsp := make([]*Response, 0, len(urls))
 	for _, u := range urls {
 		r, err := c.doOne(ctx, u)
@@ -209,12 +225,39 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 	return rsp, nil
 }
 
+func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
+	t := c.transport
+	if t == nil {
+		defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+		defaultTransport.DialContext = c.dialer.DialContext
+		defaultTransport.Proxy = http.ProxyFromEnvironment
+		t = defaultTransport
+	}
+	for _, m := range c.generateTransportMiddleware() {
+		t = m(ctx, t)
+	}
+	return t
+}
+
 func (c *Client) generateMiddleware() []Middleware {
 	return append([]Middleware{
 		setupBodyContent(c),
 		setupQueryString(c),
 		processAuth(c),
 	}, c.middleware...)
+}
+
+func (c *Client) generateTransportMiddleware() []TransportMiddleware {
+	return append([]TransportMiddleware{
+		c.setupTraceLevelTransport,
+	}, c.transportMiddleware...)
+}
+
+func (c *Client) setupTraceLevelTransport(_ context.Context, t http.RoundTripper) http.RoundTripper {
+	return &traceableTransport{
+		level:     c.traceLevel,
+		Transport: t,
+	}
 }
 
 func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
@@ -252,8 +295,7 @@ func (c *Client) applyAuth() error {
 
 func (c *Client) loadClientTLSCreds() error {
 	if c.certFile != "" || c.keyFile != "" {
-		t := c.Client.Transport.(*traceableTransport)
-		if defaultTransport, ok := t.Transport.(*http.Transport); ok {
+		if defaultTransport, ok := c.transport.(*http.Transport); ok {
 			defaultTransport.TLSClientConfig = c.tlsConfig
 		}
 
