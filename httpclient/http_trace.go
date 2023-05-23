@@ -503,11 +503,13 @@ func (l *defaultTraceLogger) Wait100Continue() {
 
 func (l *defaultTraceLogger) WroteHeaderField(key string, value []string) {
 	l.render("WroteHeaderField", struct {
-		Key   string
-		Value []string
+		Key      string
+		Value    []string
+		Response bool
 	}{
-		Key:   key,
-		Value: value,
+		Key:      key,
+		Value:    value,
+		Response: false,
 	})
 }
 
@@ -515,7 +517,10 @@ func (l *defaultTraceLogger) WroteRequest(info httptrace.WroteRequestInfo) {
 }
 
 func (l *defaultTraceLogger) render(fn string, data interface{}) {
-	l.template.ExecuteTemplate(l.out, fn, data)
+	err := l.template.ExecuteTemplate(l.out, fn, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (l *defaultTraceLogger) StartRequest(req *http.Request) {
