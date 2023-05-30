@@ -183,7 +183,7 @@ const (
 {{ end -}}
 
 {{- define "StartRequest" -}}
-{{ Gray }}> {{ .Method | Magenta }} {{ .Path }} {{ .Proto }}{{ ResetColor }}
+{{ Gray }}> {{ .Method | Magenta }} {{ .RequestURI }} {{ .Proto }}{{ ResetColor }}
 {{ end -}}
 
 {{- define "GotConn" -}}
@@ -528,7 +528,7 @@ func (l *defaultTraceLogger) render(fn string, data interface{}) {
 }
 
 func (l *defaultTraceLogger) StartRequest(req *http.Request) {
-	path := req.URL.Path
+	path := req.URL.RequestURI()
 	proto := req.Proto
 	if path == "" {
 		path = "/"
@@ -537,13 +537,13 @@ func (l *defaultTraceLogger) StartRequest(req *http.Request) {
 		proto = "HTTP/1.1"
 	}
 	l.render("StartRequest", struct {
-		Method string
-		Path   string
-		Proto  string
+		Method     string
+		RequestURI string
+		Proto      string
 	}{
-		Method: req.Method,
-		Path:   path,
-		Proto:  proto,
+		Method:     req.Method,
+		RequestURI: path,
+		Proto:      proto,
 	})
 }
 
