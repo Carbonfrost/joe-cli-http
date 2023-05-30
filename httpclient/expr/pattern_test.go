@@ -33,6 +33,15 @@ var _ = Describe("Compile", func() {
 		},
 		Entry("nominal", "hello %(hello)", "hello world"),
 		Entry("missing value", "hello %(planet)", "hello %!(unknown: planet)"),
+		Entry("whitespace: empty expansion newline", "%(empty)%(newline)", "\n"),
+		Entry("whitespace: nominal expansion newline", "%(hello)%(newline)", "world\n"),
+		Entry("whitespace: nominal multiple newlines", "%(hello)%(newline)%(newline)", "world\n\n"),
+		Entry("whitespace: literal expansion newline", "literal%(newline)", "literal\n"),
+		Entry("whitespace: literal multiple newlines", "literal%(newline)%(newline)", "literal\n\n"),
+
+		// Starting with these whitespace tokens treats as if a literal
+		Entry("whitespace: empty literal newline", "%(newline)", "\n"),
+		Entry("whitespace: adjacent newlines", "%(newline)%(newline)", "\n\n"),
 	)
 
 	Context("when using colors", func() {
@@ -76,6 +85,7 @@ var _ = Describe("String", func() {
 		Entry("expansion", "hello %(planet)", "hello %(planet)"),
 		Entry("untruncated expansion", "hello %(p", "hello %(p"),
 		Entry("default access log", "%(accessLog.default)", `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(statusCode) -`),
+		Entry("whitespace", "%(newline)%(tab)%(space)", "%(newline)%(tab)%(space)"),
 	)
 })
 

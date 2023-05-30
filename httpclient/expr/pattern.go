@@ -41,7 +41,11 @@ var (
 		"white":         97,
 	}
 
-	meta = map[string]*Pattern{}
+	meta    = map[string]*Pattern{}
+	space   = nopExpr{"space"}
+	tab     = nopExpr{"tab"}
+	newline = nopExpr{"newline"}
+	empty   = nopExpr{"empty"}
 )
 
 func init() {
@@ -50,6 +54,9 @@ func init() {
 
 type Pattern struct {
 	exprs []expr
+
+	// textual representation, which is the value which was compiled after meta expr have been expanded
+	repr string
 }
 
 // Expander converts the given string key into its variable expansion
@@ -57,16 +64,22 @@ type Expander func(string) any
 
 type expr interface {
 	Format(expand Expander) any
-	WriteTo(io.StringWriter)
 }
 
 type formatExpr struct {
-	name   string
-	format string
+	name        string
+	format      string
+	trailingOpt string // optional whitespace iff the expr evaluates non-empty
+}
+
+// nopExpr is reserved for whitespace expressions that are reserved names
+type nopExpr struct {
+	name string
 }
 
 type literal struct {
-	text string
+	text     string
+	trailing string // whitespace after literal (produced by ws expressions)
 }
 
 // Renderer is a specialized writer that understands writing to multiple
@@ -213,33 +226,42 @@ func UnknownToken(tok string) error {
 }
 
 func (l *literal) Format(expand Expander) any {
-	return l.text
+	return l.text + l.trailing
 }
 
-func (l *literal) WriteTo(w io.StringWriter) {
-	w.WriteString(l.text)
+func (nopExpr) Format(Expander) any {
+	return ""
+}
+
+func (n nopExpr) Space() string {
+	switch n.name {
+	case "space":
+		return " "
+	case "newline":
+		return "\n"
+	case "tab":
+		return "\t"
+	case "empty":
+	}
+	return ""
 }
 
 func (f *formatExpr) Format(expand Expander) any {
+	var res string
 	value := expand(f.name)
 	switch t := value.(type) {
 	case time.Time:
-		return t.Format(f.format)
+		res = t.Format(f.format)
 	case error:
-		return fmt.Sprintf("%%!(%s)", t)
+		res = fmt.Sprintf("%%!(%s)", t)
+	default:
+		res = fmt.Sprintf("%"+f.format, value)
 	}
 
-	return fmt.Sprintf("%"+f.format, value)
-}
-
-func (f *formatExpr) WriteTo(w io.StringWriter) {
-	w.WriteString("%(")
-	w.WriteString(f.name)
-	if f.format != "" && f.format != "v" {
-		w.WriteString(":")
-		w.WriteString(f.format)
+	if res == "" {
+		return res
 	}
-	w.WriteString(")")
+	return res + f.trailingOpt
 }
 
 func (p *Pattern) Expand(expand Expander) string {
@@ -249,38 +271,69 @@ func (p *Pattern) Expand(expand Expander) string {
 }
 
 func (p *Pattern) String() string {
-	var b bytes.Buffer
-	for _, e := range p.exprs {
-		e.WriteTo(&b)
-	}
-	return b.String()
+	return p.repr
 }
 
 func compilePatternCore(content []byte, pat *regexp.Regexp) *Pattern {
 	allIndexes := pat.FindAllSubmatchIndex(content, -1)
 	result := []expr{}
+	var repr bytes.Buffer
 
 	var index int
 	for _, loc := range allIndexes {
 		if index < loc[0] {
 			result = append(result, newLiteral(content[index:loc[0]]))
+			repr.Write(content[index:loc[0]])
 		}
 		key := content[loc[2]:loc[3]]
 
 		if m, ok := meta[string(key)]; ok {
 			result = append(result, m.exprs...)
+			repr.WriteString(m.String())
 		} else {
 			result = append(result, newExpr(key))
+			repr.Write(content[loc[0]:loc[1]])
 		}
 		index = loc[1]
 	}
 	if index < len(content) {
 		result = append(result, newLiteral(content[index:]))
+		repr.Write(content[index:])
 	}
 
 	return &Pattern{
-		result,
+		exprs: convertWSExprs(result),
+		repr:  repr.String(),
 	}
+}
+
+// convertWSExprs sets up trailing whitespace in format expressions
+// by looking for successive whitespace expansions:
+//
+//	%(space)
+//	%(tab)
+//	%(newline)
+func convertWSExprs(exprs []expr) []expr {
+	var res []expr
+	for i := 0; i < len(exprs); i++ {
+		if wse, ok := exprs[i].(nopExpr); ok {
+			if len(res) == 0 {
+				res = append(res, newLiteral([]byte(wse.Space())))
+				continue
+			}
+			last := res[len(res)-1]
+
+			switch prev := last.(type) {
+			case *formatExpr:
+				prev.trailingOpt += wse.Space()
+			case *literal:
+				prev.trailing += wse.Space()
+			}
+		} else {
+			res = append(res, exprs[i])
+		}
+	}
+	return res
 }
 
 func newLiteral(token []byte) expr {
@@ -289,12 +342,23 @@ func newLiteral(token []byte) expr {
 	if s, err := strconv.Unquote(`"` + t + `"`); err == nil {
 		t = s
 	}
-	return &literal{t}
+	return &literal{t, ""}
 }
 
 func newExpr(token []byte) expr {
 	nameAndFormat := strings.SplitN(string(token), ":", 2)
 	name := nameAndFormat[0]
+	switch name {
+	case "space":
+		return space
+	case "newline":
+		return newline
+	case "tab":
+		return tab
+	case "empty":
+		return empty
+	}
+
 	if len(nameAndFormat) == 1 {
 		return &formatExpr{name: name, format: "v"}
 	}
