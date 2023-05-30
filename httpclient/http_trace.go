@@ -139,14 +139,18 @@ var (
 )
 
 var (
+	printColor = func(a ...any) string {
+		return fmt.Sprint(a[1:])
+	}
 	funcs = template.FuncMap{
 
 		// Stub color functions when used outside of Joe-cli
 		"Gray":       fmt.Sprint,
+		"Red":        fmt.Sprint,
 		"Magenta":    fmt.Sprint,
 		"Blue":       fmt.Sprint,
 		"ResetColor": fmt.Sprint,
-		"Color":      fmt.Sprint,
+		"Color":      printColor,
 		"Join": func(v string, args []string) string {
 			return strings.Join(args, v)
 		},
@@ -205,7 +209,7 @@ const (
 {{ end -}}
 
 {{- define "GenericError" -}}
-{{ .Red }}{{ .Error }}{{ ResetColor }}
+{{ Red }}{{ .Error }}{{ ResetColor }}
 {{ end -}}
 
 `
