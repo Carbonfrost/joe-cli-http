@@ -55,6 +55,7 @@ type Server struct {
 	hideDirListings bool
 	middleware      []MiddlewareFunc
 	accessLog       string
+	actualBindAddr  string
 }
 
 // Option is an option to configure the server
@@ -159,13 +160,17 @@ func (s *Server) ListenAndServe() error {
 		}
 		s.Server.Handler = h
 	}
-	s.applyMiddleware()
-	fmt.Fprintf(os.Stderr, "Listening on %s... (Press ^C to exit)\n", s.schemeAndAddr())
-	return s.Server.ListenAndServe()
-}
 
-func (s *Server) schemeAndAddr() string {
-	return s.proto() + s.Server.Addr
+	listener, err := net.Listen("tcp", s.Server.Addr)
+	if err != nil {
+		return err
+	}
+
+	s.actualBindAddr = listener.Addr().String()
+	s.applyMiddleware()
+
+	fmt.Fprintf(os.Stderr, "Listening on %s%s... (Press ^C to exit)", s.proto(), s.actualBindAddr)
+	return s.Server.Serve(listener)
 }
 
 func (s *Server) ensureMux() (mux, error) {
@@ -191,7 +196,10 @@ func (s *Server) applyMiddleware() {
 // OpenInBrowser opens in the browser.  The request path can also be
 // specified
 func (s *Server) OpenInBrowser(path ...string) error {
-	bind := s.schemeAndAddr() + strings.Join(path, "")
+	if s.actualBindAddr == "" {
+		return fmt.Errorf("can't open in browser: server is not listening")
+	}
+	bind := s.proto() + s.actualBindAddr + strings.Join(path, "")
 	fmt.Fprintf(os.Stderr, "Opening default web browser %s...", bind)
 	return exec.Open(bind)
 }
