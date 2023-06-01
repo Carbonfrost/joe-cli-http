@@ -253,9 +253,19 @@ func (c *Client) generateTransportMiddleware() []TransportMiddleware {
 	}, c.transportMiddleware...)
 }
 
-func (c *Client) setupTraceLevelTransport(_ context.Context, t http.RoundTripper) http.RoundTripper {
+func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
+	var logger TraceLogger
+	if c.traceLevel == TraceOff {
+		logger = nopTraceLogger{}
+	} else {
+		logger = &defaultTraceLogger{
+			template: traceTemplate(ctx),
+			out:      os.Stderr,
+			flags:    c.traceLevel,
+		}
+	}
 	return &traceableTransport{
-		level:     c.traceLevel,
+		logger:    logger,
 		Transport: t,
 	}
 }

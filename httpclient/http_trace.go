@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptrace"
 	"net/textproto"
-	"os"
 	"strconv"
 	"strings"
 	"text/template"
@@ -70,18 +69,14 @@ type TraceLogger interface {
 
 type nopTraceLogger struct{}
 
-type filteredTraceLogger struct {
-	TraceLogger
-	flags TraceLevel
-}
-
 type defaultTraceLogger struct {
+	flags    TraceLevel
 	out      io.Writer
 	template *template.Template
 }
 
 type traceableTransport struct {
-	level     TraceLevel
+	logger    TraceLogger
 	Transport http.RoundTripper
 }
 
@@ -215,14 +210,6 @@ const (
 `
 )
 
-// WithTraceLevel provides filtering at the specified level
-func WithTraceLevel(l TraceLogger, v TraceLevel) TraceLogger {
-	if v == TraceOff {
-		return nopTraceLogger{}
-	}
-	return &filteredTraceLogger{l, v}
-}
-
 func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 	// Filter out pseudo-headers
 	wrote := func(key string, value []string) {
@@ -326,97 +313,22 @@ func (l TraceLevel) requestBody() bool {
 	return l&TraceRequestBody == TraceRequestBody
 }
 
-func (l *filteredTraceLogger) ConnectDone(network, addr string, err error) {
-	if !l.flags.connections() {
-		return
-	}
-	l.TraceLogger.ConnectDone(network, addr, err)
-}
-
-func (l *filteredTraceLogger) ConnectStart(network, addr string) {
-	if !l.flags.connections() {
-		return
-	}
-	l.TraceLogger.ConnectStart(network, addr)
-}
-
-func (l *filteredTraceLogger) DNSDone(info httptrace.DNSDoneInfo) {
-	if !l.flags.dns() {
-		return
-	}
-	l.TraceLogger.DNSDone(info)
-}
-
-func (l *filteredTraceLogger) DNSStart(info httptrace.DNSStartInfo) {
-	if !l.flags.dns() {
-		return
-	}
-	l.TraceLogger.DNSStart(info)
-}
-
-func (l *filteredTraceLogger) GetConn(hostPort string) {
-	if !l.flags.connections() {
-		return
-	}
-	l.TraceLogger.GetConn(hostPort)
-}
-
-func (l *filteredTraceLogger) Got1xxResponse(code int, header textproto.MIMEHeader) (err error) {
-	if !l.flags.http1xx() {
-		return
-	}
-	return l.TraceLogger.Got1xxResponse(code, header)
-}
-
-func (l *filteredTraceLogger) GotConn(info httptrace.GotConnInfo) {
-	if !l.flags.connections() {
-		return
-	}
-	l.TraceLogger.GotConn(info)
-}
-
-func (l *filteredTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err error) {
-	if !l.flags.tls() {
-		return
-	}
-	l.TraceLogger.TLSHandshakeDone(state, err)
-}
-
-func (l *filteredTraceLogger) TLSHandshakeStart() {
-	if !l.flags.tls() {
-		return
-	}
-	l.TraceLogger.TLSHandshakeStart()
-}
-
-func (l *filteredTraceLogger) Wait100Continue() {
-	if !l.flags.http1xx() {
-		return
-	}
-	l.TraceLogger.Wait100Continue()
-}
-
-func (l *filteredTraceLogger) WroteHeaderField(key string, value []string) {
-	if !l.flags.requestHeaders() {
-		return
-	}
-	l.TraceLogger.WroteHeaderField(key, value)
-}
-
-func (l *filteredTraceLogger) WroteRequest(info httptrace.WroteRequestInfo) {
-	if !l.flags.requestBody() {
-		return
-	}
-	l.TraceLogger.WroteRequest(info)
-}
-
 func (l *defaultTraceLogger) ConnectDone(network, addr string, err error) {
+	if !l.flags.connections() {
+		return
+	}
 }
 
 func (l *defaultTraceLogger) ConnectStart(network, addr string) {
+	if !l.flags.connections() {
+		return
+	}
 }
 
 func (l *defaultTraceLogger) DNSDone(info httptrace.DNSDoneInfo) {
+	if !l.flags.dns() {
+		return
+	}
 	if info.Err != nil {
 		fmt.Println(info.Err)
 		return
@@ -434,6 +346,9 @@ func (l *defaultTraceLogger) DNSDone(info httptrace.DNSDoneInfo) {
 }
 
 func (l *defaultTraceLogger) DNSStart(info httptrace.DNSStartInfo) {
+	if !l.flags.dns() {
+		return
+	}
 	l.render("DNSStart", struct {
 		Host string
 	}{
@@ -442,6 +357,10 @@ func (l *defaultTraceLogger) DNSStart(info httptrace.DNSStartInfo) {
 }
 
 func (l *defaultTraceLogger) GetConn(hostPort string) {
+	if !l.flags.connections() {
+		return
+	}
+
 	l.render("GetConn", struct {
 		HostPort string
 	}{
@@ -450,6 +369,10 @@ func (l *defaultTraceLogger) GetConn(hostPort string) {
 }
 
 func (l *defaultTraceLogger) Got1xxResponse(code int, header textproto.MIMEHeader) (err error) {
+	if !l.flags.http1xx() {
+		return
+	}
+
 	l.render("Got1xxResponse", struct {
 		Code   int
 		Header textproto.MIMEHeader
@@ -461,6 +384,10 @@ func (l *defaultTraceLogger) Got1xxResponse(code int, header textproto.MIMEHeade
 }
 
 func (l *defaultTraceLogger) GotConn(info httptrace.GotConnInfo) {
+	if !l.flags.connections() {
+		return
+	}
+
 	l.render("GotConn", struct {
 		Remote    string
 		LocalAddr string
@@ -473,6 +400,10 @@ func (l *defaultTraceLogger) GotConn(info httptrace.GotConnInfo) {
 }
 
 func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err error) {
+	if !l.flags.tls() {
+		return
+	}
+
 	l.render("TLSHandshakeDone", struct {
 		Proto             string
 		CipherSuite       string
@@ -499,13 +430,24 @@ func formatCert(c *x509.Certificate) []NameValue {
 }
 
 func (l *defaultTraceLogger) TLSHandshakeStart() {
+	if !l.flags.tls() {
+		return
+	}
+
 	l.render("TLSHandshakeStart", nil)
 }
 
 func (l *defaultTraceLogger) Wait100Continue() {
+	if !l.flags.http1xx() {
+		return
+	}
 }
 
 func (l *defaultTraceLogger) WroteHeaderField(key string, value []string) {
+	if !l.flags.requestHeaders() {
+		return
+	}
+
 	l.render("WroteHeaderField", struct {
 		Key      string
 		Value    []string
@@ -518,6 +460,9 @@ func (l *defaultTraceLogger) WroteHeaderField(key string, value []string) {
 }
 
 func (l *defaultTraceLogger) WroteRequest(info httptrace.WroteRequestInfo) {
+	if !l.flags.requestBody() {
+		return
+	}
 }
 
 func (l *defaultTraceLogger) render(fn string, data interface{}) {
@@ -563,6 +508,9 @@ func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
 		Status: httpStatus(resp.StatusCode),
 	})
 
+	if !l.flags.responseHeaders() {
+		return
+	}
 	for k, v := range resp.Header {
 		l.render("WroteHeaderField", struct {
 			Key      string
@@ -621,19 +569,13 @@ func (nopTraceLogger) ResponseDone(*http.Response, error) {
 
 func (t *traceableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
-	tt := traceTemplate(ctx)
-
-	logger := WithTraceLevel(
-		&defaultTraceLogger{template: tt, out: os.Stderr}, t.level,
-	)
-
-	ctx = httptrace.WithClientTrace(ctx, newClientTrace(logger))
+	ctx = httptrace.WithClientTrace(ctx, newClientTrace(t.logger))
 	req = req.WithContext(ctx)
 
-	logger.StartRequest(req)
+	t.logger.StartRequest(req)
 
 	rsp, err := t.Transport.RoundTrip(req)
-	logger.ResponseDone(rsp, err)
+	t.logger.ResponseDone(rsp, err)
 	return rsp, err
 }
 
