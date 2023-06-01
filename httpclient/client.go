@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
@@ -286,13 +287,68 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 		}
 	}
 
-	resp, err := c.Client.Do(c.Request)
+	netResp, err := c.Client.Do(c.Request)
 	if err != nil {
 		return nil, err
 	}
-	return &Response{
-		Response: resp,
-	}, nil
+	resp := &Response{
+		Response: netResp,
+	}
+
+	err = c.handleDownload(cli.FromContext(ctx), resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) handleDownload(ctx *cli.Context, response *Response) error {
+	// Note that errRender always writes to stderr even if %(stdout) expr
+	// is present
+	outRender := expr.NewRenderer(ctx.Stdout, ctx.Stderr)
+	errRender := expr.NewRenderer(ctx.Stderr, ctx.Stderr)
+
+	outExpr := c.writeOutExpr.Compile()
+	errExpr := c.writeErrExpr.Compile()
+
+	if c.FailFast && !response.Success() {
+		return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
+	}
+
+	output, err := c.openDownload(ctx, response)
+	if err != nil {
+		return err
+	}
+
+	if c.IncludeResponseHeaders {
+		err = response.CopyHeadersTo(output)
+		fmt.Fprintln(output)
+	}
+	if err != nil {
+		return err
+	}
+
+	err = response.CopyTo(output)
+	if err != nil {
+		return err
+	}
+
+	err = output.Close()
+	if err != nil {
+		return err
+	}
+
+	expander := expr.ComposeExpanders(
+		expr.ExpandGlobals,
+		expr.Prefix("color", expr.ExpandColors),
+		ExpandResponse(response),
+		expr.Unknown,
+	)
+
+	expr.Fprint(outRender, outExpr, expander)
+	expr.Fprint(errRender, errExpr, expander)
+	return nil
 }
 
 func (c *Client) applyAuth() error {
