@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -84,12 +85,23 @@ type Client struct {
 	middleware     []Middleware
 	writeOutExpr   Expr
 	writeErrExpr   Expr
+
+	// These are values that are ready after the first call to Do
+	exprHandlingCache *exprHandling
+	logger            TraceLogger
 }
 
 // TransportMiddleware provides middleware to the roundtripper
 type TransportMiddleware func(context.Context, http.RoundTripper) http.RoundTripper
 
 type RoundTripperFunc func(req *http.Request) *http.Response
+
+type exprHandling struct {
+	outExpr   *expr.Pattern
+	errExpr   *expr.Pattern
+	outRender io.Writer
+	errRender io.Writer
+}
 
 var (
 	impliedOptions = []Option{
@@ -217,6 +229,7 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 
 	rsp := make([]*Response, 0, len(urls))
 	client := c.ensureClient(ctx)
+	c.ensureExprHandling(cli.FromContext(ctx))
 	for _, u := range urls {
 		r, err := c.doOne(ctx, client, u)
 		if err != nil {
@@ -241,11 +254,44 @@ func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
 	return t
 }
 
+func (c *Client) ensureExprHandling(ctx *cli.Context) {
+	// Note that errRender always writes to stderr even if %(stdout) expr
+	// is present
+	c.exprHandlingCache = &exprHandling{
+		outRender: expr.NewRenderer(ctx.Stdout, ctx.Stderr),
+		errRender: expr.NewRenderer(ctx.Stderr, ctx.Stderr),
+		outExpr:   c.writeOutExpr.Compile(),
+		errExpr:   c.writeErrExpr.Compile(),
+	}
+}
+
 func (c *Client) ensureClient(ctx context.Context) *http.Client {
 	return &http.Client{
 		Transport:     c.actualTransport(ctx),
-		CheckRedirect: c.CheckRedirect,
+		CheckRedirect: c.actualCheckRedirect(),
 	}
+}
+
+func (c *Client) actualCheckRedirect() func(*http.Request, []*http.Request) error {
+	redirect := c.CheckRedirect
+	if redirect == nil {
+		redirect = defaultCheckRedirect
+	}
+
+	// Wrap with support from the logger
+	return func(req *http.Request, via []*http.Request) error {
+		err := redirect(req, via)
+		c.exprHandlingCache.eval(nil, req, nil)
+		c.logger.Redirected(req, via, err)
+		return err
+	}
+}
+
+func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return fmt.Errorf("stopped after 10 redirects")
+	}
+	return nil
 }
 
 func (c *Client) generateMiddleware() []Middleware {
@@ -273,6 +319,7 @@ func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripp
 			flags:    c.traceLevel,
 		}
 	}
+	c.logger = logger
 	return &traceableTransport{
 		logger:    logger,
 		Transport: t,
@@ -303,6 +350,7 @@ func (c *Client) doOne(ctx context.Context, client *http.Client, l Location) (*R
 		Response: netResp,
 	}
 
+	c.exprHandlingCache.eval(c.Request, nil, resp)
 	err = c.handleDownload(cli.FromContext(ctx), resp)
 	if err != nil {
 		return nil, err
@@ -312,14 +360,6 @@ func (c *Client) doOne(ctx context.Context, client *http.Client, l Location) (*R
 }
 
 func (c *Client) handleDownload(ctx *cli.Context, response *Response) error {
-	// Note that errRender always writes to stderr even if %(stdout) expr
-	// is present
-	outRender := expr.NewRenderer(ctx.Stdout, ctx.Stderr)
-	errRender := expr.NewRenderer(ctx.Stderr, ctx.Stderr)
-
-	outExpr := c.writeOutExpr.Compile()
-	errExpr := c.writeErrExpr.Compile()
-
 	if c.FailFast && !response.Success() {
 		return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
 	}
@@ -347,15 +387,6 @@ func (c *Client) handleDownload(ctx *cli.Context, response *Response) error {
 		return err
 	}
 
-	expander := expr.ComposeExpanders(
-		expr.ExpandGlobals,
-		expr.Prefix("color", expr.ExpandColors),
-		ExpandResponse(response),
-		expr.Unknown,
-	)
-
-	expr.Fprint(outRender, outExpr, expander)
-	expr.Fprint(errRender, errExpr, expander)
 	return nil
 }
 
@@ -754,10 +785,58 @@ func (c *Client) SetFailFast(v bool) error {
 	return nil
 }
 
-func NewIntegrityDownloadMiddleware(i Integrity) func(Downloader) Downloader {
-	return func(d Downloader) Downloader {
-		return NewIntegrityDownloader(i, d)
+func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
+	expanders := []expr.Expander{
+		expr.ExpandGlobals,
+		expr.Prefix("color", expr.ExpandColors),
+		expr.Prefix("redirect", expandRequest(req)),
+		expr.Prefix("request", expandRequest(initial)),
 	}
+
+	if resp != nil {
+		expanders = append(expanders, ExpandResponse(resp))
+	}
+	expanders = append(expanders, expr.Unknown)
+	expander := expr.ComposeExpanders(expanders...)
+
+	expr.Fprint(e.outRender, e.outExpr, expander)
+	expr.Fprint(e.errRender, e.errExpr, expander)
+}
+
+func expandRequest(r *http.Request) expr.Expander {
+	if r == nil {
+		return func(s string) any {
+			if s == "method" || s == "protocol" || s == "location" || s == "url" || s == "header" {
+				return ""
+			}
+			if strings.HasPrefix(s, "location.") || strings.HasPrefix(s, "url.") || strings.HasPrefix(s, "header.") {
+				return ""
+			}
+			return nil
+		}
+	}
+
+	return expr.ComposeExpanders(func(s string) any {
+		switch s {
+		case "method":
+			return r.Method
+		case "protocol":
+			return r.Proto
+		case "location", "url":
+			// Note - technically, we encourage and have documented %(request.url)
+			// and %(redirect.location), but either is acceptable in either context
+			// (i.e. %(request.location) and %(redirect.url) also work)
+			return r.URL
+		case "header":
+			var buf bytes.Buffer
+			r.Header.Write(&buf)
+			return buf.String()
+		}
+		return nil
+	},
+		expr.Prefix("location", expr.ExpandURL(r.URL)),
+		expr.Prefix("url", expr.ExpandURL(r.URL)),
+		expr.Prefix("header", ExpandHeader(r.Header)))
 }
 
 func (o Option) Execute(c context.Context) error {

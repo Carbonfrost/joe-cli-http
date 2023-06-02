@@ -65,6 +65,7 @@ type TraceLogger interface {
 	WroteRequest(httptrace.WroteRequestInfo)
 	StartRequest(req *http.Request)
 	ResponseDone(resp *http.Response, err error)
+	Redirected(req *http.Request, via []*http.Request, err error)
 }
 
 type nopTraceLogger struct{}
@@ -90,6 +91,7 @@ const (
 	TraceRequestBody
 	TraceResponseStatus
 	TraceResponseHeaders
+	TraceRedirects
 
 	// TraceOff causes all tracing to be switched off
 	TraceOff TraceLevel = 0
@@ -98,7 +100,7 @@ const (
 	TraceOn = TraceConnections | TraceRequestHeaders | TraceResponseStatus | TraceResponseHeaders
 
 	// TraceVerbose enables tracing of DNS, TLS, HTTP 1xx responses
-	TraceVerbose = TraceOn | TraceDNS | TraceTLS | TraceHTTP1XX
+	TraceVerbose = TraceOn | TraceDNS | TraceTLS | TraceHTTP1XX | TraceRedirects
 	TraceDebug   = TraceVerbose | TraceRequestBody
 )
 
@@ -115,6 +117,7 @@ var (
 		"requestBody",
 		"responseStatus",
 		"responseHeaders",
+		"redirects",
 		"off",
 	}
 	traceEnum = [...]TraceLevel{
@@ -129,6 +132,7 @@ var (
 		TraceRequestBody,
 		TraceResponseStatus,
 		TraceResponseHeaders,
+		TraceRedirects,
 		TraceOff,
 	}
 )
@@ -179,6 +183,13 @@ const (
 
 {{- define "StartRequest" -}}
 {{ Gray }}> {{ .Method | Magenta }} {{ .RequestURI }} {{ .Proto }}{{ ResetColor }}
+{{ end -}}
+
+{{- define "Redirected" -}}
+{{ Gray }}* Redirecting to {{ .Location }}
+{{- if gt .Times 1 }} (
+    {{- .Ordinal }} redirect)
+{{- end }} ...{{ ResetColor }}
 {{ end -}}
 
 {{- define "GotConn" -}}
@@ -295,6 +306,10 @@ func (l TraceLevel) requestHeaders() bool {
 
 func (l TraceLevel) responseHeaders() bool {
 	return l&TraceResponseHeaders == TraceResponseHeaders
+}
+
+func (l TraceLevel) redirects() bool {
+	return l&TraceRedirects == TraceRedirects
 }
 
 func (l TraceLevel) dns() bool {
@@ -465,6 +480,14 @@ func (l *defaultTraceLogger) WroteRequest(info httptrace.WroteRequestInfo) {
 	}
 }
 
+func (l *defaultTraceLogger) renderError(err error) {
+	l.render("GenericError", struct {
+		Error error
+	}{
+		Error: err,
+	})
+}
+
 func (l *defaultTraceLogger) render(fn string, data interface{}) {
 	err := l.template.ExecuteTemplate(l.out, fn, data)
 	if err != nil {
@@ -492,13 +515,39 @@ func (l *defaultTraceLogger) StartRequest(req *http.Request) {
 	})
 }
 
+func (l *defaultTraceLogger) Redirected(req *http.Request, via []*http.Request, err error) {
+	if !l.flags.redirects() {
+		return
+	}
+	ordSuffix := func(i int) string {
+		if i%100 == 11 || i%100 == 12 || i%100 == 13 {
+			return "th"
+		}
+		if i%10 < 4 {
+			return [4]string{"th", "st", "nd", "rd"}[i%10]
+		}
+		return "th"
+	}
+
+	if err != nil {
+		l.renderError(err)
+	}
+
+	times := len(via)
+	l.render("Redirected", struct {
+		Location string
+		Times    int
+		Ordinal  string
+	}{
+		Location: req.URL.String(),
+		Times:    times,
+		Ordinal:  fmt.Sprintf("%d%s", times, ordSuffix(times)),
+	})
+}
+
 func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
 	if resp == nil || err != nil {
-		l.render("GenericError", struct {
-			Error error
-		}{
-			Error: err,
-		})
+		l.renderError(err)
 		return
 	}
 
@@ -562,6 +611,9 @@ func (nopTraceLogger) WroteRequest(httptrace.WroteRequestInfo) {
 }
 
 func (nopTraceLogger) StartRequest(*http.Request) {
+}
+
+func (nopTraceLogger) Redirected(*http.Request, []*http.Request, error) {
 }
 
 func (nopTraceLogger) ResponseDone(*http.Response, error) {

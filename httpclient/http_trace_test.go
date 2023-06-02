@@ -25,6 +25,7 @@ var _ = Describe("TraceLevel", func() {
 		Entry("DNS", httpclient.TraceDNS, "dns"),
 		Entry("TLS", httpclient.TraceTLS, "tls"),
 		Entry("http1xx", httpclient.TraceHTTP1XX, "http1xx"),
+		Entry("redirects", httpclient.TraceRedirects, "redirects"),
 		Entry("requestBody", httpclient.TraceRequestBody, "requestBody"),
 		Entry("responseStatus", httpclient.TraceResponseStatus, "responseStatus"),
 		Entry("off", httpclient.TraceOff, "off"),

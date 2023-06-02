@@ -28,6 +28,12 @@ type integrityChecker struct {
 	expectedHash []byte
 }
 
+func NewIntegrityDownloadMiddleware(i Integrity) func(Downloader) Downloader {
+	return func(d Downloader) Downloader {
+		return NewIntegrityDownloader(i, d)
+	}
+}
+
 func NewIntegrityDownloader(i Integrity, d Downloader) Downloader {
 	return &integrityDownloader{
 		Downloader: d,
