@@ -49,6 +49,9 @@ import (
 type Server struct {
 	*http.Server
 
+	TLSCertFile string
+	TLSKeyFile  string
+
 	staticDir       string
 	handlerFactory  func(*Server) (http.Handler, error)
 	ready           func(context.Context)
@@ -170,7 +173,12 @@ func (s *Server) ListenAndServe() error {
 	s.applyMiddleware()
 
 	fmt.Fprintf(os.Stderr, "Listening on %s%s... (Press ^C to exit)", s.proto(), s.actualBindAddr)
-	return s.Server.Serve(listener)
+
+	if s.TLSCertFile == "" {
+		return s.Server.Serve(listener)
+	}
+
+	return s.Server.ServeTLS(listener, s.TLSCertFile, s.TLSKeyFile)
 }
 
 func (s *Server) ensureMux() (mux, error) {
@@ -295,8 +303,14 @@ func (s *Server) SetServer(name string) error {
 	return nil
 }
 
-func (s *Server) setStaticDirectoryHelper(f *cli.File) error {
-	return s.SetStaticDirectory(f.Name)
+func (s *Server) SetTLSCertFile(v string) error {
+	s.TLSCertFile = v
+	return nil
+}
+
+func (s *Server) SetTLSKeyFile(v string) error {
+	s.TLSKeyFile = v
+	return nil
 }
 
 func (s *Server) setOpenInBrowserHelper(v bool) error {

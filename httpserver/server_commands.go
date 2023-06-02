@@ -46,6 +46,8 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetAccessLog()},
 			{Uses: SetNoAccessLog()},
 			{Uses: SetServer()},
+			{Uses: SetTLSCertFile()},
+			{Uses: SetTLSKeyFile()},
 		}...),
 	)
 }
@@ -187,7 +189,7 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 			Options:  cli.MustExist,
 			HelpText: "Serve static files from the specified directory",
 		},
-		withBinding((*Server).setStaticDirectoryHelper, f),
+		withBinding(bindFileAsString((*Server).SetStaticDirectory), f),
 		tagged,
 	)
 }
@@ -320,6 +322,32 @@ func SetServer(v ...string) cli.Action {
 	)
 }
 
+func SetTLSKeyFile(v ...*cli.File) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "key",
+			HelpText: "Specify the FILE that contains the TLS private key",
+			Category: listenerCategory,
+			Options:  cli.MustExist,
+		},
+		withBinding(bindFileAsString((*Server).SetTLSKeyFile), v),
+		tagged,
+	)
+}
+
+func SetTLSCertFile(v ...*cli.File) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "cert",
+			HelpText: "Specify the FILE that contains the TLS certificate",
+			Category: listenerCategory,
+			Options:  cli.MustExist,
+		},
+		withBinding(bindFileAsString((*Server).SetTLSCertFile), v),
+		tagged,
+	)
+}
+
 // RunServer locates the server in context and runs it until interrupt signal
 // is detected
 func RunServer() cli.Action {
@@ -375,5 +403,11 @@ func withBinding[V any](binder func(*Server, V) error, args []V) cli.Action {
 		return cli.BindContext(FromContext, binder, args[0])
 	default:
 		panic(expectedOneArg)
+	}
+}
+
+func bindFileAsString(fn func(*Server, string) error) func(*Server, *cli.File) error {
+	return func(s *Server, f *cli.File) error {
+		return fn(s, f.Name)
 	}
 }
