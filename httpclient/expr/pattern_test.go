@@ -105,6 +105,7 @@ var _ = Describe("ExpandURL", func() {
 		Entry("user", "%(url.user)", Equal("me")),
 		Entry("host", "%(url.host)", Equal("example.com")),
 		Entry("path", "%(url.path)", Equal("/whistle")),
+		Entry("requestURI", "%(url.requestURI)", Equal("/whistle?query=1")),
 		Entry("fragment", "%(url.fragment)", Equal("fragment")),
 	)
 })

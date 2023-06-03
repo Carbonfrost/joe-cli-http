@@ -189,6 +189,8 @@ func ExpandURL(u *url.URL) Expander {
 			return u.Query().Encode()
 		case "fragment":
 			return u.Fragment
+		case "requestURI":
+			return u.RequestURI()
 		case "authority":
 			var res string
 			if u.User != nil {
