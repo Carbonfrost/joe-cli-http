@@ -2,16 +2,21 @@ package httpclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 )
 
 type Downloader interface {
+	// OpenDownload saves the download from the response.  This method can be
+	// called multiple times if multiple URLs were requested.
 	OpenDownload(context.Context, *Response) (io.WriteCloser, error)
 }
 
@@ -22,8 +27,11 @@ type downloaderWithFileName interface {
 	FileName(*Response) string
 }
 
-type directAdapter struct {
-	*cli.File
+type exprAdapter struct {
+	FS fs.FS
+
+	index int
+	expr  Expr
 }
 
 type basicDownloader struct {
@@ -79,38 +87,69 @@ func (s stripComponents) FileName(r *Response) string {
 	return filepath.Join(dirs...)
 }
 
-func (s stripComponents) OpenDownload(_ context.Context, resp *Response) (io.WriteCloser, error) {
-	return openFileName(s, resp)
+func (s stripComponents) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
+	return openFileName(s, fileSystemFrom(nil, ctx), resp)
 }
 
-func openFileName(d downloaderWithFileName, resp *Response) (io.WriteCloser, error) {
+func openFileName(d downloaderWithFileName, f cli.FS, resp *Response) (io.WriteCloser, error) {
 	fn := d.FileName(resp)
 	if fn == "" {
 		return nil, fmt.Errorf("cannot download file: the request path has no file name")
 	}
-	ensureDirectory(filepath.Dir(fn))
-	return os.Create(fn)
+
+	// ensureDirectory(f, )
+	// fsHelper := cli.NewFS(f)
+	dir := filepath.Dir(fn)
+	if _, err := f.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		f.MkdirAll(dir, 0755)
+	}
+
+	c, err := f.Create(fn)
+	if err != nil {
+		return nil, err
+	}
+	return c.(io.WriteCloser), err
 }
 
 func NewDownloaderTo(w io.Writer) Downloader {
 	return basicDownloader{w}
 }
 
-func NewFileDownloader(f *cli.File) Downloader {
-	return &directAdapter{f}
-}
-
-func (d *directAdapter) OpenDownload(_ context.Context, _ *Response) (io.WriteCloser, error) {
-	ensureDirectory(d.Dir())
-	w, err := d.Create()
-	if err != nil {
-		return nil, err
+func NewFileDownloader(f string, fileSystem fs.FS) Downloader {
+	if !strings.Contains(f, "%(") {
+		f += "%(index.suffix)"
 	}
-	return w.(io.WriteCloser), err
+	return &exprAdapter{
+		index: -1,
+		expr:  Expr(f),
+		FS:    fileSystem,
+	}
 }
 
-func (d DownloadMode) OpenDownload(_ context.Context, resp *Response) (io.WriteCloser, error) {
-	return openFileName(d, resp)
+func (e *exprAdapter) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
+	e.index++
+	return openFileName(e, fileSystemFrom(e.FS, ctx), resp)
+}
+
+func (e *exprAdapter) FileName(r *Response) string {
+	return e.expr.Compile().Expand(expr.ComposeExpanders(e.expandIndex, ExpandResponse(r)))
+}
+
+func (e *exprAdapter) expandIndex(k string) any {
+	if k == "index" {
+		return e.index
+	}
+	if k == "index.suffix" {
+		if e.index == 0 {
+			return ""
+		}
+		return fmt.Sprintf(".%d", e.index)
+	}
+	return nil
+}
+
+func (d DownloadMode) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
+	return openFileName(d, fileSystemFrom(nil, ctx), resp)
 }
 
 func (d DownloadMode) FileName(r *Response) string {
@@ -142,8 +181,20 @@ func fileName(s string) string {
 	return s
 }
 
-func ensureDirectory(dir string) {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		os.MkdirAll(dir, 0755)
+func fileSystemFrom(preferred fs.FS, ctx context.Context) (res cli.FS) {
+	if preferred != nil {
+		res = cli.NewFS(preferred)
+		return
 	}
+
+	defer func() {
+		// TODO This recovery is necessary until joe-cli provides a version that
+		// doesn't panic on FromContext
+		if rvr := recover(); rvr != nil {
+			res = cli.NewSysFS(cli.DirFS("."), os.Stdin, os.Stdout)
+		}
+	}()
+
+	res = cli.NewFS(cli.FromContext(ctx).FS)
+	return
 }

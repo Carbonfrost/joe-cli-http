@@ -295,16 +295,15 @@ func SetIncludeResponseHeaders(s ...bool) cli.Action {
 	)
 }
 
-func SetOutputFile(f ...*cli.File) cli.Action {
+func SetOutputFile(f ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "output",
 			HelpText: "Download file to {FILE} instead of writing to stdout",
 			Aliases:  []string{"o"},
-			Value:    new(cli.File),
 			Category: responseOptions,
 		},
-		withBinding((*Client).setOutputFileHelper, f),
+		withBinding((*Client).SetOutputFile, f),
 		tagged,
 	)
 }

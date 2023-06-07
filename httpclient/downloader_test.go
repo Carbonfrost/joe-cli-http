@@ -2,9 +2,11 @@ package httpclient_test
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,9 +40,7 @@ var _ = Describe("DownloadMode", func() {
 				request, _ := http.NewRequest("GET", "https://example.com/a/b/c/d/e/f.txt", nil)
 
 				downloader := mode.WithStripComponents(count)
-				downloader.(interface {
-					FileName(*httpclient.Response) string
-				}).FileName(&httpclient.Response{
+				downloader.(fileNameDownloader).FileName(&httpclient.Response{
 					Response: &http.Response{
 						Request: request,
 					},
@@ -72,3 +72,57 @@ var _ = Describe("DownloadMode", func() {
 		)
 	})
 })
+
+var _ = Describe("NewFileDownloader", func() {
+
+	Describe("OpenDownload", func() {
+		Context("when evaluating expr", func() {
+			DescribeTable("examples", func(pat string, expected []string) {
+				var testFileSystem = func() *wrapperFS {
+					appFS := afero.NewMemMapFs()
+					return &wrapperFS{Fs: appFS}
+				}()
+
+				request, _ := http.NewRequest("GET", "https://example.com/wherever", nil)
+				e := httpclient.NewFileDownloader(pat, testFileSystem).(fileNameDownloader)
+
+				for i := 0; i < 3; i++ {
+					_, err := e.OpenDownload(context.Background(), &httpclient.Response{
+						Response: &http.Response{
+							Request:       request,
+							ContentLength: int64((1 + i) * 10),
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				actual := testFileSystem.ActualFiles
+				Expect(actual).To(Equal(expected))
+			},
+				Entry("nominal", "file.txt", []string{"file.txt", "file.txt.1", "file.txt.2"}),
+				Entry("expression", "file%(contentLength).txt", []string{"file10.txt", "file20.txt", "file30.txt"}),
+				Entry("index", "file#%(index).txt", []string{"file#0.txt", "file#1.txt", "file#2.txt"}),
+				Entry("index suffix", "file%(index.suffix).txt", []string{"file.txt", "file.1.txt", "file.2.txt"}),
+			)
+		})
+	})
+})
+
+type fileNameDownloader interface {
+	httpclient.Downloader
+	FileName(*httpclient.Response) string
+}
+
+type wrapperFS struct {
+	afero.Fs
+	ActualFiles []string
+}
+
+func (w *wrapperFS) Create(name string) (fs.File, error) {
+	w.ActualFiles = append(w.ActualFiles, name)
+	return w.Fs.Create(name)
+}
+
+func (w wrapperFS) Open(name string) (fs.File, error) {
+	return w.Fs.Open(name)
+}

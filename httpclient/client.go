@@ -506,9 +506,8 @@ func (c *Client) SetIncludeResponseHeaders(v bool) error {
 	return nil
 }
 
-func (c *Client) setOutputFileHelper(f *cli.File) error {
-	c.SetDownloadFile(NewFileDownloader(f))
-	return nil
+func (c *Client) SetOutputFile(f string) error {
+	return c.SetDownloadFile(NewFileDownloader(f, nil))
 }
 
 func (c *Client) SetNoOutput(b bool) error {
