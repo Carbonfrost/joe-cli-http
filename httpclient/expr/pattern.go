@@ -161,6 +161,10 @@ func ExpandGlobals(k string) any {
 		return runtime.Version()
 	case "wig.version":
 		return build.Version
+	case "time", "time.now":
+		return time.Now()
+	case "time.now.utc":
+		return time.Now().UTC()
 	}
 	return nil
 }
@@ -251,13 +255,20 @@ func (n nopExpr) Space() string {
 func (f *formatExpr) Format(expand Expander) any {
 	var res string
 	value := expand(f.name)
+	format := f.format
 	switch t := value.(type) {
 	case time.Time:
-		res = t.Format(f.format)
+		if format == "" {
+			format = time.RFC3339
+		}
+		res = t.Format(format)
 	case error:
 		res = fmt.Sprintf("%%!(%s)", t)
 	default:
-		res = fmt.Sprintf("%"+f.format, value)
+		if format == "" {
+			format = "v"
+		}
+		res = fmt.Sprintf("%"+format, value)
 	}
 
 	if res == "" {
@@ -362,7 +373,7 @@ func newExpr(token []byte) expr {
 	}
 
 	if len(nameAndFormat) == 1 {
-		return &formatExpr{name: name, format: "v"}
+		return &formatExpr{name: name, format: ""}
 	}
 
 	return &formatExpr{name: name, format: nameAndFormat[1]}

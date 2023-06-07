@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	"github.com/Carbonfrost/joe-cli-http/internal/build"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -107,5 +108,20 @@ var _ = Describe("ExpandURL", func() {
 		Entry("path", "%(url.path)", Equal("/whistle")),
 		Entry("requestURI", "%(url.requestURI)", Equal("/whistle?query=1")),
 		Entry("fragment", "%(url.fragment)", Equal("fragment")),
+	)
+})
+
+var _ = Describe("ExpandGlobals", func() {
+
+	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
+		e := expr.Compile(text)
+		expander := expr.ExpandGlobals
+		Expect(e.Expand(expander)).To(expected)
+	},
+		Entry("go version", "%(go.version)", MatchRegexp(`go\d(\.\d+)+`)),
+		Entry("wig version", "%(wig.version)", Equal(build.Version)),
+		Entry("time", "%(time.now)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
+		Entry("time (alias)", "%(time)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
+		Entry("time UTC", "%(time.now.utc)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)), // ends with Z
 	)
 })
