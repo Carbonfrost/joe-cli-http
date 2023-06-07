@@ -44,6 +44,7 @@ var _ = Describe("Expr", func() {
 		Entry("HTTP proto major", "%(http.protoMajor)", res, Equal("1")),
 		Entry("HTTP proto minor", "%(http.protoMinor)", res, Equal("0")),
 		Entry("content length", "%(contentLength)", res, Equal("80")),
+		Entry("content length with format", "%(contentLength:04d)", res, Equal("0080")),
 		Entry("unescape carriage return", `\n`, res, Equal("\n")),
 		Entry("all response headers", "%(header)", res, And(
 			ContainSubstring("Content-Location: https://example.com/d"),

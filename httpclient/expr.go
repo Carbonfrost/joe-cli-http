@@ -5,7 +5,6 @@ import (
 	"encoding"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
@@ -29,17 +28,17 @@ func ExpandResponse(r *Response) expr.Expander {
 		case "status":
 			return r.Status // "200 OK"
 		case "statusCode":
-			return strconv.Itoa(r.StatusCode)
+			return r.StatusCode
 		case "http.version":
 			return strings.TrimPrefix(r.Proto, "HTTP/")
 		case "http.proto":
 			return r.Proto
 		case "http.protoMajor":
-			return strconv.Itoa(r.ProtoMajor)
+			return r.ProtoMajor
 		case "http.protoMinor":
-			return strconv.Itoa(r.ProtoMinor)
+			return r.ProtoMinor
 		case "contentLength":
-			return strconv.FormatInt(r.ContentLength, 10)
+			return r.ContentLength
 		case "header":
 			var buf bytes.Buffer
 			r.Header.Write(&buf)
