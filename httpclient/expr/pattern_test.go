@@ -123,5 +123,7 @@ var _ = Describe("ExpandGlobals", func() {
 		Entry("time", "%(time.now)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
 		Entry("time (alias)", "%(time)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
 		Entry("time UTC", "%(time.now.utc)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)), // ends with Z
+		Entry("random", "%(random)", MatchRegexp(`\d+`)),
+		Entry("random.float", "%(random.float)", MatchRegexp(`\d(\.\d+)`)),
 	)
 })

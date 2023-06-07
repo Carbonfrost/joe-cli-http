@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/url"
 	"regexp"
@@ -165,6 +166,10 @@ func ExpandGlobals(k string) any {
 		return time.Now()
 	case "time.now.utc":
 		return time.Now().UTC()
+	case "random":
+		return rand.Int()
+	case "random.float":
+		return rand.Float64()
 	}
 	return nil
 }
