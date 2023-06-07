@@ -1,6 +1,7 @@
 package httpclient_test
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
@@ -60,7 +61,7 @@ var _ = Describe("DownloadMode", func() {
 		DescribeTable("examples",
 			func(mode httpclient.DownloadMode, u string, expected string) {
 				request, _ := http.NewRequest("GET", u, nil)
-				_, err := mode.OpenDownload(&httpclient.Response{
+				_, err := mode.OpenDownload(context.Background(), &httpclient.Response{
 					Response: &http.Response{
 						Request: request,
 					},

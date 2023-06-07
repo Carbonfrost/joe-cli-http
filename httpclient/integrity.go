@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding"
 	"encoding/hex"
@@ -62,8 +63,8 @@ func (c *integrityChecker) Close() error {
 	return c.output.Close()
 }
 
-func (i *integrityDownloader) OpenDownload(r *Response) (io.WriteCloser, error) {
-	output, err := i.Downloader.OpenDownload(r)
+func (i *integrityDownloader) OpenDownload(c context.Context, r *Response) (io.WriteCloser, error) {
+	output, err := i.Downloader.OpenDownload(c, r)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 type Downloader interface {
-	OpenDownload(*Response) (io.WriteCloser, error)
+	OpenDownload(context.Context, *Response) (io.WriteCloser, error)
 }
 
 type DownloadMode int
@@ -78,7 +79,7 @@ func (s stripComponents) FileName(r *Response) string {
 	return filepath.Join(dirs...)
 }
 
-func (s stripComponents) OpenDownload(resp *Response) (io.WriteCloser, error) {
+func (s stripComponents) OpenDownload(_ context.Context, resp *Response) (io.WriteCloser, error) {
 	return openFileName(s, resp)
 }
 
@@ -99,7 +100,7 @@ func NewFileDownloader(f *cli.File) Downloader {
 	return &directAdapter{f}
 }
 
-func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
+func (d *directAdapter) OpenDownload(_ context.Context, _ *Response) (io.WriteCloser, error) {
 	ensureDirectory(d.Dir())
 	w, err := d.Create()
 	if err != nil {
@@ -108,7 +109,7 @@ func (d *directAdapter) OpenDownload(_ *Response) (io.WriteCloser, error) {
 	return w.(io.WriteCloser), err
 }
 
-func (d DownloadMode) OpenDownload(resp *Response) (io.WriteCloser, error) {
+func (d DownloadMode) OpenDownload(_ context.Context, resp *Response) (io.WriteCloser, error) {
 	return openFileName(d, resp)
 }
 
@@ -126,7 +127,7 @@ func (d DownloadMode) FileName(r *Response) string {
 	}
 }
 
-func (b basicDownloader) OpenDownload(*Response) (io.WriteCloser, error) {
+func (b basicDownloader) OpenDownload(_ context.Context, _ *Response) (io.WriteCloser, error) {
 	return nopWriteCloser{b.w}, nil
 }
 

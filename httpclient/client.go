@@ -652,7 +652,7 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 
 func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.WriteCloser, error) {
 	downloader := c.actualDownloader(ctx)
-	return downloader.OpenDownload(resp)
+	return downloader.OpenDownload(ctx, resp)
 }
 
 func (c *Client) actualDownloader(ctx *cli.Context) Downloader {

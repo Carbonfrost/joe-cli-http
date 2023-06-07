@@ -2,6 +2,7 @@ package httpclient_test
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/hex"
 	"io"
@@ -74,7 +75,7 @@ var _ = Describe("IntegrityDownloader", func() {
 			Hash:   crypto.SHA1,
 			Digest: expectedHash,
 		}, httpclient.NewDownloaderTo(io.Discard))
-		writer, _ := d.OpenDownload(testResponse)
+		writer, _ := d.OpenDownload(context.Background(), testResponse)
 		_ = testResponse.CopyTo(writer)
 
 		err := writer.Close()
@@ -89,7 +90,7 @@ var _ = Describe("IntegrityDownloader", func() {
 		}
 
 		d := httpclient.NewIntegrityDownloader(httpclient.Integrity{Hash: crypto.SHA1}, httpclient.NewDownloaderTo(io.Discard))
-		writer, _ := d.OpenDownload(testResponse)
+		writer, _ := d.OpenDownload(context.Background(), testResponse)
 		_ = testResponse.CopyTo(writer)
 
 		err := writer.Close()
@@ -105,7 +106,7 @@ var _ = Describe("IntegrityDownloader", func() {
 
 		var buf bytes.Buffer
 		d := httpclient.NewIntegrityDownloader(httpclient.Integrity{Hash: crypto.SHA1}, httpclient.NewDownloaderTo(&buf))
-		writer, _ := d.OpenDownload(testResponse)
+		writer, _ := d.OpenDownload(context.Background(), testResponse)
 		_ = testResponse.CopyTo(writer)
 		_ = writer.Close()
 
