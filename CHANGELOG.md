@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.5.0 (June 8, 2023)
+
+### New Features
+* Select bind address when connecting with `wig` (21498ba)
+* Expression evaluation on redirects (`redirect.*` expressions) (d70a124)
+* Encapsulate `SetURLValue` arg (701dfd3)
+* Add pattern support to file downloader (803ee26)
+* Add support for random to `ExpandGlobals` (4bd4013)
+* Add support for time to `ExpandGlobals` (ee3c518)
+* Whitespace handling in exprs (aa14540)
+* Add TLS support to server (34f074a)
+* Transport middleware (722a09e)
+* `ExpandURL` (3ba483f)
+
+### Bug fixes and improvements
+
+* Fallback Expr evaluation generally; in redirects (2376317)
+* Remove conversion to string within response Expander (588e0cd)
+* Add context to `Downloader.OpenContext` (8d06f81)
+* Add request URI to URL expansions (c4bd91e)
+* Encapsulate http.Client on Client interface (e869eb2)
+* Refactor Client to handle responses and output (ac37f9c)
+* TraceLogger fixes (134e108)
+* Bug fix: Print out full request URI when tracing requests (112b7d1)
+* Bug fix: Trace template (783798d)
+* Bug fix: regression - not writing out request headers (7ef2d08)
+* Bug fix: Use `statusCode` instead of `status` expr (ab1f111)
+* Print actual server listener bind address (6679344)
+* Simplify `Response.CopyHeadersTo` (ea9dc03)
+* Extract Prefix expanders (67f27b5)
+* Chores:
+    * Fix releaser: Ensure unique artifact archives names (8caab8b)
+
 ## v0.4.0 (May 15, 2023)
 
 ### New Features
