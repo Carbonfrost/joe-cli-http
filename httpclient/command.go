@@ -87,14 +87,19 @@ func FlagsAndArgs() cli.Action {
 			{Uses: ListCiphers()},
 			{Uses: SetCurves()},
 			{Uses: ListCurves()},
+			{Uses: SetClientCertFile()},
+			{Uses: SetKeyFile()},
+			{Uses: SetCACertFile()},
+			{Uses: SetCACertPath()},
+			{Uses: SetTime()},
 
 			// DNS options
 			{Uses: SetDNSInterface()},
 			{Uses: SetPreferGo()},
+			{Uses: SetStrictErrorsDNS()},
 
 			{Uses: SetDialKeepAlive()},
 			{Uses: SetDisableDialKeepAlive()},
-			{Uses: SetStrictErrorsDNS()},
 
 			// Network interface options
 			{Uses: SetBindAddress()},
@@ -103,11 +108,6 @@ func FlagsAndArgs() cli.Action {
 
 			{Uses: SetVerbose()},
 			{Uses: SetTraceLevel()},
-			{Uses: SetClientCertFile()},
-			{Uses: SetKeyFile()},
-			{Uses: SetCACertFile()},
-			{Uses: SetCACertPath()},
-			{Uses: SetTime()},
 			{Uses: SetServerName()},
 			{Uses: SetNextProtos()},
 			{Uses: SetRequestID()},
@@ -116,21 +116,17 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetWriteErr()},
 			{Uses: SetStripComponents()},
 			{Uses: SetFailFast()},
-		}...),
 
-		cli.AddArg(&cli.Arg{
-			Name:    "url",
-			NArg:    cli.TakeUntilNextFlag,
-			Uses:    cli.BindContext(FromContext, (*Client).SetURLValue),
-			Options: cli.EachOccurrence,
-		}),
-
-		cli.AddFlags([]*cli.Flag{
+			// Auth
 			{Uses: ListAuthenticators()},
 			{Uses: SetUser()},
 			{Uses: SetAuth()},
 			{Uses: SetBasicAuth()},
 		}...),
+
+		cli.AddArg(&cli.Arg{
+			Uses: SetURLValue(),
+		}),
 	)
 }
 
@@ -381,6 +377,20 @@ func SetFailFast(i ...bool) cli.Action {
 			Category: responseOptions,
 		},
 		withBinding((*Client).SetFailFast, i),
+		tagged,
+	)
+}
+
+func SetURLValue(i ...*URLValue) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "url",
+			HelpText: "Set the request URL",
+			NArg:     cli.TakeUntilNextFlag,
+			Options:  cli.EachOccurrence,
+			Category: requestOptions,
+		},
+		withBinding((*Client).SetURLValue, i),
 		tagged,
 	)
 }
