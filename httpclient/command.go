@@ -611,7 +611,7 @@ func SetVerbose() cli.Action {
 			Name:     "verbose",
 			Aliases:  []string{"v"},
 			Value:    new(bool),
-			HelpText: "Display verbose output; can be used multiple times",
+			HelpText: "Display verbose output; can be used multiple times to increase detail",
 			Setup: cli.Setup{
 				Action: func(c *cli.Context) {
 					switch c.Occurrences("") {

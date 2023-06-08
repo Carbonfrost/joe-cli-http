@@ -97,10 +97,10 @@ const (
 	TraceOff TraceLevel = 0
 
 	// TraceOn enables tracing of when connections are made and header
-	TraceOn = TraceConnections | TraceRequestHeaders | TraceResponseStatus | TraceResponseHeaders
+	TraceOn = TraceRequestHeaders | TraceResponseStatus | TraceResponseHeaders
 
 	// TraceVerbose enables tracing of DNS, TLS, HTTP 1xx responses
-	TraceVerbose = TraceOn | TraceDNS | TraceTLS | TraceHTTP1XX | TraceRedirects
+	TraceVerbose = TraceOn | TraceConnections | TraceDNS | TraceTLS | TraceHTTP1XX | TraceRedirects
 	TraceDebug   = TraceVerbose | TraceRequestBody
 )
 
@@ -264,12 +264,12 @@ func SetTraceLevel(s ...*TraceLevel) cli.Action {
 func (l *TraceLevel) Set(arg string) error {
 	var res TraceLevel
 	for _, j := range strings.Split(arg, ",") {
-		j = strings.ToLower(strings.TrimSpace(j))
+		j = strings.TrimSpace(j)
 		in := indexTraceString(j)
 		if in < 0 {
 			return fmt.Errorf("unknown trace level %q", arg)
 		}
-		res |= traceEnum[res]
+		res |= traceEnum[in]
 	}
 	*l = res
 	return nil
