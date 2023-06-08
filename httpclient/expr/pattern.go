@@ -150,7 +150,7 @@ func ExpandMap(m map[string]any) Expander {
 	return func(k string) any {
 		v, ok := m[k]
 		if !ok {
-			return UnknownToken(k)
+			return nil
 		}
 		return v
 	}

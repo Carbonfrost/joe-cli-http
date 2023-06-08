@@ -107,6 +107,21 @@ var (
 	impliedOptions = []Option{
 		WithDefaultUserAgent(defaultUserAgent()),
 	}
+
+	// These don't have values within redirects
+	noResponseExpander = expr.ExpandMap(map[string]any{
+		"status":          "",
+		"statusCode":      "",
+		"http.version":    "",
+		"http.proto":      "",
+		"http.protoMajor": "",
+		"http.protoMinor": "",
+		"contentLength":   "",
+		"header":          "",
+	})
+	noHeaderExpander = expr.Prefix("header", func(_ string) any {
+		return ""
+	})
 )
 
 // Option is an option to configure the client
@@ -792,7 +807,9 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
 		expr.Prefix("request", expandRequest(initial)),
 	}
 
-	if resp != nil {
+	if resp == nil {
+		expanders = append(expanders, noResponseExpander, noHeaderExpander)
+	} else {
 		expanders = append(expanders, ExpandResponse(resp))
 	}
 	expanders = append(expanders, expr.Unknown)

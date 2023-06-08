@@ -33,7 +33,7 @@ var _ = Describe("Compile", func() {
 			Expect(actual).To(Equal(expected))
 		},
 		Entry("nominal", "hello %(hello)", "hello world"),
-		Entry("missing value", "hello %(planet)", "hello %!(unknown: planet)"),
+		Entry("missing value", "hello %(planet)", "hello <nil>"),
 		Entry("whitespace: empty expansion newline", "%(empty)%(newline)", "\n"),
 		Entry("whitespace: nominal expansion newline", "%(hello)%(newline)", "world\n"),
 		Entry("whitespace: nominal multiple newlines", "%(hello)%(newline)%(newline)", "world\n\n"),

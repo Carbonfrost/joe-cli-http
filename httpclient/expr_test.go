@@ -69,6 +69,10 @@ var _ = Describe("Expr", func() {
 
 						if err != nil {
 							return &http.Response{
+								Header: http.Header{
+									http.CanonicalHeaderKey("X-XYZ"): []string{"ABC"},
+								},
+								Status:     "404 Not Found",
 								StatusCode: http.StatusNotFound,
 							}
 						}
@@ -80,7 +84,8 @@ var _ = Describe("Expr", func() {
 						return &http.Response{
 							StatusCode: http.StatusTemporaryRedirect,
 							Header: http.Header{
-								"Location": []string{location},
+								"Location":                       []string{location},
+								http.CanonicalHeaderKey("X-XYZ"): []string{"Redirect"},
 							},
 						}
 					})),
@@ -115,6 +120,12 @@ var _ = Describe("Expr", func() {
 
 			Entry("only actual request",
 				"/redirect2", "%(request.url.path)%(newline)", "/redirect2\n"),
+			Entry("only actual response header",
+				"/redirect2", "%(header)", "X-Xyz: ABC\r\n"),
+			Entry("only actual response header value",
+				"/redirect2", "%(header.X-Xyz)%(newline)", "ABC\n"),
+			Entry("only actual response status",
+				"/redirect2", "%(status)%(newline)", "404 Not Found\n"),
 		)
 
 	})
