@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Carbonfrost/joe-cli v0.5.2
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
-	github.com/onsi/ginkgo/v2 v2.10.0
+	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/spf13/afero v1.9.5
 	honnef.co/go/tools v0.4.3
