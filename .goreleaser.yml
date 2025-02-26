@@ -1,6 +1,7 @@
-before:
-  hooks:
-    - go mod tidy
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
 
 builds:
   - main: ./cmd/toupee
@@ -15,7 +16,6 @@ builds:
         - CGO_ENABLED=0
       ldflags:
         - -s -w -X github.com/Carbonfrost/joe-cli-http/internal/build.Version={{.Version}}
-
   - main: ./cmd/weave
     id: weave
     binary: weave
@@ -31,7 +31,13 @@ archives:
     builds:
       - toupee
     <<: &archive_defaults
-      name_template: "{{ trimsuffix .ArtifactName \".exe\" }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+      name_template: >-
+        {{ .ProjectName }}_
+        {{- title .Os }}_
+        {{- if eq .Arch "amd64" }}x86_64
+        {{- else if eq .Arch "386" }}i386
+        {{- else }}{{ .Arch }}{{ end }}
+        {{- if .Arm }}v{{ .Arm }}{{ end }}
       format_overrides:
         - goos: windows
           format: zip
@@ -44,21 +50,21 @@ archives:
   - id: wig
     builds:
       - wig
-    <<: *archive_defaults
+    <<: *archive_defaults        
 
 brews:
   - name: toupee
     ids:
     - toupee
     <<: &brew_defaults
-      tap:
+      repository: 
         owner: Carbonfrost
         name: homebrew-tap
         token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
       commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
       homepage: "https://github.com/Carbonfrost/joe-cli-http"
     description: "Expands RFC 6570 (level 4) URI templates"
-
+    
   - name: weave
     ids:
     - weave
@@ -72,7 +78,7 @@ brews:
     <<: *brew_defaults
 
 changelog:
-  skip: true
+  disable: true
 
 checksum:
   name_template: 'checksums.txt'
