@@ -302,7 +302,7 @@ func (c *Client) actualCheckRedirect() func(*http.Request, []*http.Request) erro
 	}
 }
 
-func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
+func defaultCheckRedirect(_ *http.Request, via []*http.Request) error {
 	if len(via) >= 10 {
 		return fmt.Errorf("stopped after 10 redirects")
 	}

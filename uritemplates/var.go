@@ -135,7 +135,7 @@ func (v *Var) Type() VarType {
 	}
 }
 
-func (c *varState) Take(arg string, possibleFlag bool) error {
+func (c *varState) Take(arg string, _ bool) error {
 	return c.next(arg)
 }
 

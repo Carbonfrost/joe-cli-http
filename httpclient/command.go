@@ -833,7 +833,7 @@ func setHTTPHeaderStatic(name, value string) cli.Action {
 	})
 }
 
-func tlsVersionFlag(min, max uint16, proto *cli.Prototype) cli.Action {
+func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) cli.Action {
 	return cli.Pipeline(
 		cli.Setup{
 			Uses: cli.Pipeline(
@@ -845,8 +845,8 @@ func tlsVersionFlag(min, max uint16, proto *cli.Prototype) cli.Action {
 			Action: func(c *cli.Context) error {
 				s := FromContext(c)
 				if c.Bool("") {
-					s.TLSConfig().MinVersion = min
-					s.TLSConfig().MaxVersion = max
+					s.TLSConfig().MinVersion = minVersion
+					s.TLSConfig().MaxVersion = maxVersion
 				}
 				return nil
 			},

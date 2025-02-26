@@ -573,10 +573,10 @@ func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
 	}
 }
 
-func (nopTraceLogger) ConnectDone(network, addr string, err error) {
+func (nopTraceLogger) ConnectDone(_, _ string, _ error) {
 }
 
-func (nopTraceLogger) ConnectStart(network, addr string) {
+func (nopTraceLogger) ConnectStart(_, _ string) {
 }
 
 func (nopTraceLogger) DNSDone(httptrace.DNSDoneInfo) {
@@ -585,10 +585,10 @@ func (nopTraceLogger) DNSDone(httptrace.DNSDoneInfo) {
 func (nopTraceLogger) DNSStart(httptrace.DNSStartInfo) {
 }
 
-func (nopTraceLogger) GetConn(hostPort string) {
+func (nopTraceLogger) GetConn(string) {
 }
 
-func (nopTraceLogger) Got1xxResponse(code int, header textproto.MIMEHeader) error {
+func (nopTraceLogger) Got1xxResponse(int, textproto.MIMEHeader) error {
 	return nil
 }
 
@@ -604,7 +604,7 @@ func (nopTraceLogger) TLSHandshakeStart() {
 func (nopTraceLogger) Wait100Continue() {
 }
 
-func (nopTraceLogger) WroteHeaderField(key string, value []string) {
+func (nopTraceLogger) WroteHeaderField(string, []string) {
 }
 
 func (nopTraceLogger) WroteRequest(httptrace.WroteRequestInfo) {

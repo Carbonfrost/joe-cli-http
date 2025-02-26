@@ -280,7 +280,7 @@ func (s *Server) SetStaticDirectory(path string) error {
 }
 
 func (s *Server) SetNoDirectoryListings(v bool) error {
-	s.hideDirListings = true
+	s.hideDirListings = v
 	return nil
 }
 
@@ -313,7 +313,7 @@ func (s *Server) SetTLSKeyFile(v string) error {
 	return nil
 }
 
-func (s *Server) setOpenInBrowserHelper(v bool) error {
+func (s *Server) setOpenInBrowserHelper(_ bool) error {
 	WithReadyFunc(OpenInBrowser)(s)
 	return nil
 }

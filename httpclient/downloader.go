@@ -88,7 +88,7 @@ func (s stripComponents) FileName(r *Response) string {
 }
 
 func (s stripComponents) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
-	return openFileName(s, fileSystemFrom(nil, ctx), resp)
+	return openFileName(s, fileSystemFrom(ctx, nil), resp)
 }
 
 func openFileName(d downloaderWithFileName, f cli.FS, resp *Response) (io.WriteCloser, error) {
@@ -97,8 +97,6 @@ func openFileName(d downloaderWithFileName, f cli.FS, resp *Response) (io.WriteC
 		return nil, fmt.Errorf("cannot download file: the request path has no file name")
 	}
 
-	// ensureDirectory(f, )
-	// fsHelper := cli.NewFS(f)
 	dir := filepath.Dir(fn)
 	if _, err := f.Stat(dir); errors.Is(err, fs.ErrNotExist) {
 		f.MkdirAll(dir, 0755)
@@ -128,7 +126,7 @@ func NewFileDownloader(f string, fileSystem fs.FS) Downloader {
 
 func (e *exprAdapter) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
 	e.index++
-	return openFileName(e, fileSystemFrom(e.FS, ctx), resp)
+	return openFileName(e, fileSystemFrom(ctx, e.FS), resp)
 }
 
 func (e *exprAdapter) FileName(r *Response) string {
@@ -149,7 +147,7 @@ func (e *exprAdapter) expandIndex(k string) any {
 }
 
 func (d DownloadMode) OpenDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
-	return openFileName(d, fileSystemFrom(nil, ctx), resp)
+	return openFileName(d, fileSystemFrom(ctx, nil), resp)
 }
 
 func (d DownloadMode) FileName(r *Response) string {
@@ -181,7 +179,7 @@ func fileName(s string) string {
 	return s
 }
 
-func fileSystemFrom(preferred fs.FS, ctx context.Context) (res cli.FS) {
+func fileSystemFrom(ctx context.Context, preferred fs.FS) (res cli.FS) {
 	if preferred != nil {
 		res = cli.NewFS(preferred)
 		return

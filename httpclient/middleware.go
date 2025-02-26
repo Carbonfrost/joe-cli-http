@@ -92,7 +92,7 @@ func WithHeaders(headers http.Header) Middleware {
 }
 
 func setupBodyContent(c *Client) MiddlewareFunc {
-	return func(r *http.Request) error {
+	return func(*http.Request) error {
 		if len(c.bodyForm) > 0 {
 			c.ensureBodyContent()
 		}
@@ -115,7 +115,7 @@ func setupBodyContent(c *Client) MiddlewareFunc {
 }
 
 func setupQueryString(c *Client) MiddlewareFunc {
-	return func(r *http.Request) error {
+	return func(*http.Request) error {
 		query := c.Request.URL.Query()
 		for k, v := range c.queryString {
 			query[k] = append(query[k], v...)
@@ -127,7 +127,7 @@ func setupQueryString(c *Client) MiddlewareFunc {
 }
 
 func processAuth(c *Client) MiddlewareFunc {
-	return func(r *http.Request) error {
+	return func(*http.Request) error {
 		err := c.applyAuth()
 		if err != nil {
 			return err

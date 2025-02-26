@@ -76,11 +76,11 @@ func (c *RawContent) Query() (url.Values, error) {
 	return nil, errRawContentSet
 }
 
-func (c *RawContent) Set(name, value string) error {
+func (c *RawContent) Set(_, _ string) error {
 	return errRawContentSet
 }
 
-func (c *RawContent) SetFile(name, file io.Reader) error {
+func (c *RawContent) SetFile(_, _ io.Reader) error {
 	return errRawContentSet
 }
 

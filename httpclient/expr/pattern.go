@@ -236,7 +236,7 @@ func UnknownToken(tok string) error {
 	return fmt.Errorf("unknown: %s", tok)
 }
 
-func (l *literal) Format(expand Expander) any {
+func (l *literal) Format(_ Expander) any {
 	return l.text + l.trailing
 }
 

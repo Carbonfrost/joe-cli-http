@@ -50,7 +50,7 @@ func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Hand
 
 // NewPingHandler provides a handler which simply replies with a message
 func NewPingHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("ping\n"))
 	})
 }
