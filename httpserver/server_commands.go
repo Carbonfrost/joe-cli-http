@@ -361,6 +361,8 @@ func RunServer() cli.Action {
 				defer cancel()
 
 				_ = srv.Shutdown(timeoutCtx)
+
+				srv.actualShutdown()(timeoutCtx)
 			})
 			return execContext(c, srv.ListenAndServe, srv.actualReady())
 		},

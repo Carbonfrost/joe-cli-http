@@ -3,12 +3,13 @@ package httpserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -54,12 +55,19 @@ type Server struct {
 
 	staticDir       string
 	handlerFactory  func(*Server) (http.Handler, error)
-	ready           func(context.Context)
+	ready           ReadyFunc
+	shutdown        ReadyFunc
 	hideDirListings bool
 	middleware      []MiddlewareFunc
 	accessLog       string
-	actualBindAddr  string
+	actualBind      struct {
+		addr string
+		tls  bool
+	}
 }
+
+// ReadyFunc provides a function for when the server has started or stopped
+type ReadyFunc func(context.Context)
 
 // Option is an option to configure the server
 type Option func(*Server)
@@ -78,6 +86,16 @@ const servicesKey contextKey = "httpserver_services"
 
 const (
 	expectedOneArg = "expected 0 or 1 arg"
+)
+
+// DefaultReadyFunc provides the default behavior when the server starts
+var (
+	DefaultReadyFunc = ComposeReadyFuncs(
+		ReportListening,
+	)
+
+	// ErrNotListening is reported when the server is not listening
+	ErrNotListening = errors.New("server is not listening")
 )
 
 // New creates a new HTTP server with the given handler creation callback.
@@ -102,9 +120,12 @@ func New(options ...Option) *Server {
 }
 
 func DefaultServer() *Server {
-	return New(WithHandlerFactory(func(s *Server) (http.Handler, error) {
-		return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil
-	}))
+	return New(
+		WithReadyFunc(DefaultReadyFunc),
+		WithHandlerFactory(func(s *Server) (http.Handler, error) {
+			return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil
+		}),
+	)
 }
 
 // WithHandler sets the handler which will run on the server
@@ -122,9 +143,30 @@ func WithHandlerFactory(f func(*Server) (http.Handler, error)) Option {
 }
 
 // WithReadyFunc sets a callback for when the server is listening
-func WithReadyFunc(ready func(context.Context)) Option {
+func WithReadyFunc(ready ReadyFunc) Option {
 	return func(s *Server) {
 		s.ready = ready
+	}
+}
+
+// AddReadyFunc appends a callback for when the server is ready
+func AddReadyFunc(ready ReadyFunc) Option {
+	return func(s *Server) {
+		s.ready = ComposeReadyFuncs(s.ready, ready)
+	}
+}
+
+// WithShutdownFunc sets a callback for when the server is shutting down
+func WithShutdownFunc(shutdown ReadyFunc) Option {
+	return func(s *Server) {
+		s.shutdown = shutdown
+	}
+}
+
+// AddShutdownFunc adds a callback for when the server is shutting down
+func AddShutdownFunc(shutdown ReadyFunc) Option {
+	return func(s *Server) {
+		s.shutdown = ComposeReadyFuncs(s.shutdown, shutdown)
 	}
 }
 
@@ -144,6 +186,25 @@ func OpenInBrowser(c context.Context) {
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
+}
+
+// ComposeReadyFunc provides a ReadyFunc that combines a sequence
+func ComposeReadyFuncs(v ...ReadyFunc) ReadyFunc {
+	return func(c context.Context) {
+		for _, f := range v {
+			if f == nil {
+				continue
+			}
+			f(c)
+		}
+	}
+}
+
+// ReportListening is a ready func that prints a message to stderr that the
+// server is listening
+func ReportListening(c context.Context) {
+	s := FromContext(c)
+	s.ReportListening()
 }
 
 // AddMiddleware appends additional middleware to the server
@@ -169,10 +230,9 @@ func (s *Server) ListenAndServe() error {
 		return err
 	}
 
-	s.actualBindAddr = listener.Addr().String()
+	s.actualBind.addr = listener.Addr().String()
+	s.actualBind.tls = (s.TLSCertFile != "")
 	s.applyMiddleware()
-
-	fmt.Fprintf(os.Stderr, "Listening on %s%s... (Press ^C to exit)", s.proto(), s.actualBindAddr)
 
 	if s.TLSCertFile == "" {
 		return s.Server.Serve(listener)
@@ -204,12 +264,13 @@ func (s *Server) applyMiddleware() {
 // OpenInBrowser opens in the browser.  The request path can also be
 // specified
 func (s *Server) OpenInBrowser(path ...string) error {
-	if s.actualBindAddr == "" {
-		return fmt.Errorf("can't open in browser: server is not listening")
+	if err := s.checkIfListening(); err != nil {
+		return fmt.Errorf("can't open in browser: %w", err)
 	}
-	bind := s.proto() + s.actualBindAddr + strings.Join(path, "")
-	fmt.Fprintf(os.Stderr, "Opening default web browser %s...", bind)
-	return exec.Open(bind)
+
+	bind := s.url().JoinPath(path...)
+	fmt.Fprintf(os.Stderr, "Opening default web browser %s...\n", bind)
+	return exec.Open(bind.String())
 }
 
 func (s *Server) Execute(c context.Context) error {
@@ -233,6 +294,15 @@ func (s *Server) updateAddr(hostname string, port string) error {
 		port = p
 	}
 	s.Server.Addr = net.JoinHostPort(hostname, port)
+	return nil
+}
+
+func (s *Server) ReportListening() error {
+	if err := s.checkIfListening(); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(os.Stderr, "Listening on %s... (Press ^C to exit)\n", s.url().String())
 	return nil
 }
 
@@ -314,7 +384,7 @@ func (s *Server) SetTLSKeyFile(v string) error {
 }
 
 func (s *Server) setOpenInBrowserHelper(_ bool) error {
-	WithReadyFunc(OpenInBrowser)(s)
+	AddReadyFunc(OpenInBrowser)(s)
 	return nil
 }
 
@@ -327,15 +397,37 @@ func (s *Server) Handle(path string, h http.Handler) error {
 	return nil
 }
 
-func (s *Server) actualReady() func(context.Context) {
+func (s *Server) actualReady() ReadyFunc {
 	if s.ready == nil {
 		return func(_ context.Context) {}
 	}
 	return s.ready
 }
 
-func (s *Server) proto() string {
-	return "http://"
+func (s *Server) actualShutdown() ReadyFunc {
+	if s.shutdown == nil {
+		return func(_ context.Context) {}
+	}
+	return s.shutdown
+}
+
+func (s *Server) checkIfListening() error {
+	if s.actualBind.addr == "" {
+		return ErrNotListening
+	}
+	return nil
+}
+
+func (s *Server) url() *url.URL {
+	if s.actualBind.addr == "" {
+		return nil
+	}
+	proto := "http://"
+	if s.actualBind.tls {
+		proto = "https://"
+	}
+	res, _ := url.Parse(proto + s.actualBind.addr)
+	return res
 }
 
 func (o Option) Execute(c context.Context) error {
