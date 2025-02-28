@@ -22,7 +22,7 @@ func NewApp() *cli.App {
 		Uses: cli.Pipeline(
 			httpserver.DefaultServer(),
 			httpserver.WithShutdownFunc(func(context.Context) {
-				fmt.Fprintf(os.Stderr, "Good bye!\n")
+				fmt.Fprintf(os.Stderr, "Goodbye!\n")
 			}),
 			&color.Options{},
 			httpserver.RunServer(),

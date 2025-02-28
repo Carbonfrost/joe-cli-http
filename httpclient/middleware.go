@@ -8,10 +8,14 @@ import (
 	"net/http"
 )
 
+// Middleware provides logic that intercepts and processes each
+// request
 type Middleware interface {
 	Handle(req *http.Request) error
 }
 
+// MiddlewareFunc implements [Middleware] as a function which
+// implements the solitary corresponding method of the interface
 type MiddlewareFunc func(req *http.Request) error
 
 type requestIDGenerator interface {
@@ -23,6 +27,8 @@ type staticRequestID string
 
 const requestIDBytes = 12
 
+// NewRequestIDMiddleware generates a request ID for each request
+// using the X-Request-ID header
 func NewRequestIDMiddleware(v ...any) Middleware {
 	var gen requestIDGenerator
 	switch len(v) {

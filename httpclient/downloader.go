@@ -14,12 +14,15 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 )
 
+// Downloader provides the behavior for downloading a response
 type Downloader interface {
 	// OpenDownload saves the download from the response.  This method can be
 	// called multiple times if multiple URLs were requested.
 	OpenDownload(context.Context, *Response) (io.WriteCloser, error)
 }
 
+// DownloadMode enumerates common download methods. It implements
+// [Downloader]
 type DownloadMode int
 
 type downloaderWithFileName interface {
@@ -47,7 +50,8 @@ type stripComponents struct {
 	mode  DownloadMode
 }
 
-// Download modes
+// Download modes.  PreserveRequestFile uses the remote file name.
+// PreserveRequestPath uses the remote file path.
 const (
 	PreserveRequestFile DownloadMode = iota
 	PreserveRequestPath
@@ -109,10 +113,17 @@ func openFileName(d downloaderWithFileName, f cli.FS, resp *Response) (io.WriteC
 	return c.(io.WriteCloser), err
 }
 
+// NewDownloaderTo implements a basic downloader that copies to
+// a writer
 func NewDownloaderTo(w io.Writer) Downloader {
 	return basicDownloader{w}
 }
 
+// NewFileDownloader implements a downloader that copies to
+// a file system.  The f argument specifies the name of the file
+// to copy to.  It may contain "write out" variables that are
+// expanded.  By default, a suffix is added for successive downloads
+// of the same file name.
 func NewFileDownloader(f string, fileSystem fs.FS) Downloader {
 	if !strings.Contains(f, "%(") {
 		f += "%(index.suffix)"
