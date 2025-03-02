@@ -3,7 +3,7 @@ module github.com/Carbonfrost/joe-cli-http
 go 1.23
 
 require (
-	github.com/Carbonfrost/joe-cli v0.5.2
+	github.com/Carbonfrost/joe-cli v0.8.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/spf13/afero v1.12.0
@@ -38,6 +38,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 // indirect
 	github.com/mgechev/dots v0.0.0-20210922191527-e955255bf517 // indirect
 	github.com/mgechev/revive v1.7.0 // indirect
+	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.2 // indirect

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -36,7 +37,10 @@ func (c *Client) Execute(ctx context.Context) error {
 	return cli.Do(
 		ctx,
 		FlagsAndArgs(),
-		cli.Before(cli.RegisterTemplate("HTTPTrace", outputTemplateText)),
+		cli.Before(cli.Pipeline(
+			registerFallbackFuncs(),
+			cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+		)),
 		ContextValue(c),
 		Authenticators,
 		PromptForCredentials(),
@@ -878,7 +882,7 @@ func listInterfaces() cli.ActionFunc {
 }
 
 func completeInterfaces() cli.CompletionFunc {
-	return func(cc *cli.CompletionContext) []cli.CompletionItem {
+	return func(cc *cli.Context) []cli.CompletionItem {
 		values := []string{}
 		eths, _ := net.Interfaces()
 		for _, s := range eths {
@@ -901,12 +905,25 @@ func dualSetup(a cli.Action) cli.Setup {
 }
 
 func withBinding[V any](binder func(*Client, V) error, args []V) cli.Action {
-	switch len(args) {
-	case 0:
-		return cli.BindContext(FromContext, binder)
-	case 1:
-		return cli.BindContext(FromContext, binder, args[0])
-	default:
-		panic(expectedOneArg)
+	return cli.BindContext(FromContext, binder, args...)
+}
+
+func registerFallbackFuncs() cli.ActionFunc {
+	return func(c *cli.Context) error {
+		// Certain function names that control color need to be stubbed
+		// if they have not been registered already by the color extension.
+		// Build up a template and execute it to make sure all names are present.
+		var sb strings.Builder
+		for k := range funcs {
+			fmt.Fprintf(&sb, "{{ %s }}\n", k)
+		}
+
+		if err := c.RegisterTemplate("_CheckForFunctions", sb.String()); err != nil {
+			// The error occurs if functions are not present on registration
+			for k, v := range funcs {
+				c.RegisterTemplateFunc(k, v)
+			}
+		}
+		return nil
 	}
 }
