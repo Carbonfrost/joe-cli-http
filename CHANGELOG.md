@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.5.1 (March 1, 2025)
+
+### New Features
+
+* Introduce support for shutting down; more configurable ready funcs (8318dce)
+
+### Bug fixes and improvements
+
+* Bug fix: Address `TraceLevel` parsing; verbose usage (c7d3c20)
+* Chores:
+    * Update dependent versions; go1.23 (1ca1feb, 26813dc, 68dcd55, 7767928, e38c734)
+    * Update GitHub configuration: Dependabot (74ddc90)
+    * Update GoReleaser configuration (f929992)
+    * Use newer mechanism in tool configuration (1e84bc6)
+    * Improve linting; address lint errors (2446f7d)
+    * Update documentation (e268fde)
+
 ## v0.5.0 (June 8, 2023)
 
 ### New Features
