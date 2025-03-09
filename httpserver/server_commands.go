@@ -15,8 +15,7 @@ const (
 	listenerCategory = "Listener options"
 	advancedCategory = "Advanced options"
 
-	allowStartupTime  = 1 * time.Second
-	allowShutdownTime = 3 * time.Second
+	allowStartupTime = 1 * time.Second
 )
 
 var (
@@ -111,6 +110,20 @@ func SetReadTimeout(d ...time.Duration) cli.Action {
 			Category: advancedCategory,
 		},
 		withBinding((*Server).SetReadTimeout, d),
+		tagged,
+	)
+}
+
+// SetShutdownTimeout sets the maximum duration to wait for shutting down
+// the server.
+func SetShutdownTimeout(d ...time.Duration) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "shutdown-timeout",
+			HelpText: "Sets the maximum {DURATION} for shutting down the server",
+			Category: advancedCategory,
+		},
+		withBinding((*Server).SetShutdownTimeout, d),
 		tagged,
 	)
 }
@@ -349,23 +362,24 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 }
 
 // RunServer locates the server in context and runs it until interrupt signal
-// is detected
-func RunServer() cli.Action {
+// is detected. Optional actions run just before the server starts up, typically
+// used to provide context-bound modifications to the server just in time.
+func RunServer(actionopt ...cli.Action) cli.Action {
 	return cli.Setup{
 		Uses: cli.HandleSignal(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT),
-		Action: func(c *cli.Context) error {
+		Action: cli.Pipeline().Append(actionopt...).Append(cli.ActionFunc(func(c *cli.Context) error {
 			srv := FromContext(c)
-			c.After(func() {
+			c.After(cli.ActionOf(func() {
 				// Shutting down happens in After because the signal handler will be unregistered
-				timeoutCtx, cancel := context.WithTimeout(context.Background(), allowShutdownTime)
+				timeoutCtx, cancel := context.WithTimeout(context.Background(), srv.ShutdownTimeout)
 				defer cancel()
 
 				_ = srv.Shutdown(timeoutCtx)
 
 				srv.actualShutdown()(timeoutCtx)
-			})
+			}))
 			return execContext(c, srv.ListenAndServe, srv.actualReady())
-		},
+		})),
 	}
 }
 

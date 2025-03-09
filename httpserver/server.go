@@ -53,6 +53,10 @@ type Server struct {
 	TLSCertFile string
 	TLSKeyFile  string
 
+	// ShutdownTimeout specifies how long to wait for the server to shutdown
+	// when a signal is received
+	ShutdownTimeout time.Duration
+
 	staticDir       string
 	handlerFactory  func(*Server) (http.Handler, error)
 	ready           ReadyFunc
@@ -86,6 +90,8 @@ const servicesKey contextKey = "httpserver_services"
 
 const (
 	expectedOneArg = "expected 0 or 1 arg"
+
+	defaultShutdownTimeout = 3 * time.Second
 )
 
 // DefaultReadyFunc provides the default behavior when the server starts
@@ -104,7 +110,8 @@ func New(options ...Option) *Server {
 		Server: &http.Server{
 			Addr: "localhost:8000",
 		},
-		accessLog: defaultAccessLog,
+		ShutdownTimeout: defaultShutdownTimeout,
+		accessLog:       defaultAccessLog,
 	}
 	s.AddMiddleware(func(h http.Handler) http.Handler {
 		if s.accessLog != "" {
@@ -175,6 +182,26 @@ func WithMiddleware(m MiddlewareFunc) Option {
 	return func(s *Server) {
 		s.AddMiddleware(m)
 	}
+}
+
+// WithAddr sets the corresponding server field
+func WithAddr(addr string) Option {
+	return withAdapter((*Server).SetAddr, addr)
+}
+
+// WithHostname sets the server hostname
+func WithHostname(v string) Option {
+	return withAdapter((*Server).SetHostname, v)
+}
+
+// WithPort sets the server port
+func WithPort(v int) Option {
+	return withAdapter((*Server).SetPort, v)
+}
+
+// WithShutdownTimeout sets the amount of time to allow the server to shutdown
+func WithShutdownTimeout(d time.Duration) Option {
+	return withAdapter((*Server).SetShutdownTimeout, d)
 }
 
 // OpenInBrowser is a function to open the server in the browser.  This
@@ -319,6 +346,11 @@ func (s *Server) SetAddr(addr string) error {
 	return nil
 }
 
+func (s *Server) SetShutdownTimeout(d time.Duration) error {
+	s.ShutdownTimeout = d
+	return nil
+}
+
 func (s *Server) SetReadTimeout(v time.Duration) error {
 	s.Server.ReadTimeout = v
 	return nil
@@ -433,4 +465,10 @@ func (s *Server) url() *url.URL {
 func (o Option) Execute(c context.Context) error {
 	o(FromContext(c))
 	return nil
+}
+
+func withAdapter[T any](fn func(*Server, T) error, value T) Option {
+	return func(s *Server) {
+		_ = fn(s, value)
+	}
 }
