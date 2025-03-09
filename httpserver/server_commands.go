@@ -228,7 +228,7 @@ func SetNoDirectoryListings() cli.Action {
 func SetOpenInBrowser() cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "open-in-browser",
+			Name:     "open",
 			HelpText: "When set, open the default Web browser when the server is ready",
 		},
 		withBinding((*Server).setOpenInBrowserHelper, []bool{true}),
