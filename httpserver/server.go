@@ -74,6 +74,7 @@ type Server struct {
 type ReadyFunc func(context.Context)
 
 // Option is an option to configure the server
+// Option can be used as an Action, typically within the Uses or Before pipeline.
 type Option func(*Server)
 
 // MiddlewareFunc defines a function that creates a middleware wrapper around another

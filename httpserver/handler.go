@@ -68,7 +68,7 @@ func NewHeaderMiddleware(name, value string) func(http.Handler) http.Handler {
 
 // FileServerHandlerSpec creates a file server.  The physical path in the virtual path
 // specifies the base directory for the file server.  An option named
-// no_directory_listing controls whether the directory listing response is served.
+// hide_directory_listing controls whether the directory listing response is served.
 // The handler also consults the server for whether directory listings can be served.
 func FileServerHandlerSpec() HandlerSpec {
 	return func(_ context.Context, vp httpclient.VirtualPath) (http.Handler, error) {

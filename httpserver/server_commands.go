@@ -28,6 +28,10 @@ func SourceAnnotation() (string, string) {
 	return "Source", "joe-cli-http/httpclient"
 }
 
+// FlagsAndArgs adds numerous flags that can be used to configure the
+// server in the context.
+// The default flags list contains all of the flag actions
+// in this package except for SetHandler and its variants.
 func FlagsAndArgs() cli.Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
@@ -258,7 +262,10 @@ func setHandlerSpec(spec HandlerSpec, v []httpclient.VirtualPath) cli.ActionFunc
 }
 
 // SetHandler adds the specified handler to the mux. This can be called multiple
-// times.
+// times. SetHandler only works if a Registry named "handlers" is present
+// in the context to convert the handler spec to the correct implementation.
+// Consider adding [HandlerRegistry] to the Uses pipeline..
+// This handler is not included in [FlagsAndArgs]
 func SetHandler(v ...httpclient.VirtualPath) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -283,6 +290,7 @@ func Handle(path string, h http.Handler) cli.Action {
 
 // SetFileServerHandler adds the specified file server handler to the mux.
 // This can be called multiple times.
+// This handler is not included in [FlagsAndArgs]
 func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
