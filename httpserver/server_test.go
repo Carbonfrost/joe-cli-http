@@ -1,7 +1,11 @@
 package httpserver_test
 
 import (
+	"context"
+
+	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpserver"
+	"github.com/Carbonfrost/joe-cli/joe-clifakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,5 +41,26 @@ var _ = Describe("Server", func() {
 					s.SetAddr("elvis.localhost:8900")
 				}, "elvis.localhost:8900"),
 		)
+	})
+
+	Describe("RunServer", func() {
+
+		It("runs the actions before server", func() {
+			fakeAct := new(joeclifakes.FakeAction)
+			app := &cli.App{
+				Uses: cli.Pipeline(
+					httpserver.New(
+						httpserver.WithPort(-1),
+						httpserver.WithReadyFunc(func(c context.Context) {
+							httpserver.FromContext(c).Shutdown(c)
+						}),
+					),
+					httpserver.RunServer(fakeAct),
+				),
+			}
+
+			_ = app.RunContext(context.Background(), nil)
+			Expect(fakeAct.ExecuteCallCount()).To(Equal(1))
+		})
 	})
 })
