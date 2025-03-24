@@ -9,6 +9,7 @@ import (
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
+	"maps"
 )
 
 // URLValue provides ergonomics for entering URLs as values.  When the text looks like
@@ -147,9 +148,7 @@ func (v *VirtualPath) Reset() {
 
 func (v *VirtualPath) Copy() *VirtualPath {
 	opts := map[string]string{}
-	for k, v := range v.Options {
-		opts[k] = v
-	}
+	maps.Copy(opts, v.Options)
 	return &VirtualPath{
 		RequestPath:  v.RequestPath,
 		PhysicalPath: v.PhysicalPath,

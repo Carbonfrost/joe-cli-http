@@ -86,7 +86,7 @@ var _ = Describe("NewFileDownloader", func() {
 				request, _ := http.NewRequest("GET", "https://example.com/wherever", nil)
 				e := httpclient.NewFileDownloader(pat, testFileSystem).(fileNameDownloader)
 
-				for i := 0; i < 3; i++ {
+				for i := range 3 {
 					_, err := e.OpenDownload(context.Background(), &httpclient.Response{
 						Response: &http.Response{
 							Request:       request,

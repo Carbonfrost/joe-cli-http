@@ -12,7 +12,7 @@ import (
 // Var is a variable in a URI template
 type Var struct {
 	Name  string
-	Value interface{}
+	Value any
 
 	state *varState
 }
@@ -22,7 +22,7 @@ type VarType int
 
 type varState struct {
 	Name  string
-	Value interface{}
+	Value any
 
 	myType VarType
 	state  varStateEnum
@@ -55,14 +55,14 @@ var (
 	}
 )
 
-func ArrayVar(name string, values ...interface{}) *Var {
+func ArrayVar(name string, values ...any) *Var {
 	return &Var{
 		Name:  name,
 		Value: values,
 	}
 }
 
-func MapVar(name string, values map[string]interface{}) *Var {
+func MapVar(name string, values map[string]any) *Var {
 	return &Var{
 		Name:  name,
 		Value: values,
@@ -107,10 +107,10 @@ func (*Var) Synopsis() string {
 func (v *Var) String() string {
 	value := func() string {
 		switch o := v.Value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			panic("not impl")
 
-		case []interface{}:
+		case []any:
 			items := make([]string, len(o))
 			for i := range o {
 				items[i] = fmt.Sprint(o)
@@ -126,9 +126,9 @@ func (v *Var) String() string {
 
 func (v *Var) Type() VarType {
 	switch v.Value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return Map
-	case []interface{}:
+	case []any:
 		return Array
 	default:
 		return String
@@ -216,13 +216,13 @@ func (c *varState) setValue(value string) {
 	switch c.myType {
 	case Map:
 		k, v, _ := strings.Cut(value, "=")
-		c.Value = map[string]interface{}{
+		c.Value = map[string]any{
 			k: v,
 		}
 	case String:
 		c.Value = value
 	case Array:
-		c.Value = []interface{}{value}
+		c.Value = []any{value}
 	}
 }
 

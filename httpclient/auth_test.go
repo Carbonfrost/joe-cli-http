@@ -40,7 +40,7 @@ var _ = Describe("AuthMode", func() {
 
 var _ = Describe("NewAuthenticator", func() {
 
-	DescribeTable("examples", func(name string, v interface{}, requiresUserInfo bool) {
+	DescribeTable("examples", func(name string, v any, requiresUserInfo bool) {
 		actual, err := httpclient.NewAuthenticator(name, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(actual).To(Equal(v))

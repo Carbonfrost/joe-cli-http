@@ -9,7 +9,7 @@ import (
 )
 
 type JSONContent struct {
-	data interface{}
+	data any
 }
 
 func (c *JSONContent) Query() (url.Values, error) {
@@ -22,10 +22,10 @@ func (c *JSONContent) Set(name, value string) error {
 	}
 	switch data := c.data.(type) {
 	case nil:
-		c.data = map[string]interface{}{
+		c.data = map[string]any{
 			name: value,
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		data[name] = value
 	default:
 		panic("not impl")

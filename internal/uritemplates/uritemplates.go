@@ -211,7 +211,7 @@ func (u *URITemplate) Names() []string {
 }
 
 // Expand expands a URI template with a set of values to produce a string.
-func (u *URITemplate) Expand(value interface{}) (string, error) {
+func (u *URITemplate) Expand(value any) (string, error) {
 	values, err := convertToValues(value)
 	if err != nil {
 		return "", err
@@ -228,7 +228,7 @@ func (u *URITemplate) Expand(value interface{}) (string, error) {
 
 // PartialExpand expands a URI template with a set of values to produce a string, preserving
 // any unknown parameters
-func (u *URITemplate) PartialExpand(value interface{}) (string, error) {
+func (u *URITemplate) PartialExpand(value any) (string, error) {
 	values, err := convertToValues(value)
 	if err != nil {
 		return "", err
@@ -274,7 +274,7 @@ func convertToValues(value any) (map[string]any, error) {
 	return values, nil
 }
 
-func (t *templatePart) expand(buf *bytes.Buffer, values map[string]interface{}) (missingTerms []templateTerm, err error) {
+func (t *templatePart) expand(buf *bytes.Buffer, values map[string]any) (missingTerms []templateTerm, err error) {
 	if len(t.raw) > 0 {
 		buf.WriteString(t.raw)
 		return
@@ -294,9 +294,9 @@ func (t *templatePart) expand(buf *bytes.Buffer, values map[string]interface{}) 
 		switch v := value.(type) {
 		case string:
 			t.expandString(buf, term, v)
-		case []interface{}:
+		case []any:
 			t.expandArray(buf, term, v)
-		case map[string]interface{}:
+		case map[string]any:
 			if term.truncate > 0 {
 				err = errors.New("cannot truncate a map expansion")
 				return
@@ -342,7 +342,7 @@ func (t *templatePart) expandString(buf *bytes.Buffer, term templateTerm, s stri
 	buf.WriteString(escape(s, t.allowReserved))
 }
 
-func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []interface{}) {
+func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []any) {
 	if len(a) == 0 {
 		return
 	} else if !term.explode {
@@ -371,7 +371,7 @@ func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []int
 	}
 }
 
-func (t *templatePart) expandMap(buf *bytes.Buffer, term templateTerm, m map[string]interface{}) {
+func (t *templatePart) expandMap(buf *bytes.Buffer, term templateTerm, m map[string]any) {
 	if len(m) == 0 {
 		return
 	}
@@ -406,14 +406,14 @@ func (t *templatePart) expandMap(buf *bytes.Buffer, term templateTerm, m map[str
 	}
 }
 
-func struct2map(v interface{}) (map[string]interface{}, bool) {
+func struct2map(v any) (map[string]any, bool) {
 	value := reflect.ValueOf(v)
 	switch value.Type().Kind() {
 	case reflect.Ptr:
 		return struct2map(value.Elem().Interface())
 	case reflect.Struct:
-		m := make(map[string]interface{})
-		for i := 0; i < value.NumField(); i++ {
+		m := make(map[string]any)
+		for i := range value.NumField() {
 			tag := value.Type().Field(i).Tag
 			var name string
 			if strings.Contains(string(tag), ":") {

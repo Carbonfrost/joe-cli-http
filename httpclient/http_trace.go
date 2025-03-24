@@ -488,7 +488,7 @@ func (l *defaultTraceLogger) renderError(err error) {
 	})
 }
 
-func (l *defaultTraceLogger) render(fn string, data interface{}) {
+func (l *defaultTraceLogger) render(fn string, data any) {
 	err := l.template.ExecuteTemplate(l.out, fn, data)
 	if err != nil {
 		panic(err)

@@ -47,7 +47,7 @@ var _ = Describe("Var", func() {
 			Entry(
 				"inline map",
 				[]string{"map,s=v=a"},
-				uritemplates.MapVar("s", map[string]interface{}{"v": "a"}),
+				uritemplates.MapVar("s", map[string]any{"v": "a"}),
 			),
 			Entry(
 				"no type",

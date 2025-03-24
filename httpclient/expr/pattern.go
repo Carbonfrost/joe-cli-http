@@ -333,7 +333,7 @@ func compilePatternCore(content []byte, pat *regexp.Regexp) *Pattern {
 //	%(newline)
 func convertWSExprs(exprs []expr) []expr {
 	var res []expr
-	for i := 0; i < len(exprs); i++ {
+	for i := range exprs {
 		if wse, ok := exprs[i].(nopExpr); ok {
 			if len(res) == 0 {
 				res = append(res, newLiteral([]byte(wse.Space())))

@@ -10,17 +10,18 @@ import (
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
+	"maps"
 )
 
 // Vars provides template variables
-type Vars map[string]interface{}
+type Vars map[string]any
 
 func (t Vars) Add(v ...*Var) {
 	for _, u := range v {
 		switch val := u.Value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			t.setMapHelper(u.Name, val)
-		case []interface{}:
+		case []any:
 			t.setArrayHelper(u.Name, val)
 		case string:
 			t.setStringHelper(u.Name, val)
@@ -30,12 +31,12 @@ func (t Vars) Add(v ...*Var) {
 	}
 }
 
-func (t Vars) Update(u map[string]interface{}) (err error) {
+func (t Vars) Update(u map[string]any) (err error) {
 	for k, v := range u {
 		switch val := v.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			err = t.setMapHelper(k, val)
-		case []interface{}:
+		case []any:
 			err = t.setArrayHelper(k, val)
 		case string:
 			err = t.setStringHelper(k, val)
@@ -54,9 +55,9 @@ func (t Vars) Items() []*Var {
 	for k, v := range t {
 		var item *Var
 		switch val := v.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			item = MapVar(k, val)
-		case []interface{}:
+		case []any:
 			item = ArrayVar(k, val)
 		case string:
 			item = StringVar(k, val)
@@ -74,16 +75,16 @@ func (t Vars) setStringHelper(name, value string) error {
 	return nil
 }
 
-func (t Vars) setArrayHelper(name string, values []interface{}) error {
+func (t Vars) setArrayHelper(name string, values []any) error {
 	if current, ok := t[name]; ok {
 		switch c := current.(type) {
-		case []interface{}:
+		case []any:
 			t[name] = append(c, values...)
 			return nil
 		case string:
-			t[name] = append([]interface{}{c}, values...)
+			t[name] = append([]any{c}, values...)
 			return nil
-		case map[string]interface{}:
+		case map[string]any:
 			for _, v := range values {
 				c[fmt.Sprint(v)] = ""
 			}
@@ -96,17 +97,15 @@ func (t Vars) setArrayHelper(name string, values []interface{}) error {
 	return nil
 }
 
-func (t Vars) setMapHelper(name string, values map[string]interface{}) error {
+func (t Vars) setMapHelper(name string, values map[string]any) error {
 	if current, ok := t[name]; ok {
 		switch c := current.(type) {
-		case []interface{}:
+		case []any:
 			return fmt.Errorf("existing value is array, cannot apply map")
 		case string:
 			return fmt.Errorf("existing value is array, cannot apply string")
-		case map[string]interface{}:
-			for k, v := range values {
-				c[k] = v
-			}
+		case map[string]any:
+			maps.Copy(c, values)
 			t[name] = c
 			return nil
 		}
@@ -145,7 +144,7 @@ func (t *Vars) Set(arg string) error {
 			return fmt.Errorf("expected `}' to end array")
 		}
 		tokens := strings.Split(trimAffix(value, "{", "}"), ",")
-		items := map[string]interface{}{}
+		items := map[string]any{}
 		for _, t := range tokens {
 			k, v, _ := strings.Cut(t, ":")
 			items[k] = v
@@ -179,9 +178,9 @@ func (t Vars) String() string {
 		buf.WriteString(k)
 		buf.WriteString("=")
 		switch val := v.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			buf.WriteString(printMap(val))
-		case []interface{}:
+		case []any:
 			buf.WriteString(printArray(val))
 		case string:
 			if val == k {
@@ -209,7 +208,7 @@ func (t *Vars) Copy() *Vars {
 	return &res
 }
 
-func printMap(v map[string]interface{}) string {
+func printMap(v map[string]any) string {
 	items := make([]string, len(v))
 	var i int
 	for k, atom := range v {
@@ -220,7 +219,7 @@ func printMap(v map[string]interface{}) string {
 	return "{" + strings.Join(items, ",") + "}"
 }
 
-func printArray(v []interface{}) string {
+func printArray(v []any) string {
 	items := make([]string, len(v))
 	for i, atom := range v {
 		items[i] = cli.Quote(fmt.Sprint(atom))

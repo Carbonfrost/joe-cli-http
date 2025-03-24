@@ -11,7 +11,7 @@ var _ = Describe("Content", func() {
 
 	Describe("NewContent", func() {
 
-		DescribeTable("examples", func(arg httpclient.ContentType, expected interface{}) {
+		DescribeTable("examples", func(arg httpclient.ContentType, expected any) {
 			actual := httpclient.NewContent(arg)
 			Expect(actual).To(BeAssignableToTypeOf(expected))
 		},

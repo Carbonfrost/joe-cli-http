@@ -42,7 +42,7 @@ var _ = Describe("Vars", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actual).To(Equal(&uritemplates.Vars{
 				"id":    float64(420),
-				"terms": []interface{}{"asdf", "jkl;"},
+				"terms": []any{"asdf", "jkl;"},
 			}))
 		})
 
@@ -59,20 +59,20 @@ var _ = Describe("Vars", func() {
 			Entry("atoms", []string{"id=420"}, &uritemplates.Vars{"id": "420"}),
 			Entry("array",
 				[]string{"terms=[a,b]"},
-				&uritemplates.Vars{"terms": []interface{}{"a", "b"}},
+				&uritemplates.Vars{"terms": []any{"a", "b"}},
 			),
 			Entry("array ws",
 				[]string{"terms=[a, b, c ]"},
-				&uritemplates.Vars{"terms": []interface{}{"a", "b", "c"}},
+				&uritemplates.Vars{"terms": []any{"a", "b", "c"}},
 			),
 			Entry("array with ws",
 				[]string{"terms=[a with ws, b, c ]"},
-				&uritemplates.Vars{"terms": []interface{}{"a with ws", "b", "c"}},
+				&uritemplates.Vars{"terms": []any{"a with ws", "b", "c"}},
 			),
 			Entry("map",
 				[]string{"map={s:a,t:b}"},
 				&uritemplates.Vars{
-					"map": map[string]interface{}{
+					"map": map[string]any{
 						"s": "a",
 						"t": "b",
 					}}),
@@ -87,12 +87,12 @@ var _ = Describe("Vars", func() {
 			},
 			Entry("atoms", &uritemplates.Vars{"id": "420"}, "id=420"),
 			Entry("array",
-				&uritemplates.Vars{"terms": []interface{}{"a", "b"}},
+				&uritemplates.Vars{"terms": []any{"a", "b"}},
 				"terms=[a,b]",
 			),
 			Entry("map",
 				&uritemplates.Vars{
-					"map": map[string]interface{}{
+					"map": map[string]any{
 						"s": "a",
 						"t": "b",
 					}},

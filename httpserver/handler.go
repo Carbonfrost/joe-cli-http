@@ -13,6 +13,7 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
+	"maps"
 )
 
 const defaultAccessLog = `%(accessLog.default)\n`
@@ -195,7 +196,5 @@ func hideListing(next http.Handler) http.HandlerFunc {
 }
 
 func update(dst, src map[string]string) {
-	for k, v := range src {
-		dst[k] = v
-	}
+	maps.Copy(dst, src)
 }
