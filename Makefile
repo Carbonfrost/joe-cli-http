@@ -21,6 +21,11 @@ build: generate
 watch:
 	@ find Makefile . -name '*.go' | entr -c cli --version --plus --time generate
 
+json_info:
+	@ go run -tags json_info ./cmd/weave > docs/weave.json_info.json
+	@ go run -tags json_info ./cmd/wig > docs/wig.json_info.json
+	@ go run -tags json_info ./cmd/toupee > docs/toupee.json_info.json
+
 generate:
 	$(Q) $(OUTPUT_COLLAPSED) go generate ./...
 

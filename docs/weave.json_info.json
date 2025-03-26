@@ -1,0 +1,228 @@
+{
+    "name": "weave",
+    "flags": [
+        {
+            "name": "chdir",
+            "helpText": "Change directory into the specified working {DIRECTORY}",
+            "options": "MUST_EXIST, WORKING_DIRECTORY"
+        },
+        {
+            "name": "handler",
+            "aliases": [
+                "H"
+            ],
+            "helpText": "Binds a handler to the given route",
+            "category": "Server options",
+            "usageText": "route:handler[,options]",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "list-handlers",
+            "helpText": "List available providers for the handler option then exit",
+            "options": "EXITS"
+        },
+        {
+            "name": "host",
+            "aliases": [
+                "h"
+            ],
+            "helpText": "Sets the server {HOST} name to use",
+            "category": "Listener options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "addr",
+            "helpText": "Sets the server {ADDRESS} to use",
+            "category": "Listener options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "port",
+            "aliases": [
+                "p"
+            ],
+            "helpText": "Sets the server {PORT} that will be used",
+            "category": "Listener options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "read-timeout",
+            "helpText": "Sets the maximum {DURATION} for reading the entire request",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "read-header-timeout",
+            "helpText": "Sets the amount of {TIME} allowed to read request headers",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "write-header-timeout",
+            "helpText": "Sets the amount of {TIME} allowed to write response",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "idle-timeout",
+            "helpText": "Sets the amount of {TIME} allowed to read request headers",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "max-header-bytes",
+            "helpText": "Specify the maximum header bytes allowed for headers",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "directory",
+            "aliases": [
+                "d"
+            ],
+            "helpText": "Serve static files from the specified directory",
+            "category": "Server options",
+            "options": "MUST_EXIST",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "no-directory-listings",
+            "helpText": "When set, don't display directory listings",
+            "category": "Server options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "open",
+            "helpText": "When set, open the default Web browser when the server is ready",
+            "category": "Server options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "access-log",
+            "aliases": [
+                "a"
+            ],
+            "helpText": "Set access log format",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "no-access-log",
+            "helpText": "Disable the access log",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "server",
+            "aliases": [
+                "S"
+            ],
+            "helpText": "Set value of the Server response header",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "cert",
+            "helpText": "Specify the FILE that contains the TLS certificate",
+            "category": "Listener options",
+            "options": "MUST_EXIST",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "key",
+            "helpText": "Specify the FILE that contains the TLS private key",
+            "category": "Listener options",
+            "options": "MUST_EXIST",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        },
+        {
+            "name": "color",
+            "helpText": "Controls whether terminal color and styles are used",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            }
+        },
+        {
+            "name": "no-color",
+            "helpText": "Disable terminal color and styles",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            }
+        },
+        {
+            "name": "help",
+            "aliases": [
+                "h"
+            ],
+            "helpText": "Display this help screen then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        },
+        {
+            "name": "version",
+            "helpText": "Print the build version then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        },
+        {
+            "name": "zsh-completion",
+            "options": "HIDDEN, EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        }
+    ],
+    "args": [
+        {
+            "name": "directories",
+            "helpText": "Specifies static directories to serve",
+            "usageText": "[route:]directory",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            }
+        }
+    ],
+    "helpText": "Provides access to a simple Go HTTP server for files and proxy handling",
+    "version": "development",
+    "buildDate": "2026-02-15T22:37:38.439454912-08:00"
+}

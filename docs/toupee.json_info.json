@@ -1,0 +1,86 @@
+{
+    "name": "toupee",
+    "flags": [
+        {
+            "name": "color",
+            "helpText": "Controls whether terminal color and styles are used",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            }
+        },
+        {
+            "name": "no-color",
+            "helpText": "Disable terminal color and styles",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            }
+        },
+        {
+            "name": "param",
+            "aliases": [
+                "T"
+            ],
+            "helpText": "Specify a value used to fill the template",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
+            }
+        },
+        {
+            "name": "params",
+            "aliases": [
+                "t"
+            ],
+            "helpText": "Specify a template parameters using abbreviated syntax or from a JSON file",
+            "usageText": "expr|@file",
+            "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
+            }
+        },
+        {
+            "name": "partial",
+            "aliases": [
+                "P"
+            ],
+            "helpText": "When set, partially expand the template by preserving missing variables",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
+            }
+        },
+        {
+            "name": "help",
+            "aliases": [
+                "h"
+            ],
+            "helpText": "Display this help screen then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        },
+        {
+            "name": "version",
+            "helpText": "Print the build version then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        },
+        {
+            "name": "zsh-completion",
+            "options": "HIDDEN, EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            }
+        }
+    ],
+    "args": [
+        {
+            "name": "template"
+        }
+    ],
+    "helpText": "Expands RFC 6570 (level 4) URI templates",
+    "version": "development",
+    "buildDate": "2026-02-15T22:37:39.7123528-08:00"
+}
