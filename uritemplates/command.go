@@ -22,6 +22,10 @@ func SourceAnnotation() (string, string) {
 
 func Expand() cli.Action {
 	return cli.ActionFunc(func(c *cli.Context) error {
+		if !c.Seen("template") {
+			return c.Do(cli.DisplayHelpScreen())
+		}
+
 		tpl := c.Value("template").(*URITemplate)
 
 		if c.Bool("partial") {
