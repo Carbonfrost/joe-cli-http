@@ -304,8 +304,10 @@ func (s *Server) OpenInBrowser(path ...string) error {
 func (s *Server) Execute(c context.Context) error {
 	return cli.Do(
 		c,
-		FlagsAndArgs(),
-		ContextValue(s),
+		cli.Pipeline(
+			FlagsAndArgs(),
+			ContextValue(s),
+		),
 	)
 }
 

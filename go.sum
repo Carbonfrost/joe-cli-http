@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c h1:pxW6RcqyfI9/k
 github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/Carbonfrost/joe-cli v0.8.0 h1:X0PpkbhZFgq7uDRhUZsVrTcapn3WO54TQaLVEuvb7cs=
 github.com/Carbonfrost/joe-cli v0.8.0/go.mod h1:LlpVVTEJNubdBWLkmlGInJ2FIoCOaBVofi4HTIQ4VcA=
+github.com/Carbonfrost/joe-cli v0.9.0 h1:9kZyLpOT97WiRL2zrZGsn7CDypFX4vHlfeYc2tFhseA=
+github.com/Carbonfrost/joe-cli v0.9.0/go.mod h1:p4kTCr+vLnTM7dqKFA5vlV7h0ZFrJ55bztQfjH1YNQU=
 github.com/chavacava/garif v0.1.0 h1:2JHa3hbYf5D9dsgseMKAmc/MZ109otzgNFk5s87H9Pc=
 github.com/chavacava/garif v0.1.0/go.mod h1:XMyYCkEL58DF0oyW4qDjjnPWONs2HBqYKI+UIPD+Gww=
 github.com/cristalhq/acmd v0.12.0 h1:RdlKnxjN+txbQosg8p/TRNZ+J1Rdne43MVQZ1zDhGWk=

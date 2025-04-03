@@ -36,14 +36,16 @@ func SourceAnnotation() (string, string) {
 func (c *Client) Execute(ctx context.Context) error {
 	return cli.Do(
 		ctx,
-		FlagsAndArgs(),
-		cli.Before(cli.Pipeline(
-			registerFallbackFuncs(),
-			cli.RegisterTemplate("HTTPTrace", outputTemplateText),
-		)),
-		ContextValue(c),
-		Authenticators,
-		PromptForCredentials(),
+		cli.Pipeline(
+			FlagsAndArgs(),
+			cli.Before(cli.Pipeline(
+				registerFallbackFuncs(),
+				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+			)),
+			ContextValue(c),
+			Authenticators,
+			PromptForCredentials(),
+		),
 	)
 }
 
