@@ -15,39 +15,14 @@ import (
 	"text/template"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 )
 
 // TraceLevel indicates the amount of client tracing to generate
 type TraceLevel int
 
-type httpStatus int
-
-func (s httpStatus) Color() string {
-	switch 100 * (s / 100) {
-	case 100:
-		return "Magenta"
-	case 200:
-		return "Green"
-	case 300:
-		return "Yellow"
-	case 400, 500:
-		fallthrough
-	default:
-		return "Red"
-	}
-}
-
-func (s httpStatus) Message() string {
-	return http.StatusText(int(s))
-}
-
-func (s httpStatus) Code() int {
-	return int(s)
-}
-
-func (s httpStatus) String() string {
-	return strconv.Itoa(int(s)) + " " + s.Message()
-}
+type httpStatus = expr.HTTPStatus
+type httpMethod = expr.HTTPMethod
 
 // TraceLogger provides delegates from ClientTrace
 type TraceLogger interface {

@@ -835,7 +835,7 @@ func expandRequest(r *http.Request) expr.Expander {
 	return expr.ComposeExpanders(func(s string) any {
 		switch s {
 		case "method":
-			return r.Method
+			return httpMethod(r.Method)
 		case "protocol":
 			return r.Proto
 		case "location", "url":

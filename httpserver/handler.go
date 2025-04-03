@@ -158,11 +158,11 @@ func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
 		case "bytesWritten":
 			return ww.BytesWritten()
 		case "method":
-			return r.Method
+			return expr.HTTPMethod(r.Method)
 		case "protocol":
 			return r.Proto
 		case "statusCode":
-			return ww.Status()
+			return expr.HTTPStatus(ww.Status())
 		case "status":
 			return fmt.Sprint(ww.Status(), " ", http.StatusText(ww.Status()))
 		case "urlPath":

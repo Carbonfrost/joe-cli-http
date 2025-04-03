@@ -28,7 +28,7 @@ func ExpandResponse(r *Response) expr.Expander {
 		case "status":
 			return r.Status // "200 OK"
 		case "statusCode":
-			return r.StatusCode
+			return httpStatus(r.StatusCode)
 		case "http.version":
 			return strings.TrimPrefix(r.Proto, "HTTP/")
 		case "http.proto":

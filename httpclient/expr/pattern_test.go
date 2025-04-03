@@ -85,7 +85,7 @@ var _ = Describe("String", func() {
 		Entry("literal", "hello", "hello"),
 		Entry("expansion", "hello %(planet)", "hello %(planet)"),
 		Entry("untruncated expansion", "hello %(p", "hello %(p"),
-		Entry("default access log", "%(accessLog.default)", `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(statusCode) -`),
+		Entry("default access log", "%(accessLog.default)", `- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`),
 		Entry("whitespace", "%(newline)%(tab)%(space)", "%(newline)%(tab)%(space)"),
 	)
 })

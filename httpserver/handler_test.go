@@ -2,8 +2,11 @@ package httpserver_test
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
+	"strings"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/httpserver"
@@ -49,9 +52,21 @@ var _ = Describe("NewRequestLogger", func() {
 		})
 
 		It("writes out the expected log message", func() {
-			Expect(output.String()).To(And(
+			Expect(removeANSICodes(output.String())).To(And(
 				ContainSubstring(`"GET /ring HTTP/1.1"`),
 				MatchRegexp(`\[\d{2}/[a-zA-Z]{3}/\d{4} \d{2}:\d{2}:\d{2}]`),
+			))
+		})
+
+		It("writes out color for method", func() {
+			Expect(derefANSICodes(output.String())).To(And(
+				ContainSubstring(`"{reverse}{blue}GET{reset}`),
+			))
+		})
+
+		It("writes out color for status", func() {
+			Expect(derefANSICodes(output.String())).To(And(
+				ContainSubstring("{reverse}{green}200 OK{reset}"),
 			))
 		})
 
@@ -120,3 +135,19 @@ var _ = Describe("ExpandRequest", func() {
 		Entry("header camel name", "%(header.xRequestId)", Equal("732")),
 	)
 })
+
+var ansiPattern = regexp.MustCompile(`\x1B\[[0-9;]*m`)
+
+func removeANSICodes(s string) string {
+	return ansiPattern.ReplaceAllString(s, "")
+}
+
+func derefANSICodes(s string) string {
+	for _, k := range []string{"reset", "blue", "reverse", "magenta", "green"} {
+		s = strings.ReplaceAll(
+			s,
+			expr.ExpandColors(k).(string),
+			fmt.Sprintf("{%s}", k))
+	}
+	return s
+}

@@ -16,7 +16,7 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
 
-const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method) %(urlPath) %(protocol)" %(statusCode) -`
+const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`
 
 var (
 	patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
@@ -40,6 +40,38 @@ var (
 		"brightMagenta": 95,
 		"brightCyan":    96,
 		"white":         97,
+
+		"default.bg": 49,
+		"black.bg":   40,
+		"red.bg":     41,
+		"green.bg":   42,
+		"yellow.bg":  43,
+		"blue.bg":    44,
+		"magenta.bg": 45,
+		"cyan.bg":    46,
+		"gray.bg":    47,
+
+		"reset":           0,
+		"bold":            1,
+		"faint":           2,
+		"italic":          3,
+		"underline":       4,
+		"slow":            5,
+		"fast":            6,
+		"reverse":         7,
+		"erase":           8,
+		"strikethrough":   9,
+		"doubleUnderline": 21,
+
+		"bold.off":            22,
+		"italic.off":          23,
+		"underline.off":       24,
+		"doubleUnderline.off": 24, // same
+		"slow.off":            25,
+		"fast.off":            26,
+		"reverse.off":         27,
+		"erase.off":           28,
+		"strikethrough.off":   29,
 	}
 
 	meta    = map[string]*Pattern{}
