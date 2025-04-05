@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5.2 (April 3, 2025)
+
+### New Features
+
+* Support more terminal formatting vars for HTTP method and status, including these as defaults for the access log (fd86c7c)
+* Introduce a flag and accompanying API for customizing shutting down server timeout and other server options (13ecca7)
+
+### Bug fixes and improvements
+
+* Bug fix: Show help screen instead of panic on toupee with no args (b1b9b9a)
+* Rename `--open-in-browser` to `--open` flag (efeaae8)
+* Documentation updates, resolve typos (9666939)
+* Chores:
+    * Update joe-cli version; address breaking changes (cd6c0e6)
+    * Apply Go modernizations (7171726)
+    * Additional unit tests (a58da67)
+    * Update lint targets (d8ed5dc)
+
 ## v0.5.1 (March 1, 2025)
 
 ### New Features
