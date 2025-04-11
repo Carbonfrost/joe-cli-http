@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -40,13 +41,20 @@ var HandlerRegistry = &provider.Registry{
 	},
 }
 
+type requestLoggerHandler struct {
+	mu     *sync.Mutex
+	out    io.Writer
+	format *expr.Pattern
+	next   http.Handler
+}
+
 // NewRequestLogger provides handler middleware to write to access log
 func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Handler {
 	if format == "" {
 		format = defaultAccessLog
 	}
 	logFormat := expr.Compile(format)
-	return requestLoggerHandler(out, next, logFormat)
+	return newRequestLoggerHandler(out, next, logFormat)
 }
 
 // NewPingHandler provides a handler which simply replies with a message
@@ -133,23 +141,31 @@ func newRedirectServerHandlerWithOpts(opts struct {
 	return http.RedirectHandler(opts.To, code), nil
 }
 
-func requestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ww := newWrapResponseWriter(w, r.ProtoMajor)
-		t1 := time.Now()
-
-		defer func() {
-			expander := expr.ComposeExpanders(
-				expr.ExpandGlobals,
-				expr.ExpandColors,
-				ExpandRequest(r, ww),
-				expandTiming(t1, time.Now()),
-			)
-			expr.Fprint(out, format, expander)
-		}()
-
-		next.ServeHTTP(ww, r)
+func newRequestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern) http.Handler {
+	return &requestLoggerHandler{
+		mu:     new(sync.Mutex),
+		out:    out,
+		next:   next,
+		format: format,
 	}
+}
+
+func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ww := newWrapResponseWriter(w, r.ProtoMajor)
+	t1 := time.Now()
+
+	h.next.ServeHTTP(ww, r)
+
+	expander := expr.ComposeExpanders(
+		expr.ExpandGlobals,
+		expr.ExpandColors,
+		ExpandRequest(r, ww),
+		expandTiming(t1, time.Now()),
+	)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	expr.Fprint(h.out, h.format, expander)
 }
 
 func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
