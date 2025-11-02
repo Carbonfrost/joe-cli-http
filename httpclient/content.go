@@ -50,9 +50,17 @@ func NewContent(ct ContentType) Content {
 	}
 }
 
+// NewRawContent provides body content that is formed from raw data
 func NewRawContent(data []byte) *RawContent {
 	res := new(RawContent)
 	res.Write(data)
+	return res
+}
+
+// NewStringContent provides body content that is formed from a string
+func NewStringContent(data string) *RawContent {
+	res := new(RawContent)
+	res.WriteString(data)
 	return res
 }
 
@@ -73,6 +81,10 @@ func (c *bufferedContent) Read() io.Reader {
 
 func (c *RawContent) Write(d []byte) (int, error) {
 	return c.bufferedContent.buf.Write(d)
+}
+
+func (c *RawContent) WriteString(d string) (int, error) {
+	return c.bufferedContent.buf.WriteString(d)
 }
 
 func (c *RawContent) Query() (url.Values, error) {
