@@ -12,11 +12,13 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
 const (
 	listenerCategory = "Listener options"
 	advancedCategory = "Advanced options"
+	serverCategory   = "Server options"
 
 	allowStartupTime = 1 * time.Second
 )
@@ -208,6 +210,7 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 			Value:    new(cli.File),
 			Options:  cli.MustExist,
 			HelpText: "Serve static files from the specified directory",
+			Category: serverCategory,
 		},
 		withBinding(bindFileAsString((*Server).SetStaticDirectory), f),
 		tagged,
@@ -220,6 +223,7 @@ func SetNoDirectoryListings() cli.Action {
 		&cli.Prototype{
 			Name:     "no-directory-listings",
 			HelpText: "When set, don't display directory listings",
+			Category: serverCategory,
 		},
 		withBinding((*Server).SetNoDirectoryListings, []bool{true}),
 		tagged,
@@ -233,6 +237,7 @@ func SetOpenInBrowser() cli.Action {
 		&cli.Prototype{
 			Name:     "open",
 			HelpText: "When set, open the default Web browser when the server is ready",
+			Category: serverCategory,
 		},
 		withBinding((*Server).setOpenInBrowserHelper, []bool{true}),
 		tagged,
@@ -278,9 +283,21 @@ func SetHandler(v ...httpclient.VirtualPath) cli.Action {
 			HelpText:  "Binds a handler to the given route",
 			Value:     new(httpclient.VirtualPath),
 			Options:   cli.EachOccurrence,
+			Category:  serverCategory,
 		},
 		cli.At(cli.ActionTiming, setHandlerSpec(RegistryHandlerSpec("handlers"), v)),
 		tagged,
+	)
+}
+
+// ListHandlers provides an action which lists the handlers for the
+// handler flag. When used in the Uses pipeline, also sets reasonable defaults
+// for a flag.
+// This handler is not included in [FlagsAndArgs]
+func ListHandlers() cli.Action {
+	return cli.Pipeline(
+		provider.ListProviders("handlers"),
+		cli.HelpText("List available providers for the handler option then exit"),
 	)
 }
 

@@ -43,6 +43,9 @@ func NewApp() *cli.App {
 			{
 				Uses: httpserver.SetHandler(),
 			},
+			{
+				Uses: httpserver.ListHandlers(),
+			},
 		},
 		Args: []*cli.Arg{
 			{
