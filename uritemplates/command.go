@@ -24,7 +24,7 @@ func SourceAnnotation() (string, string) {
 }
 
 func Expand() cli.Action {
-	return cli.ActionFunc(func(c *cli.Context) error {
+	return cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {
 		if !c.Seen("template") {
 			return c.Do(cli.DisplayHelpScreen())
 		}
@@ -40,7 +40,7 @@ func Expand() cli.Action {
 		rr, err := tpl.Expand(fromContext(c))
 		fmt.Fprintln(c.Stdout, rr)
 		return err
-	})
+	}))
 }
 
 func FlagsAndArgs() cli.Action {
