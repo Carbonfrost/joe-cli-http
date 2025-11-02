@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5.3 (November 2, 2025)
+
+### New Features
+
+* `NewStringContent` for body content (b74917c)
+* Add server category to weave; `--list-handlers` flag (8f19db0)
+* Introduce middleware interface; `Location` implicitly as middleware (fa4c25e)
+
+### Bug fixes and improvements
+
+* Add tests for URI templates and toupee (95b2eb4)
+* Ensure request logging is serialized (71dd41e)
+* Chores:
+    * Update licensing and copyright information (ddeb828)
+    * Bump actions/checkout from 4 to 5 (2480ebd)
+    * Bump actions/setup-go from 5 to 6 (224ffec)
+    * Adopt code of conduct (e8e7d06)
+
 ## v0.5.2 (April 3, 2025)
 
 ### New Features
