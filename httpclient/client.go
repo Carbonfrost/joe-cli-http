@@ -312,12 +312,14 @@ func defaultCheckRedirect(_ *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func (c *Client) generateMiddleware() []Middleware {
-	return append([]Middleware{
+func (c *Client) generateMiddleware(l Location) Middleware {
+	mw, _ := l.(Middleware)
+	return ComposeMiddleware(append([]Middleware{
+		mw,
 		setupBodyContent(c),
 		setupQueryString(c),
 		processAuth(c),
-	}, c.middleware...)
+	}, c.middleware...)...)
 }
 
 func (c *Client) generateTransportMiddleware() []TransportMiddleware {
@@ -352,13 +354,7 @@ func (c *Client) doOne(ctx context.Context, client *http.Client, l Location) (*R
 	c.Request.URL = u
 	c.Request.Host = u.Host
 	c.Request = c.Request.WithContext(rctx)
-
-	for _, m := range c.generateMiddleware() {
-		err := m.Handle(c.Request)
-		if err != nil {
-			return nil, err
-		}
-	}
+	c.generateMiddleware(l).Handle(c.Request, nil)
 
 	netResp, err := client.Do(c.Request)
 	if err != nil {

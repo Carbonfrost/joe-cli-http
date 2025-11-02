@@ -40,6 +40,8 @@ type LocationResolver interface {
 // will be requested by the HTTP client and a context function that helps initialize
 // any context values that might be needed such as by middleware.  This is an
 // indirection typically used to provide behavior dependent upon the request URL.
+// If Location also implements client Middleware, it will be the first middleware
+// function used when the client fetches the request
 type Location interface {
 	// URL derives a context that should be used for the client request for the
 	// given URL, the URL itself to use.  An error can be returned, usually if the

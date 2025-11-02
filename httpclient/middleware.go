@@ -12,13 +12,15 @@ import (
 )
 
 // Middleware provides logic that intercepts and processes each
-// request
+// request. The next function should be called to continue the middleware
+// pipeline.
 type Middleware interface {
-	Handle(req *http.Request) error
+	Handle(req *http.Request, next func(*http.Request) error) error
 }
 
 // MiddlewareFunc implements [Middleware] as a function which
 // implements the solitary corresponding method of the interface
+// and automatically delegates to the next middleware.
 type MiddlewareFunc func(req *http.Request) error
 
 type requestIDGenerator interface {
@@ -27,6 +29,8 @@ type requestIDGenerator interface {
 
 type requestIDGeneratorFunc func(context.Context) (string, error)
 type staticRequestID string
+
+type compositeMiddleware []Middleware
 
 const requestIDBytes = 12
 
@@ -46,6 +50,21 @@ func NewRequestIDMiddleware(v ...any) Middleware {
 	return WithHeader("X-Request-ID", func(req *http.Request) (string, error) {
 		return gen.generate(req.Context())
 	})
+}
+
+// ComposeMiddleware creates middleware from a list
+func ComposeMiddleware(mw ...Middleware) Middleware {
+	withoutNil := make([]Middleware, 0, len(mw))
+	for _, item := range mw {
+		if item != nil {
+			withoutNil = append(withoutNil, item)
+		}
+	}
+	return compositeMiddleware(withoutNil)
+}
+
+func emptyMiddlewareImpl(*http.Request) error {
+	return nil
 }
 
 // WithHeader sets the specified header.  The value may be:
@@ -149,15 +168,41 @@ func (f requestIDGeneratorFunc) generate(c context.Context) (string, error) {
 	return f(c)
 }
 
-func (f MiddlewareFunc) Handle(req *http.Request) error {
+func (f MiddlewareFunc) Handle(req *http.Request, next func(*http.Request) error) error {
 	if f == nil {
+		return next(req)
+	}
+	err := f(req)
+	if err != nil {
+		return err
+	}
+	if next == nil {
 		return nil
 	}
-	return f(req)
+	return next(req)
 }
 
 func (s staticRequestID) generate(context.Context) (string, error) {
 	return string(s), nil
+}
+
+func (c compositeMiddleware) Handle(req *http.Request, next func(*http.Request) error) error {
+	yielders := make([]func(*http.Request) error, len(c))
+	yielderThunk := func(i int) func(*http.Request) error {
+		if i >= len(yielders) || yielders[i] == nil {
+			return emptyMiddlewareImpl
+		}
+		return yielders[i]
+	}
+
+	for ik := range c {
+		i := ik
+		yielders[i] = func(r *http.Request) error {
+			return c[i].Handle(r, yielderThunk(i+1))
+		}
+	}
+
+	return yielderThunk(0)(req)
 }
 
 func asRequestIDGenerator(v any) requestIDGenerator {
