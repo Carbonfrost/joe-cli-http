@@ -7,11 +7,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"iter"
 	"math/rand"
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -23,7 +23,6 @@ import (
 const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`
 
 var (
-	patternRegexp = regexp.MustCompile(`%\((.+?)\)`)
 
 	// vt100 ansi codes
 	colors = map[string]int{
@@ -162,12 +161,15 @@ func Fprint(w io.Writer, pattern *Pattern, e Expander) (count int, err error) {
 }
 
 func Compile(pattern string) *Pattern {
-	return compilePatternCore([]byte(pattern), patternRegexp)
+	return CompilePattern(pattern, "%(", ")")
 }
 
 func CompilePattern(pattern string, start string, end string) *Pattern {
-	pp := regexp.MustCompile(regexp.QuoteMeta(start) + `(.+?)` + regexp.QuoteMeta(end))
-	return compilePatternCore([]byte(pattern), pp)
+	endBytes := []byte(end)
+	if len(endBytes) > 1 {
+		panic("end sequence must be one byte")
+	}
+	return compilePatternCore([]byte(pattern), []byte(start), endBytes[0])
 }
 
 // Prefix provides an expander which looks for and cuts a given prefix
@@ -336,13 +338,13 @@ func (p *Pattern) String() string {
 	return p.repr
 }
 
-func compilePatternCore(content []byte, pat *regexp.Regexp) *Pattern {
-	allIndexes := pat.FindAllSubmatchIndex(content, -1)
+func compilePatternCore(content []byte, start []byte, end byte) *Pattern {
+	allIndexes := findAllSubmatchIndex(content, start, end)
 	result := []expr{}
 	var repr bytes.Buffer
 
 	var index int
-	for _, loc := range allIndexes {
+	for loc := range allIndexes {
 		if index < loc[0] {
 			result = append(result, newLiteral(content[index:loc[0]]))
 			repr.Write(content[index:loc[0]])
@@ -366,6 +368,58 @@ func compilePatternCore(content []byte, pat *regexp.Regexp) *Pattern {
 	return &Pattern{
 		exprs: convertWSExprs(result),
 		repr:  repr.String(),
+	}
+}
+
+// findAllSubmatchIndex provides the behavior of regexp FindAllSubmatchIndex
+// except with simplifying assumptions but also detecting nested patterns. Only
+// considers ASCII sequences, only allows a single byte end character.
+func findAllSubmatchIndex(content, start []byte, end byte) iter.Seq[[4]int] {
+	return func(yield func([4]int) bool) {
+		var (
+			nested     int
+			lenStart   = len(start)
+			lenContent = len(content)
+			submatch   = func(i, j int) [4]int {
+				return [4]int{i, j + 1, i + lenStart, j}
+			}
+		)
+
+	OUTER:
+		for i := 0; i < lenContent; i++ {
+			c := content[i]
+			// Submatch indexes - same as what regexp.Regexp.FindAllSubmatchIndex returns
+			// 0 2    1,3
+			// %(hello)
+			if c != start[0] {
+				continue
+			}
+
+			if bytes.Equal(content[i:i+lenStart], start) {
+				for j := i + lenStart; j < lenContent; j++ {
+					if content[j] == end {
+						if nested == 0 {
+							sub := submatch(i, j)
+							if sub[2] != sub[3] {
+								if !yield(sub) {
+									return
+								}
+							}
+							i = j
+							continue OUTER
+
+						} else {
+							nested--
+						}
+					}
+
+					// Detect nested occurrences
+					if j < lenContent-lenStart && bytes.Equal(content[j:j+lenStart], start) {
+						nested++
+					}
+				}
+			}
+		}
 	}
 }
 
