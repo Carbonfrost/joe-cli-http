@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"time"
 
@@ -27,13 +28,19 @@ const (
 )
 
 var (
-	tagged = cli.Data(SourceAnnotation())
+	tagged  = cli.Data(SourceAnnotation())
+	pkgPath string
 )
 
 // SourceAnnotation gets the name and value of the annotation added to the Data
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
-	return "Source", "joe-cli-http/httpclient"
+	return "Source", pkgPath
+}
+
+func init() {
+	type here struct{}
+	pkgPath = reflect.TypeFor[here]().PkgPath()
 }
 
 func (c *Client) Execute(ctx context.Context) error {
