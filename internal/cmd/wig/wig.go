@@ -43,7 +43,10 @@ func NewApp() *cli.App {
 			&color.Options{},
 			cli.Sorted,
 		),
-		Action:  httpclient.FetchAndPrint(),
+		Action: cli.Pipeline(
+			displayHelpOnNoArgs,
+			httpclient.FetchAndPrint(),
+		),
 		Version: build.Version,
 		Flags: []*cli.Flag{
 			{
@@ -54,4 +57,11 @@ func NewApp() *cli.App {
 			},
 		},
 	}
+}
+
+func displayHelpOnNoArgs(c *cli.Context) error {
+	if !c.Seen("url") {
+		return c.Do(cli.DisplayHelpScreen("wig"))
+	}
+	return nil
 }
