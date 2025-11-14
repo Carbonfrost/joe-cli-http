@@ -41,6 +41,9 @@ var HandlerRegistry = &provider.Registry{
 		"redirect": {
 			Factory: provider.Factory(newRedirectServerHandlerWithOpts),
 		},
+		"echo": {
+			Factory: provider.Factory(newEchoHandlerWithOpts),
+		},
 	},
 }
 
@@ -131,6 +134,12 @@ func newFileServerHandler(staticDir string, hideDirListing bool) http.Handler {
 
 func newPingHandlerWithOpts(_ any) (http.Handler, error) {
 	return NewPingHandler(), nil
+}
+
+func newEchoHandlerWithOpts(opts struct {
+	Failsafe bool `mapstructure:"failsafe"`
+}) (http.Handler, error) {
+	return NewEchoHandler(opts.Failsafe), nil
 }
 
 func newRedirectServerHandlerWithOpts(opts struct {
