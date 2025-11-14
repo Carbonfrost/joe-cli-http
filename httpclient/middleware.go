@@ -67,6 +67,32 @@ func emptyMiddlewareImpl(*http.Request) error {
 	return nil
 }
 
+// WithMethod sets the specified method.  The value may be:
+//   - string
+//   - func()string
+//   - func(*http.Request)(string, error).
+//
+// Other types result in an error.
+func WithMethod(method any) Middleware {
+	return MiddlewareFunc(func(r *http.Request) error {
+		switch v := method.(type) {
+		case string:
+			r.Method = v
+		case func() string:
+			r.Method = v()
+		case func(*http.Request) (string, error):
+			mv, err := v(r)
+			if err != nil {
+				return err
+			}
+			r.Method = mv
+		default:
+			return fmt.Errorf("unexpected type for method %T", method)
+		}
+		return nil
+	})
+}
+
 // WithHeader sets the specified header.  The value may be:
 //   - string
 //   - []string

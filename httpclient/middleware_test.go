@@ -43,6 +43,19 @@ var _ = Describe("NewRequestIDMiddleware", func() {
 	})
 })
 
+var _ = Describe("WithMethod", func() {
+	DescribeTable("examples", func(v any, expected types.GomegaMatcher) {
+		req, _ := http.NewRequest("GET", "https://example.com", nil)
+		httpclient.WithMethod(v).Handle(req, nil)
+
+		Expect(req.Method).To(expected)
+	},
+		Entry("string", "static string", Equal("static string")),
+		Entry("string func", func() string { return "s" }, Equal("s")),
+		Entry("func", func(*http.Request) (string, error) { return "s", nil }, Equal("s")),
+	)
+})
+
 var _ = Describe("WithHeader", func() {
 	DescribeTable("examples", func(v any, expected types.GomegaMatcher) {
 		req, _ := http.NewRequest("GET", "https://example.com", nil)
