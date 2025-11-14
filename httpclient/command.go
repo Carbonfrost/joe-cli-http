@@ -181,7 +181,7 @@ func SetBody(s ...string) cli.Action {
 		&cli.Prototype{
 			Name:     "body",
 			HelpText: "Sets the raw content of the body of the request",
-			Aliases:  []string{"data-raw"},
+			Aliases:  []string{"data-raw", "d"},
 			Category: requestOptions,
 			Options:  cli.AllowFileReference,
 			Setup: cli.Setup{
