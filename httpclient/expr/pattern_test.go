@@ -6,6 +6,7 @@ package expr_test
 import (
 	"bytes"
 	"net/url"
+	"os"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
@@ -111,6 +112,21 @@ var _ = Describe("ExpandURL", func() {
 		Entry("path", "%(url.path)", Equal("/whistle")),
 		Entry("requestURI", "%(url.requestURI)", Equal("/whistle?query=1")),
 		Entry("fragment", "%(url.fragment)", Equal("fragment")),
+	)
+})
+
+var _ = Describe("ExpandEnv", func() {
+
+	os.Setenv("ENV_VAR", "an env var")
+
+	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
+		e := expr.Compile(text)
+
+		expander := expr.Prefix("env", expr.ExpandEnv)
+		Expect(e.Expand(expander)).To(expected)
+	},
+		Entry("os env", "%(env.ENV_VAR)", Equal("an env var")),
+		Entry("os env non-existing", "%(env.ENV_VAR__NON_EXISTENT)", Equal("<nil>")),
 	)
 })
 

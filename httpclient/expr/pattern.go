@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -179,6 +180,14 @@ func Prefix(p string, e Expander) Expander {
 		}
 		return nil
 	}
+}
+
+func ExpandEnv(s string) any {
+	result, ok := os.LookupEnv(s)
+	if ok {
+		return result
+	}
+	return nil
 }
 
 func ExpandMap(m map[string]any) Expander {
