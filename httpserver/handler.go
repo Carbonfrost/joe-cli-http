@@ -22,6 +22,12 @@ import (
 
 const defaultAccessLog = `%(accessLog.default)\n`
 
+var (
+	metaDefaultAccessLog = expr.Compile(
+		`- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`,
+	)
+)
+
 // HandlerSpec creates a handler from a virtual path.  The virtual path
 // defines how the handler works.  Typically, the physical path
 // identifies a useful feature or the location of a file,
@@ -59,7 +65,7 @@ func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Hand
 	if format == "" {
 		format = defaultAccessLog
 	}
-	logFormat := expr.Compile(format)
+	logFormat := expr.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
 	return newRequestLoggerHandler(out, next, logFormat)
 }
 

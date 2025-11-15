@@ -20,8 +20,6 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 )
 
-const defaultAccessLog = `- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`
-
 var (
 
 	// vt100 ansi codes
@@ -77,16 +75,11 @@ var (
 		"strikethrough.off":   29,
 	}
 
-	meta    = map[string]*Pattern{}
 	space   = nopExpr{"space"}
 	tab     = nopExpr{"tab"}
 	newline = nopExpr{"newline"}
 	empty   = nopExpr{"empty"}
 )
-
-func init() {
-	meta["accessLog.default"] = Compile(defaultAccessLog)
-}
 
 type Syntax int
 
@@ -411,6 +404,18 @@ func (p *Pattern) String() string {
 	return sb.String()
 }
 
+func (p *Pattern) WithMeta(name string, pattern *Pattern) *Pattern {
+	newExprs := make([]expr, 0, len(p.exprs))
+	for _, e := range p.exprs {
+		if f, ok := e.(*formatExpr); ok && f.name == name {
+			newExprs = append(newExprs, pattern.exprs...)
+			continue
+		}
+		newExprs = append(newExprs, e)
+	}
+	return &Pattern{exprs: newExprs, start: p.start, end: p.end}
+}
+
 func (p *Pattern) debugExprs() string {
 	var sb strings.Builder
 	for _, e := range p.exprs {
@@ -467,12 +472,7 @@ func compilePatternCore(content, start, end []byte, newExpr func([]byte) expr) *
 			result = append(result, newLiteral(content[index:loc[0]]))
 		}
 		key := content[loc[2]:loc[3]]
-
-		if m, ok := meta[string(key)]; ok {
-			result = append(result, m.exprs...)
-		} else {
-			result = append(result, newExpr(key))
-		}
+		result = append(result, newExpr(key))
 		index = loc[1]
 	}
 	if index < len(content) {
