@@ -105,8 +105,8 @@ const (
 type Pattern struct {
 	exprs []expr
 
-	// textual representation, which is the value which was compiled after meta expr have been expanded
-	repr string
+	start []byte
+	end   []byte
 }
 
 // Expander converts the given string key into its variable expansion
@@ -314,7 +314,7 @@ func (s Syntax) CompilePattern(pattern, start, end string) *Pattern {
 		newExpr = recursiveNewExpr(start, end)
 	}
 
-	return compilePatternCore([]byte(pattern), []byte(start), endBytes[0], newExpr)
+	return compilePatternCore([]byte(pattern), []byte(start), endBytes, newExpr)
 }
 
 func (l literalExpr) Format(_ Expander) string {
@@ -336,6 +336,28 @@ func (n nopExpr) Space() string {
 	case "empty":
 	}
 	return ""
+}
+
+func fprintReprWS(ws string, w io.Writer, start, end []byte) {
+	for _, s := range []byte(ws) {
+		w.Write(start)
+		fmt.Fprint(w, nameOfWSToken(s).name)
+		w.Write(end)
+	}
+}
+
+func nameOfWSToken(s byte) nopExpr {
+	switch s {
+	case byte(' '):
+		return space
+
+	case byte('\n'):
+		return newline
+
+	case byte('\t'):
+		return tab
+	}
+	return empty
 }
 
 func (f formatExpr) Format(expand Expander) string {
@@ -382,7 +404,11 @@ func (p *Pattern) Expand(expand Expander) string {
 }
 
 func (p *Pattern) String() string {
-	return p.repr
+	var sb strings.Builder
+	for _, e := range p.exprs {
+		fprintRepr(e, &sb, p.start, p.end)
+	}
+	return sb.String()
 }
 
 func (p *Pattern) debugExprs() string {
@@ -391,6 +417,31 @@ func (p *Pattern) debugExprs() string {
 		fprintDebugExpr(&sb, e)
 	}
 	return sb.String()
+}
+
+func fprintRepr(exp expr, w io.Writer, start, end []byte) {
+	switch e := exp.(type) {
+	case *fallbackExpr:
+		w.Write(start)
+		fmt.Fprintf(w, "%s:", e.name)
+		fprintRepr(e.fallback, w, start, end)
+		w.Write(end)
+		fprintReprWS(e.trailingOpt, w, start, end)
+
+	case *literalExpr:
+		fmt.Fprint(w, e.text)
+		fprintReprWS(e.trailing, w, start, end)
+
+	case *formatExpr:
+		w.Write(start)
+		if e.format == "" {
+			fmt.Fprintf(w, "%s", e.name)
+		} else {
+			fmt.Fprintf(w, "%s:%s", e.name, e.format)
+		}
+		w.Write(end)
+		fprintReprWS(e.trailingOpt, w, start, end)
+	}
 }
 
 func fprintDebugExpr(w io.Writer, e expr) {
@@ -406,36 +457,32 @@ func fprintDebugExpr(w io.Writer, e expr) {
 	}
 }
 
-func compilePatternCore(content []byte, start []byte, end byte, newExpr func([]byte) expr) *Pattern {
-	allIndexes := findAllSubmatchIndex(content, start, end)
+func compilePatternCore(content, start, end []byte, newExpr func([]byte) expr) *Pattern {
+	allIndexes := findAllSubmatchIndex(content, start, end[0])
 	result := []expr{}
-	var repr bytes.Buffer
 
 	var index int
 	for loc := range allIndexes {
 		if index < loc[0] {
 			result = append(result, newLiteral(content[index:loc[0]]))
-			repr.Write(content[index:loc[0]])
 		}
 		key := content[loc[2]:loc[3]]
 
 		if m, ok := meta[string(key)]; ok {
 			result = append(result, m.exprs...)
-			repr.WriteString(m.String())
 		} else {
 			result = append(result, newExpr(key))
-			repr.Write(content[loc[0]:loc[1]])
 		}
 		index = loc[1]
 	}
 	if index < len(content) {
 		result = append(result, newLiteral(content[index:]))
-		repr.Write(content[index:])
 	}
 
 	return &Pattern{
 		exprs: convertWSExprs(result),
-		repr:  repr.String(),
+		start: start,
+		end:   end,
 	}
 }
 
@@ -502,7 +549,7 @@ func convertWSExprs(exprs []expr) []expr {
 	for i := range exprs {
 		if wse, ok := exprs[i].(nopExpr); ok {
 			if len(res) == 0 {
-				res = append(res, newLiteral([]byte(wse.Space())))
+				res = append(res, &literalExpr{text: "", trailing: wse.Space()})
 				continue
 			}
 			last := res[len(res)-1]
