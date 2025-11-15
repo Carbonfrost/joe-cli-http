@@ -88,6 +88,20 @@ func init() {
 	meta["accessLog.default"] = Compile(defaultAccessLog)
 }
 
+type Syntax int
+
+const (
+	// SyntaxDefault indicates that the expression syntax uses the
+	// form <name>[':' <format>]. That is, an optional format string is allowed
+	// to control the output.
+	SyntaxDefault Syntax = iota
+
+	// SyntaxRecursive causes recursive expression evaluation to
+	// be allowed. For example, the expression ${VISUAL:${EDITOR}}
+	// would evaluate both environment variables, falling back to EDITOR.
+	SyntaxRecursive
+)
+
 type Pattern struct {
 	exprs []expr
 
@@ -99,13 +113,14 @@ type Pattern struct {
 type Expander func(string) any
 
 type expr interface {
-	Format(expand Expander) any
+	Format(expand Expander) string
 }
 
 type formatExpr struct {
 	name        string
 	format      string
 	trailingOpt string // optional whitespace iff the expr evaluates non-empty
+	fallback    expr
 }
 
 // nopExpr is reserved for whitespace expressions that are reserved names
@@ -113,7 +128,13 @@ type nopExpr struct {
 	name string
 }
 
-type literal struct {
+type fallbackExpr struct {
+	name        string
+	fallback    expr
+	trailingOpt string
+}
+
+type literalExpr struct {
 	text     string
 	trailing string // whitespace after literal (produced by ws expressions)
 }
@@ -161,15 +182,11 @@ func Fprint(w io.Writer, pattern *Pattern, e Expander) (count int, err error) {
 }
 
 func Compile(pattern string) *Pattern {
-	return CompilePattern(pattern, "%(", ")")
+	return SyntaxDefault.Compile(pattern)
 }
 
-func CompilePattern(pattern string, start string, end string) *Pattern {
-	endBytes := []byte(end)
-	if len(endBytes) > 1 {
-		panic("end sequence must be one byte")
-	}
-	return compilePatternCore([]byte(pattern), []byte(start), endBytes[0])
+func CompilePattern(pattern, start, end string) *Pattern {
+	return SyntaxDefault.CompilePattern(pattern, start, end)
 }
 
 // Prefix provides an expander which looks for and cuts a given prefix
@@ -282,11 +299,29 @@ func UnknownToken(tok string) error {
 	return fmt.Errorf("unknown: %s", tok)
 }
 
-func (l *literal) Format(_ Expander) any {
+func (s Syntax) Compile(pattern string) *Pattern {
+	return s.CompilePattern(pattern, "%(", ")")
+}
+
+func (s Syntax) CompilePattern(pattern, start, end string) *Pattern {
+	endBytes := []byte(end)
+	if len(endBytes) > 1 {
+		panic("end sequence must be one byte")
+	}
+
+	newExpr := defaultNewExpr
+	if s == SyntaxRecursive {
+		newExpr = recursiveNewExpr(start, end)
+	}
+
+	return compilePatternCore([]byte(pattern), []byte(start), endBytes[0], newExpr)
+}
+
+func (l literalExpr) Format(_ Expander) string {
 	return l.text + l.trailing
 }
 
-func (nopExpr) Format(Expander) any {
+func (nopExpr) Format(Expander) string {
 	return ""
 }
 
@@ -303,7 +338,7 @@ func (n nopExpr) Space() string {
 	return ""
 }
 
-func (f *formatExpr) Format(expand Expander) any {
+func (f formatExpr) Format(expand Expander) string {
 	var res string
 	value := expand(f.name)
 	format := f.format
@@ -328,6 +363,18 @@ func (f *formatExpr) Format(expand Expander) any {
 	return res + f.trailingOpt
 }
 
+func (f fallbackExpr) Format(expand Expander) string {
+	value := expand(f.name)
+	if value == nil {
+		return f.fallback.Format(expand)
+	}
+	res := fmt.Sprint(value)
+	if res == "" {
+		return res
+	}
+	return res + f.trailingOpt
+}
+
 func (p *Pattern) Expand(expand Expander) string {
 	var b strings.Builder
 	Fprint(&b, p, expand)
@@ -338,7 +385,28 @@ func (p *Pattern) String() string {
 	return p.repr
 }
 
-func compilePatternCore(content []byte, start []byte, end byte) *Pattern {
+func (p *Pattern) debugExprs() string {
+	var sb strings.Builder
+	for _, e := range p.exprs {
+		fprintDebugExpr(&sb, e)
+	}
+	return sb.String()
+}
+
+func fprintDebugExpr(w io.Writer, e expr) {
+	switch exp := e.(type) {
+	case *fallbackExpr:
+		fmt.Fprintf(w, "<fallback %s, to=", exp.name)
+		fprintDebugExpr(w, exp.fallback)
+		fmt.Fprint(w, ">")
+	case *literalExpr:
+		fmt.Fprintf(w, "<literal %s> ", exp.text)
+	case *formatExpr:
+		fmt.Fprintf(w, "<format %s, format=%s> ", exp.name, exp.format)
+	}
+}
+
+func compilePatternCore(content []byte, start []byte, end byte, newExpr func([]byte) expr) *Pattern {
 	allIndexes := findAllSubmatchIndex(content, start, end)
 	result := []expr{}
 	var repr bytes.Buffer
@@ -442,7 +510,9 @@ func convertWSExprs(exprs []expr) []expr {
 			switch prev := last.(type) {
 			case *formatExpr:
 				prev.trailingOpt += wse.Space()
-			case *literal:
+			case *fallbackExpr:
+				prev.trailingOpt += wse.Space()
+			case *literalExpr:
 				prev.trailing += wse.Space()
 			}
 		} else {
@@ -458,28 +528,75 @@ func newLiteral(token []byte) expr {
 	if s, err := strconv.Unquote(`"` + t + `"`); err == nil {
 		t = s
 	}
-	return &literal{t, ""}
+	return &literalExpr{t, ""}
 }
 
-func newExpr(token []byte) expr {
-	nameAndFormat := strings.SplitN(string(token), ":", 2)
-	name := nameAndFormat[0]
-	switch name {
-	case "space":
-		return space
-	case "newline":
-		return newline
-	case "tab":
-		return tab
-	case "empty":
-		return empty
+func defaultNewExpr(token []byte) expr {
+	name, format, ok := strings.Cut(string(token), ":")
+	if expr, ok := tryNopExpr(name); ok {
+		return expr
 	}
 
-	if len(nameAndFormat) == 1 {
+	if !ok {
 		return &formatExpr{name: name, format: ""}
 	}
 
-	return &formatExpr{name: name, format: nameAndFormat[1]}
+	return &formatExpr{name: name, format: format}
+}
+
+func recursiveNewExpr(start, end string) func([]byte) expr {
+	return func(token []byte) expr {
+		var result, current expr
+
+		// Splitting on recursive tokens should give artifacts that
+		// indicate which ones (except for the first one which is always
+		// interpretted as var)
+		//
+		// %(token:%(fallback_token:literal))
+		//		-> token, '%(fallback_token', 'literal)'
+		//
+		for i, tt := range strings.Split(string(token), ":") {
+			name, isExpr := strings.CutPrefix(tt, start)
+			name = strings.TrimRight(name, end)
+
+			var newCurrent expr
+			if isExpr || i == 0 {
+				newCurrent = &fallbackExpr{name: name, fallback: empty}
+			} else {
+				newCurrent = literalExpr{text: name}
+			}
+
+			if i == 0 {
+				result = newCurrent
+			} else {
+				current.(*fallbackExpr).fallback = newCurrent
+			}
+
+			current = newCurrent
+
+			if _, isFallback := newCurrent.(*fallbackExpr); !isFallback {
+				break
+			}
+
+		}
+
+		// FIXME Literal expression could have additional
+		return result
+	}
+}
+
+func tryNopExpr(name string) (expr, bool) {
+	switch name {
+	case "space":
+		return space, true
+	case "newline":
+		return newline, true
+	case "tab":
+		return tab, true
+	case "empty":
+		return empty, true
+	}
+	return nil, false
 }
 
 var (

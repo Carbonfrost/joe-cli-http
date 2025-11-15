@@ -64,6 +64,10 @@ var _ = Describe("findAllSubmatchIndex", func() {
 
 })
 
+func DebugPattern(p *Pattern) string {
+	return p.debugExprs()
+}
+
 func formatIndexes(v [][4]int) string {
 	var buf strings.Builder
 	for i, val := range v {

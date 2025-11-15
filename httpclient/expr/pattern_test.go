@@ -26,6 +26,29 @@ var _ = Describe("CompilePattern", func() {
 		},
 		Entry("quote with percent sign", "%(", ")", "hello %(hello)", "hello world"),
 	)
+
+	Describe("SyntaxRecursive", func() {
+
+		DescribeTable("examples", func(pattern, expected string) {
+			pat := expr.SyntaxRecursive.Compile(pattern)
+
+			actual := pat.Expand(
+				expr.ExpandMap(map[string]any{
+					"hello":   "world",
+					"goodbye": "earth",
+					"foo":     "bar",
+				}),
+			)
+			Expect(actual).To(Equal(expected), "Expected: debug pattern %s", expr.DebugPattern(pat))
+		},
+			Entry("nominal", "hello %(hello)", "hello world"),
+			Entry("fallback to literal", "bonjour %(missing:le monde)", "bonjour le monde"),
+			Entry("fallback to var", "hello %(missing:%(goodbye))", "hello earth"),
+			Entry("fallback var 2", "hello %(missing:%(missing:%(foo)))", "hello bar"),
+			Entry("fallback literal 2", "hello %(missing:%(missing:baz))", "hello baz"),
+			Entry("redundant literal fallback", "hello %(missing:literal:bar)", "hello literal"),
+		)
+	})
 })
 
 var _ = Describe("Compile", func() {
