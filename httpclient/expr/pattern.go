@@ -113,7 +113,6 @@ type formatExpr struct {
 	name        string
 	format      string
 	trailingOpt string // optional whitespace iff the expr evaluates non-empty
-	fallback    expr
 }
 
 // nopExpr is reserved for whitespace expressions that are reserved names

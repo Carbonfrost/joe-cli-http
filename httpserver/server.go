@@ -219,7 +219,7 @@ func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
 }
 
-// ComposeReadyFunc provides a ReadyFunc that combines a sequence
+// ComposeReadyFuncs provides a ReadyFunc that combines a sequence
 func ComposeReadyFuncs(v ...ReadyFunc) ReadyFunc {
 	return func(c context.Context) {
 		for _, f := range v {

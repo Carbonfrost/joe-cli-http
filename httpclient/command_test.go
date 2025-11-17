@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 )
 
-const someJson = `{"error":"Character not found"}`
+const someJSON = `{"error":"Character not found"}`
 
 var _ = Describe("FetchAndPrint", func() {
 	DescribeTable("examples", func(command string, expected Fields) {
@@ -31,7 +31,7 @@ var _ = Describe("FetchAndPrint", func() {
 					actual = r
 					return &http.Response{
 						StatusCode: http.StatusBadRequest,
-						Body:       io.NopCloser(strings.NewReader(someJson)),
+						Body:       io.NopCloser(strings.NewReader(someJSON)),
 					}
 				})),
 			),
@@ -61,7 +61,7 @@ var _ = Describe("FetchAndPrint", func() {
 				httpclient.WithTransport(httpclient.RoundTripperFunc(func(*http.Request) *http.Response {
 					return &http.Response{
 						StatusCode: http.StatusBadRequest,
-						Body:       io.NopCloser(strings.NewReader(someJson)),
+						Body:       io.NopCloser(strings.NewReader(someJSON)),
 					}
 				})),
 			),
@@ -72,7 +72,7 @@ var _ = Describe("FetchAndPrint", func() {
 		args, _ := cli.Split("_ https://example.com")
 		err := app.RunContext(context.Background(), args)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(out.String()).To(Equal(someJson))
+		Expect(out.String()).To(Equal(someJSON))
 	})
 })
 

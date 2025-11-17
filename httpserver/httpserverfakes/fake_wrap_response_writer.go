@@ -423,20 +423,6 @@ func (fake *FakeWrapResponseWriter) WriteHeaderArgsForCall(i int) int {
 func (fake *FakeWrapResponseWriter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.bytesWrittenMutex.RLock()
-	defer fake.bytesWrittenMutex.RUnlock()
-	fake.headerMutex.RLock()
-	defer fake.headerMutex.RUnlock()
-	fake.statusMutex.RLock()
-	defer fake.statusMutex.RUnlock()
-	fake.teeMutex.RLock()
-	defer fake.teeMutex.RUnlock()
-	fake.unwrapMutex.RLock()
-	defer fake.unwrapMutex.RUnlock()
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
-	fake.writeHeaderMutex.RLock()
-	defer fake.writeHeaderMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
