@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli/value"
 )
 
 type contextKey string
@@ -85,7 +86,7 @@ func SetURITemplateVars(v ...*Vars) cli.Action {
 			Aliases:   []string{"t"},
 			UsageText: "expr|@file",
 			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
-			Value:     &Vars{},
+			Value:     value.JSON(&Vars{}),
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
 		cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {

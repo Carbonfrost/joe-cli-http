@@ -9,6 +9,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
+	"github.com/Carbonfrost/joe-cli/value"
 	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -34,7 +35,7 @@ var _ = Describe("Vars", func() {
 				Flags: []*cli.Flag{
 					{
 						Name:    "V",
-						Value:   actual,
+						Value:   value.JSON(actual),
 						Options: cli.AllowFileReference,
 					},
 				},

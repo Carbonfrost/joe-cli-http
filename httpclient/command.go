@@ -15,6 +15,7 @@ import (
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
+	"github.com/Carbonfrost/joe-cli/value"
 )
 
 const (
@@ -683,7 +684,7 @@ func SetURITemplateVars(v ...uritemplates.Vars) cli.Action {
 			Aliases:   []string{"t"},
 			UsageText: "expr|@file",
 			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
-			Value:     &uritemplates.Vars{},
+			Value:     value.JSON(&uritemplates.Vars{}),
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
 		withBinding((*Client).SetURITemplateVars, v),

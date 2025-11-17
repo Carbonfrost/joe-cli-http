@@ -5,10 +5,8 @@ package uritemplates
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -196,10 +194,6 @@ func (t Vars) String() string {
 		}
 	}
 	return buf.String()
-}
-
-func (t *Vars) SetData(r io.Reader) error {
-	return json.NewDecoder(r).Decode(t)
 }
 
 func (t *Vars) Reset() {
