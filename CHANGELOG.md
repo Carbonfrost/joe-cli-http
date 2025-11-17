@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.5.4 (November 16, 2025)
+
+### New Features
+
+* Allow `-d` alias to `--body` in wig (5ce323b)
+* Echo handler (eb2419c)
+* `ExpandEnv` (a21b525)
+* `Method` middleware (a450656)
+* Expose meta patterns as API (714d7c3)
+
+### Bug fixes and improvements
+
+* Bug fix: `wig` should print usage on no URLs (da93220)
+* Update source annotation to use package path (bdccd5d)
+* Swap to using JSON wrapper on Vars (f58d280)
+* Rework expression syntax and handling:
+    * Calculate representation of Pattern dynamically (d2bb1cb)
+    * Recursive expression syntax (c289247)
+    * Manual expression parsing (059c809)
+* Chores:
+    * Upgrade dependent versions (abf5182)
+    * Addresses some linter errors (ee4dc63)
+
 ## v0.5.3 (November 2, 2025)
 
 ### New Features
