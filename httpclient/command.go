@@ -677,7 +677,7 @@ func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
 	)
 }
 
-func SetURITemplateVars(v ...uritemplates.Vars) cli.Action {
+func SetURITemplateVars(v ...*uritemplates.Vars) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "params",

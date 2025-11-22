@@ -498,7 +498,7 @@ func (c *Client) SetURITemplateVar(v *uritemplates.Var) error {
 	return c.ensureLocationResolver().AddVar(v)
 }
 
-func (c *Client) SetURITemplateVars(v uritemplates.Vars) error {
+func (c *Client) SetURITemplateVars(v *uritemplates.Vars) error {
 	for _, item := range v.Items() {
 		err := c.ensureLocationResolver().AddVar(item)
 		if err != nil {
