@@ -59,7 +59,7 @@ func (t Vars) Items() []*Var {
 		case map[string]any:
 			item = MapVar(k, val)
 		case []any:
-			item = ArrayVar(k, val)
+			item = ArrayVar(k, val...)
 		case string:
 			item = StringVar(k, val)
 		default:

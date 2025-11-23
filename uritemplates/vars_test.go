@@ -24,7 +24,8 @@ var _ = Describe("Vars", func() {
 				"vars.json": {
 					Data: []byte(`{
 						            "id": 420,
-						            "terms": ["asdf", "jkl;"]
+						            "terms": ["asdf", "jkl;"],
+						            "m": { "b": "s" }
 						        }`),
 				},
 			}
@@ -46,10 +47,14 @@ var _ = Describe("Vars", func() {
 			args, _ := cli.Split("app -V @vars.json")
 			err := app.RunContext(context.Background(), args)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actual).To(Equal(&uritemplates.Vars{
-				"id":    float64(420),
-				"terms": []any{"asdf", "jkl;"},
-			}))
+			Expect(*actual).To(HaveKeyWithValue("id", float64(420)))
+			Expect(*actual).To(HaveKeyWithValue("terms", []any{"asdf", "jkl;"}))
+			Expect(*actual).To(HaveKeyWithValue("m", map[string]any{"b": "s"}))
+			Expect(actual.Items()).To(ContainElements(
+				uritemplates.StringVar("id", "420"),
+				uritemplates.ArrayVar("terms", "asdf", "jkl;"),
+				uritemplates.MapVar("m", map[string]any{"b": "s"}),
+			))
 		})
 
 		DescribeTable("examples",
