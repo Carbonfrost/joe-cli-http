@@ -189,7 +189,7 @@ const (
 {{ end -}}
 
 {{- define "StatusCode" -}}
-{{ Color .Status.Color }}{{ .Status }}{{ ResetColor }}
+{{ Color .StatusCode.Color }}{{ .Status }}{{ ResetColor }}
 {{ end -}}
 
 {{- define "GenericError" -}}
@@ -530,9 +530,11 @@ func (l *defaultTraceLogger) ResponseDone(resp *http.Response, err error) {
 	}
 
 	l.render("StatusCode", struct {
-		Status httpStatus
+		StatusCode httpStatus
+		Status     string
 	}{
-		Status: httpStatus(resp.StatusCode),
+		StatusCode: httpStatus(resp.StatusCode),
+		Status:     resp.Status,
 	})
 
 	if !l.flags.responseHeaders() {
