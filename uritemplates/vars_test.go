@@ -6,11 +6,11 @@ package uritemplates_test
 import (
 	"context"
 	"io/fs"
+	"testing/fstest"
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/value"
-	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,12 +20,14 @@ var _ = Describe("Vars", func() {
 
 	Describe("Set", func() {
 		var testFileSystem = func() fs.FS {
-			appFS := afero.NewMemMapFs()
-			afero.WriteFile(appFS, "vars.json", []byte(`{
-            "id": 420,
-            "terms": ["asdf", "jkl;"]
-        }`), 0644)
-			return afero.NewIOFS(appFS)
+			return fstest.MapFS{
+				"vars.json": {
+					Data: []byte(`{
+						            "id": 420,
+						            "terms": ["asdf", "jkl;"]
+						        }`),
+				},
+			}
 		}()
 
 		It("parses vars from JSON file", func() {
