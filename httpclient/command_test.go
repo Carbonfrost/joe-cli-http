@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2025 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 package httpclient_test
@@ -77,6 +77,16 @@ var _ = Describe("FetchAndPrint", func() {
 })
 
 var _ = Describe("Set actions", func() {
+
+	It("has Source annotation", func() {
+		app := &cli.App{
+			Uses: httpclient.New(),
+		}
+		app.Initialize(context.Background())
+
+		f, _ := app.Flag("interface")
+		Expect(f.Data).To(HaveKeyWithValue("Source", "github.com/Carbonfrost/joe-cli-http/httpclient"))
+	})
 
 	DescribeTable("examples", func(act cli.Action, command string, transform any, expected Fields) {
 		client := httpclient.New(

@@ -30,18 +30,13 @@ const (
 
 var (
 	tagged  = cli.Data(SourceAnnotation())
-	pkgPath string
+	pkgPath = reflect.TypeFor[Client]().PkgPath()
 )
 
 // SourceAnnotation gets the name and value of the annotation added to the Data
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
-}
-
-func init() {
-	type here struct{}
-	pkgPath = reflect.TypeFor[here]().PkgPath()
 }
 
 func (c *Client) Execute(ctx context.Context) error {

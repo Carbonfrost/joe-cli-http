@@ -56,3 +56,17 @@ var _ = Describe("Expand", func() {
 		),
 	)
 })
+
+var _ = Describe("Set actions", func() {
+
+	It("has Source annotation", func() {
+		app := &cli.App{
+			Uses: uritemplates.FlagsAndArgs(),
+		}
+		app.Initialize(context.Background())
+
+		f, _ := app.Flag("params")
+		Expect(f.Data).To(HaveKeyWithValue("Source", "github.com/Carbonfrost/joe-cli-http/uritemplates"))
+	})
+
+})

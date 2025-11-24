@@ -6,6 +6,7 @@ package uritemplates
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli/value"
@@ -16,12 +17,13 @@ type contextKey string
 var (
 	tagged                    = cli.Data(SourceAnnotation())
 	varsContextKey contextKey = "uritemplates_vars"
+	pkgPath                   = reflect.TypeFor[Var]().PkgPath()
 )
 
 // SourceAnnotation gets the name and value of the annotation added to the Data
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
-	return "Source", "joe-cli-http/uritemplates"
+	return "Source", pkgPath
 }
 
 func Expand() cli.Action {

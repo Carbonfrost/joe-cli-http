@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -24,13 +25,14 @@ const (
 )
 
 var (
-	tagged = cli.Data(SourceAnnotation())
+	tagged  = cli.Data(SourceAnnotation())
+	pkgPath = reflect.TypeFor[Server]().PkgPath()
 )
 
 // SourceAnnotation gets the name and value of the annotation added to the Data
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
-	return "Source", "joe-cli-http/httpclient"
+	return "Source", pkgPath
 }
 
 // FlagsAndArgs adds numerous flags that can be used to configure the
