@@ -5,11 +5,15 @@ package httpclient_test
 
 import (
 	"context"
+	"io"
 	"io/fs"
+	"maps"
 	"net/http"
+	"slices"
+	"testing/fstest"
 
+	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
-	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -81,10 +85,7 @@ var _ = Describe("NewFileDownloader", func() {
 	Describe("OpenDownload", func() {
 		Context("when evaluating expr", func() {
 			DescribeTable("examples", func(pat string, expected []string) {
-				var testFileSystem = func() *wrapperFS {
-					appFS := afero.NewMemMapFs()
-					return &wrapperFS{Fs: appFS}
-				}()
+				var testFileSystem = newMemoryWrapperFS()
 
 				request, _ := http.NewRequest("GET", "https://example.com/wherever", nil)
 				e := httpclient.NewFileDownloader(pat, testFileSystem).(fileNameDownloader)
@@ -99,8 +100,8 @@ var _ = Describe("NewFileDownloader", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				actual := testFileSystem.ActualFiles
-				Expect(actual).To(Equal(expected))
+				actual := testFileSystem.Files()
+				Expect(actual).To(ConsistOf(expected))
 			},
 				Entry("nominal", "file.txt", []string{"file.txt", "file.txt.1", "file.txt.2"}),
 				Entry("expression", "file%(contentLength).txt", []string{"file10.txt", "file20.txt", "file30.txt"}),
@@ -111,21 +112,57 @@ var _ = Describe("NewFileDownloader", func() {
 	})
 })
 
+func newMemoryWrapperFS() *wrapperFS {
+	memory := fstest.MapFS{}
+	return &wrapperFS{
+		FS:     cli.NewFS(memory),
+		memory: memory,
+	}
+}
+
 type fileNameDownloader interface {
 	httpclient.Downloader
 	FileName(*httpclient.Response) string
 }
 
 type wrapperFS struct {
-	afero.Fs
-	ActualFiles []string
+	cli.FS
+	memory fstest.MapFS
+}
+
+type wrapperFile struct {
+	file *fstest.MapFile
 }
 
 func (w *wrapperFS) Create(name string) (fs.File, error) {
-	w.ActualFiles = append(w.ActualFiles, name)
-	return w.Fs.Create(name)
+	file := new(fstest.MapFile)
+	w.memory[name] = file
+	return &wrapperFile{file}, nil
 }
 
 func (w wrapperFS) Open(name string) (fs.File, error) {
-	return w.Fs.Open(name)
+	return w.FS.Open(name)
 }
+
+func (w *wrapperFS) Files() []string {
+	return slices.Collect(maps.Keys(w.memory))
+}
+
+func (w *wrapperFile) Write(p []byte) (n int, err error) {
+	w.file.Data = append(w.file.Data, p...)
+	return len(p), nil
+}
+
+func (w *wrapperFile) Close() error {
+	return nil
+}
+
+func (w *wrapperFile) Read([]byte) (int, error) {
+	panic("unimplemented")
+}
+
+func (w *wrapperFile) Stat() (fs.FileInfo, error) {
+	panic("unimplemented")
+}
+
+var _ io.WriteCloser = (*wrapperFile)(nil)
