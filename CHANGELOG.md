@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.5.5 (December 22, 2025)
+
+### New Features
+
+### Bug fixes and improvements
+
+* Bug fix: correct handling of JSON parsing Vars (6016e17)
+* Bug fix: ensure status text is printed with code (e0e1576)
+* Bug fix: Use vars type acceptable as Value (d94ee9e)
+* Fix and update source annotations (3604263)
+* Chores:
+  * Update dependent versions (17aa83f)
+  * Using fstest instead of afero (c8250e5, 85cf839)
+
+
 ## v0.5.4 (November 16, 2025)
 
 ### New Features
