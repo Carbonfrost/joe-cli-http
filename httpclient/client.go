@@ -213,7 +213,8 @@ func WithTransport(t http.RoundTripper) Option {
 	}
 }
 
-func Do(c *cli.Context) ([]*Response, error) {
+// Do invokes the context client to generate corresponding responses
+func Do(c context.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
 }
 

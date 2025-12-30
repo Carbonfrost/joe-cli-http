@@ -60,7 +60,7 @@ func ContextValue(c *Client) cli.Action {
 }
 
 func FetchAndPrint() cli.Action {
-	return cli.ActionFunc(func(c *cli.Context) error {
+	return cli.ActionOf(func(c context.Context) error {
 		_, err := Do(c)
 		return err
 	})
