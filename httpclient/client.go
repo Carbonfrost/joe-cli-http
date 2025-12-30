@@ -213,6 +213,24 @@ func WithTransport(t http.RoundTripper) Option {
 	}
 }
 
+func requestOption(fn func(r *http.Request)) Option {
+	return func(c *Client) {
+		fn(c.Request)
+	}
+}
+
+// WithBodyString sets up the body on the request to the given string
+func WithBodyString(s string) Option {
+	return WithBody(io.NopCloser(bytes.NewReader([]byte(s))))
+}
+
+// WithBody sets up the body on the request to the given reader
+func WithBody(b io.ReadCloser) Option {
+	return requestOption(func(r *http.Request) {
+		r.Body = b
+	})
+}
+
 // Do invokes the context client to generate corresponding responses
 func Do(c context.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
