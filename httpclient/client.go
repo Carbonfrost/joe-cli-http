@@ -184,6 +184,13 @@ func WithTransportMiddleware(m TransportMiddleware) Option {
 	}
 }
 
+// WithDownloadMiddleware adds downloader middleware
+func WithDownloadMiddleware(d func(Downloader) Downloader) Option {
+	return func(c *Client) {
+		c.AddDownloadMiddleware(d)
+	}
+}
+
 // WithRequestID provides middleware to the client that adds a header
 // X-Request-ID to the request.  The optional argument defines how to generate
 // the ID.  When specified, it must be one of these types:
@@ -534,7 +541,7 @@ func (c *Client) SetNoOutput(b bool) error {
 }
 
 func (c *Client) SetIntegrity(i Integrity) error {
-	c.UseDownloadMiddleware(func(downloader Downloader) Downloader {
+	c.AddDownloadMiddleware(func(downloader Downloader) Downloader {
 		return NewIntegrityDownloader(i, downloader)
 	})
 	return nil
@@ -710,7 +717,8 @@ func (c *Client) Authenticator() Authenticator {
 	return c.auth
 }
 
-func (c *Client) UseAuthMiddleware(fn func(Authenticator) Authenticator) {
+// AddAuthMiddleware adds middleware for the authenticator
+func (c *Client) AddAuthMiddleware(fn func(Authenticator) Authenticator) {
 	c.authMiddleware = append(c.authMiddleware, fn)
 }
 
@@ -781,13 +789,14 @@ func (c *Client) SetWriteErr(w Expr) error {
 	return nil
 }
 
-func (c *Client) UseDownloadMiddleware(fn func(Downloader) Downloader) {
+// AddDownloadMiddleware adds download middleware
+func (c *Client) AddDownloadMiddleware(fn func(Downloader) Downloader) {
 	c.downloadMiddleware = append(c.downloadMiddleware, fn)
 }
 
 func (c *Client) SetStripComponents(count int) error {
 	c.SetDownloadFile(PreserveRequestPath)
-	c.UseDownloadMiddleware(func(d Downloader) Downloader {
+	c.AddDownloadMiddleware(func(d Downloader) Downloader {
 		return d.(DownloadMode).WithStripComponents(count)
 	})
 	return nil

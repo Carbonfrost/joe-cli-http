@@ -189,7 +189,7 @@ func PromptForCredentials() cli.Action {
 
 func promptForPassword(c *cli.Context) error {
 	client := FromContext(c)
-	client.UseAuthMiddleware(WithPromptForCredentials)
+	client.AddAuthMiddleware(WithPromptForCredentials)
 	return nil
 }
 
