@@ -23,6 +23,10 @@ type Authenticator interface {
 	Authenticate(r *http.Request, u *UserInfo) error
 }
 
+type bearerTokenAuth struct {
+	headerAndValue []string
+}
+
 type promptForCredentials struct {
 	auth Authenticator
 }
@@ -54,6 +58,12 @@ var (
 			"basic": {
 				Value: BasicAuth,
 			},
+			"bearer": {
+				Factory: provider.FactoryOf(newBearerAuthOpts),
+				Defaults: map[string]string{
+					"header": "Authentication",
+				},
+			},
 		},
 	}
 )
@@ -68,6 +78,25 @@ func NewAuthenticator(name string, opts map[string]string) (Authenticator, error
 		return nil, err
 	}
 	return a1.(Authenticator), nil
+}
+
+func newBearerAuthOpts(opts struct {
+	Token  string
+	Header string
+}) Authenticator {
+	return NewBearerTokenAuthenticator(opts.Token, opts.Header)
+}
+
+func NewBearerTokenAuthenticator(token string, headeropt ...string) Authenticator {
+	if len(headeropt) == 0 || headeropt[0] == "" || headeropt[0] == "Authentication" {
+		headeropt = []string{"Authentication", "Bearer"}
+	} else if len(headeropt) == 1 {
+		headeropt = strings.Fields(headeropt[0])
+	} else {
+		panic(expectedOneArg)
+	}
+
+	return &bearerTokenAuth{headerAndValue: append(headeropt, token)}
 }
 
 func WithPromptForCredentials(auth Authenticator) Authenticator {
@@ -114,6 +143,16 @@ func (m *AuthMode) UnmarshalText(b []byte) error {
 		return err
 	}
 	*m = res
+	return nil
+}
+
+func (*bearerTokenAuth) RequiresUserInfo() bool {
+	return false
+}
+
+func (b *bearerTokenAuth) Authenticate(r *http.Request, u *UserInfo) error {
+	value := strings.Join(b.headerAndValue[1:], " ")
+	r.Header.Add(b.headerAndValue[0], value)
 	return nil
 }
 

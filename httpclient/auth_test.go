@@ -6,10 +6,12 @@ package httpclient_test
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var _ = Describe("AuthMode", func() {
@@ -54,5 +56,21 @@ var _ = Describe("NewAuthenticator", func() {
 		Entry("blank", "", httpclient.NoAuth, false),
 		Entry("BASIC", "BASIC", httpclient.BasicAuth, true),
 		Entry("none", "none", httpclient.NoAuth, false),
+	)
+})
+
+var _ = Describe("NewBearerAuthenticator", func() {
+
+	DescribeTable("examples", func(headers string, expected types.GomegaMatcher) {
+		auth := httpclient.NewBearerTokenAuthenticator("TOKEN", headers)
+		r, _ := http.NewRequest("GET", "https://example.com", nil)
+		auth.Authenticate(r, nil)
+		Expect(r.Header).To(expected)
+	},
+		Entry("empty", "", HaveKeyWithValue("Authentication", []string{"Bearer TOKEN"})),
+		Entry("Authentication", "Authentication", HaveKeyWithValue("Authentication", []string{"Bearer TOKEN"})),
+		Entry("Custom", "X-Token", HaveKeyWithValue("X-Token", []string{"TOKEN"})),
+		Entry("Custom plus value", "X-Token Bearer", HaveKeyWithValue("X-Token", []string{"Bearer TOKEN"})),
+		Entry("Custom plus values 2", "X-Token Bearer A", HaveKeyWithValue("X-Token", []string{"Bearer A TOKEN"})),
 	)
 })
