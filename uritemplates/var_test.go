@@ -1,6 +1,7 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package uritemplates_test
 
 import (
@@ -46,6 +47,16 @@ var _ = Describe("Var", func() {
 				"type and kvp",
 				[]string{"a", "s=v"},
 				uritemplates.ArrayVar("s", "v"),
+			),
+			Entry(
+				"inline short upper",
+				[]string{"A,s=v"},
+				uritemplates.ArrayVar("s", "v"),
+			),
+			Entry(
+				"array inline multi",
+				[]string{"a,s=v,w,x"},
+				uritemplates.ArrayVar("s", "v", "w", "x"),
 			),
 			Entry(
 				"inline map",

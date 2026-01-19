@@ -1,6 +1,7 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package uritemplates
 
 import (
@@ -49,7 +50,7 @@ const (
 )
 
 var (
-	inlineFormat = regexp.MustCompile(`^(array|string|map|a|s|m),(.+)=(.+)$`)
+	inlineFormat = regexp.MustCompile(`^(array|string|map|a|s|m|A|S|M),(.+)=(.+)$`)
 
 	varTypeStrings = [maxVarType]string{
 		"string",
@@ -225,7 +226,7 @@ func (c *varState) setValue(value string) {
 	case String:
 		c.Value = value
 	case Array:
-		c.Value = []any{value}
+		c.Value = untyped(strings.Split(value, ","))
 	}
 }
 
@@ -242,14 +243,22 @@ func (t VarType) String() string {
 
 func varTypes(m string) (VarType, bool) {
 	switch m {
-	case "a", "array":
+	case "A", "a", "array":
 		return Array, true
-	case "s", "string":
+	case "S", "s", "string":
 		return String, true
-	case "m", "map":
+	case "M", "m", "map":
 		return Map, true
 	}
 	return 0, false
+}
+
+func untyped(items []string) []any {
+	untyped := make([]any, len(items))
+	for i := range items {
+		untyped[i] = items[i]
+	}
+	return untyped
 }
 
 var (
