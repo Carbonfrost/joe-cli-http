@@ -1,6 +1,7 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package httpclient
 
 import (
@@ -42,11 +43,18 @@ var (
 		"BASIC",
 	}
 
+	// Authenticators provides the default authenticator registry.
 	Authenticators = &provider.Registry{
 		Name: "authenticators",
-		Providers: provider.Map{
-			"basic": {},
-			"none":  {},
+		Providers: provider.Details{
+			// TODO A factory is required because Value is not correctly handled, requires
+			// upgrade to joe-cli@future
+			"none": {
+				Factory: provider.Factory(newNoneAuthenticatorOpts),
+			},
+			"basic": {
+				Factory: provider.Factory(newBasicAuthenticatorWithOpts),
+			},
 		},
 	}
 )
@@ -55,17 +63,12 @@ func NewAuthenticator(name string, opts map[string]string) (Authenticator, error
 	if name == "" {
 		return NoAuth, nil
 	}
-	for i, a := range authStrings {
-		if name == a {
-			return AuthMode(i), nil
-		}
+
+	a1, err := Authenticators.New(name, opts)
+	if err != nil {
+		return nil, err
 	}
-	for i, a := range authMarshalStrings {
-		if name == a {
-			return AuthMode(i), nil
-		}
-	}
-	return nil, fmt.Errorf("unknown authenticator: %q", name)
+	return a1.(Authenticator), nil
 }
 
 func WithPromptForCredentials(auth Authenticator) Authenticator {
@@ -243,6 +246,14 @@ func authModeFromName(items [2]string, s string) (AuthMode, error) {
 		}
 	}
 	return AuthMode(0), fmt.Errorf("unknown auth mode %q", s)
+}
+
+func newNoneAuthenticatorOpts(opts struct{}) (Authenticator, error) {
+	return NoAuth, nil
+}
+
+func newBasicAuthenticatorWithOpts(opts struct{}) (Authenticator, error) {
+	return BasicAuth, nil
 }
 
 var _ Authenticator = AuthMode(0)
