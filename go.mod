@@ -69,5 +69,6 @@ tool (
 
 ignore (
 	.github
+	bin
 	eng
 )
