@@ -510,7 +510,7 @@ func (c *Client) SetBaseURL(u *URLValue) error {
 	if err != nil {
 		return err
 	}
-	return c.ensureLocationResolver().SetBase(uu)
+	return c.ensureLocationResolver().SetBaseURL(uu)
 }
 
 func (c *Client) SetURL(u *url.URL) error {
@@ -522,12 +522,12 @@ func (c *Client) SetURLValue(u *URLValue) error {
 }
 
 func (c *Client) SetURITemplateVar(v *uritemplates.Var) error {
-	return c.ensureLocationResolver().AddVar(v)
+	return c.ensureLocationResolver().AddVar(v.Name, v.Value)
 }
 
 func (c *Client) SetURITemplateVars(v *uritemplates.Vars) error {
 	for _, item := range v.Items() {
-		err := c.ensureLocationResolver().AddVar(item)
+		err := c.ensureLocationResolver().AddVar(item.Name, item.Value)
 		if err != nil {
 			return err
 		}

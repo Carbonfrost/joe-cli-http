@@ -27,13 +27,17 @@ type LocationResolver interface {
 	// of either a URL or a URI template.
 	Add(location string) error
 	// Add a variable that can be applied to templates.
-	AddVar(v *uritemplates.Var) error
+	AddVar(name string, value any) error
 	// Set the base URL used for resolving relative URLs.
-	SetBase(base *url.URL) error
+	SetBaseURL(base *url.URL) error
 	// Resolve the list of locations. Each location is represented
 	// as a URL and the context the client should use to issue the
 	// request.
 	Resolve(context.Context) ([]Location, error)
+	// Vars gets the variables that were added.
+	Vars() map[string]any
+	// BaseURL retrievess the base URL.
+	BaseURL() *url.URL
 }
 
 // Location specifies the request location.  A location comprises a URL that
@@ -80,12 +84,20 @@ func (d *defaultLocationResolver) Add(location string) error {
 	return nil
 }
 
-func (d *defaultLocationResolver) AddVar(v *uritemplates.Var) error {
-	d.vars.Add(v)
+func (d *defaultLocationResolver) AddVar(name string, value any) error {
+	d.vars.Add(uritemplates.NewVar(name, value))
 	return nil
 }
 
-func (d *defaultLocationResolver) SetBase(base *url.URL) error {
+func (d *defaultLocationResolver) Vars() map[string]any {
+	return d.vars
+}
+
+func (d *defaultLocationResolver) BaseURL() *url.URL {
+	return d.base
+}
+
+func (d *defaultLocationResolver) SetBaseURL(base *url.URL) error {
 	if d.base == nil {
 		d.base = base
 		return nil

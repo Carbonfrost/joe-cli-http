@@ -72,11 +72,24 @@ func MapVar(name string, values map[string]any) *Var {
 		Value: values,
 	}
 }
+
 func StringVar(name string, value string) *Var {
 	return &Var{
 		Name:  name,
 		Value: value,
 	}
+}
+
+func NewVar(name string, value any) *Var {
+	switch val := value.(type) {
+	case map[string]any:
+		return MapVar(name, val)
+	case []any:
+		return ArrayVar(name, val...)
+	case string:
+		return StringVar(name, val)
+	}
+	return StringVar(name, fmt.Sprint(value))
 }
 
 func (v *Var) NewCounter() cli.ArgCounter {

@@ -54,18 +54,7 @@ func (t Vars) Update(u map[string]any) (err error) {
 func (t Vars) Items() []*Var {
 	res := make([]*Var, 0, len(t))
 	for k, v := range t {
-		var item *Var
-		switch val := v.(type) {
-		case map[string]any:
-			item = MapVar(k, val)
-		case []any:
-			item = ArrayVar(k, val...)
-		case string:
-			item = StringVar(k, val)
-		default:
-			item = StringVar(k, fmt.Sprint(val))
-		}
-
+		item := NewVar(k, v)
 		res = append(res, item)
 	}
 	return res
