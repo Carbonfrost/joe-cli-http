@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,6 +11,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"testing/fstest"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -18,6 +19,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var _ = Describe("DownloadMode", func() {
@@ -66,7 +68,39 @@ var _ = Describe("DownloadMode", func() {
 	})
 
 	Describe("OpenDownload", func() {
+
 		DescribeTable("examples",
+			func(mode httpclient.DownloadMode, u string, expected types.GomegaMatcher) {
+				request, _ := http.NewRequest("GET", u, nil)
+				testFileSystem := newMemoryWrapperFS()
+				ctxt := &cli.Context{
+					FS: testFileSystem,
+				}
+				s, err := mode.OpenDownload(ctxt, &httpclient.Response{
+					Response: &http.Response{
+						Request: request,
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				io.Copy(s, strings.NewReader("Contents"))
+				Expect(testFileSystem.All()).To(expected)
+			},
+			Entry(
+				"nominal",
+				httpclient.PreserveRequestFile,
+				"https://example.com/a.txt",
+				HaveKeyWithValue("a.txt", WithTransform(fileContents, Equal("Contents"))),
+			),
+			Entry(
+				"nominal",
+				httpclient.PreserveRequestPath,
+				"https://example.com/a/v.txt",
+				HaveKeyWithValue("a/v.txt", WithTransform(fileContents, Equal("Contents"))),
+			),
+		)
+
+		DescribeTable("errors",
 			func(mode httpclient.DownloadMode, u string, expected string) {
 				request, _ := http.NewRequest("GET", u, nil)
 				_, err := mode.OpenDownload(context.Background(), &httpclient.Response{
@@ -80,6 +114,10 @@ var _ = Describe("DownloadMode", func() {
 		)
 	})
 })
+
+func fileContents(v any) any {
+	return string(v.(*fstest.MapFile).Data)
+}
 
 var _ = Describe("NewFileDownloader", func() {
 
@@ -147,6 +185,10 @@ func (w wrapperFS) Open(name string) (fs.File, error) {
 
 func (w *wrapperFS) Files() []string {
 	return slices.Collect(maps.Keys(w.memory))
+}
+
+func (w *wrapperFS) All() map[string]*fstest.MapFile {
+	return w.memory
 }
 
 func (w *wrapperFile) Write(p []byte) (n int, err error) {

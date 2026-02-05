@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -200,14 +199,12 @@ func fileSystemFrom(ctx context.Context, preferred fs.FS) (res cli.FS) {
 		return
 	}
 
-	defer func() {
-		// TODO This recovery is necessary until joe-cli provides a version that
-		// doesn't panic on FromContext
-		if rvr := recover(); rvr != nil {
-			res = cli.NewSysFS(cli.DirFS("."), os.Stdin, os.Stdout)
-		}
-	}()
+	c, ok := cli.TryFromContext(ctx)
+	if ok {
+		res = cli.NewFS(c.FS)
+	} else {
+		res = cli.NewFS(nil)
+	}
 
-	res = cli.NewFS(cli.FromContext(ctx).FS)
 	return
 }
