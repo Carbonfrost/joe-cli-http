@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.6.0 (February 4, 2026)
+
+### New Features
+
+* Introduce `DoLocation` (d295f2b)
+* `WithBody` and `WithBodyString` (cde2a55)
+* Add `--no` to fail fast option (f5a00a7)
+* Breaking change: Improve `LocationResolver` definition to expose vars and base (6cb0d33)
+
+### Bug fixes and improvements
+
+* Remove legacy bind functions (0941aba)
+* Use authenticators registry for `NewAuthenticator` (8d6d644)
+* Improvements to uri template var parsing (fa689b3)
+* Simplify action signatures on `Do` (175f8b3)
+* Download middleware; consistent naming of middleware methods (c201f40)
+* Chores:
+  * Fix copyright headers (2caffa6)
+  * Update go module to ignore files (37cf8fe, cf89dbf)
+  * Update dependent versions (74a12b6, e355cf1, 5461fda)
+  * Split out request ID generator into own file (ab0901a)
+
 ## v0.5.5 (December 22, 2025)
 
 ### New Features
