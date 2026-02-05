@@ -387,6 +387,7 @@ func SetFailFast(i ...bool) cli.Action {
 			Aliases:  []string{"f"},
 			HelpText: "Fail fast with no output on HTTP errors",
 			Category: responseOptions,
+			Options:  cli.No,
 		},
 		withBinding((*Client).SetFailFast, i),
 		tagged,
