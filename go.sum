@@ -2,8 +2,8 @@ codeberg.org/chavacava/garif v0.2.0 h1:F0tVjhYbuOCnvNcU3YSpO6b3Waw6Bimy4K0mM8y6M
 codeberg.org/chavacava/garif v0.2.0/go.mod h1:P2BPbVbT4QcvLZrORc2T29szK3xEOlnl0GiPTJmEqBQ=
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/Carbonfrost/joe-cli v0.9.4 h1:9sMh3MLBnjmttHahmZYI/nqrSoD/PZxH+SZYkxtOiK4=
-github.com/Carbonfrost/joe-cli v0.9.4/go.mod h1:oACsBE+X3SiAmllhzvyyjeSykPk2gohLREy7ojEMxtU=
+github.com/Carbonfrost/joe-cli v0.10.0 h1:sW5jh2Z8MFMeLHURnUWpZhUIuApCZv73pll1K1B5yos=
+github.com/Carbonfrost/joe-cli v0.10.0/go.mod h1:pEFJbAmQLQTimRv1YQxODXE3vmrespQxSVk6TIk0aF4=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/cristalhq/acmd v0.12.0 h1:RdlKnxjN+txbQosg8p/TRNZ+J1Rdne43MVQZ1zDhGWk=

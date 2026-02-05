@@ -47,13 +47,11 @@ var (
 	Authenticators = &provider.Registry{
 		Name: "authenticators",
 		Providers: provider.Details{
-			// TODO A factory is required because Value is not correctly handled, requires
-			// upgrade to joe-cli@future
 			"none": {
-				Factory: provider.Factory(newNoneAuthenticatorOpts),
+				Value: NoAuth,
 			},
 			"basic": {
-				Factory: provider.Factory(newBasicAuthenticatorWithOpts),
+				Value: BasicAuth,
 			},
 		},
 	}

@@ -40,16 +40,16 @@ var HandlerRegistry = &provider.Registry{
 	Name: "handlers",
 	Providers: provider.Details{
 		"ping": {
-			Factory: provider.Factory(newPingHandlerWithOpts),
+			Factory: provider.FactoryOf(newPingHandlerWithOpts),
 		},
 		"file": {
-			Factory: provider.Factory(newFileServerHandlerWithOpts),
+			Factory: provider.FactoryOf(newFileServerHandlerWithOpts),
 		},
 		"redirect": {
-			Factory: provider.Factory(newRedirectServerHandlerWithOpts),
+			Factory: provider.FactoryOf(newRedirectServerHandlerWithOpts),
 		},
 		"echo": {
-			Factory: provider.Factory(newEchoHandlerWithOpts),
+			Factory: provider.FactoryOf(newEchoHandlerWithOpts),
 		},
 	},
 }
@@ -98,7 +98,7 @@ func FileServerHandlerSpec() HandlerSpec {
 			"directory": vp.PhysicalPath,
 		}
 		update(dict, vp.Options)
-		h, err := provider.Factory(newFileServerHandlerWithOpts)(dict)
+		h, err := provider.FactoryOf(newFileServerHandlerWithOpts).New(dict)
 		if err != nil {
 			return nil, err
 		}

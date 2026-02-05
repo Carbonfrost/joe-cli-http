@@ -242,7 +242,7 @@ func ParseVirtualPath(v string) (VirtualPath, error) {
 func splitValuePair(arg string) (k, v string, hasValue bool) {
 	a := cli.SplitList(arg, "=", 2)
 	if len(a) == 2 {
-		return a[0], strings.TrimSpace(a[1]), true
+		return unescapeKey(a[0]), strings.TrimSpace(a[1]), true
 	}
 	a = cli.SplitList(arg, ":", 2)
 	if len(a) == 2 {
@@ -250,6 +250,10 @@ func splitValuePair(arg string) (k, v string, hasValue bool) {
 	}
 
 	return a[0], "", false
+}
+
+func unescapeKey(s string) string {
+	return strings.ReplaceAll(s, "\\=", "=")
 }
 
 var (
