@@ -14,6 +14,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
+	"github.com/Carbonfrost/joe-cli/extensions/bind"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
@@ -443,14 +444,7 @@ func serverFailed(err error) error {
 }
 
 func withBinding[V any](binder func(*Server, V) error, args []V) cli.Action {
-	switch len(args) {
-	case 0:
-		return cli.BindContext(FromContext, binder)
-	case 1:
-		return cli.BindContext(FromContext, binder, args[0])
-	default:
-		panic(expectedOneArg)
-	}
+	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
 }
 
 func bindFileAsString(fn func(*Server, string) error) func(*Server, *cli.File) error {

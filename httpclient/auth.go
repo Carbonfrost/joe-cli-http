@@ -219,7 +219,7 @@ func SetBasicAuth() cli.Action {
 			HelpText: "Use Basic auth",
 			Value:    new(bool),
 			Category: requestOptions,
-			Setup:    dualSetup(cli.BindContext(FromContext, (*Client).setAuthModeHelper, BasicAuth)),
+			Setup:    dualSetup(withBinding((*Client).setAuthModeHelper, []AuthMode{BasicAuth})),
 		},
 		tagged,
 	)
