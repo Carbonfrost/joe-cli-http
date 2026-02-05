@@ -273,16 +273,19 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 	}
 
 	rsp := make([]*Response, 0, len(urls))
-	client := c.ensureClient(ctx)
-	c.ensureExprHandling(cli.FromContext(ctx))
 	for _, u := range urls {
-		r, err := c.doOne(ctx, client, u)
+		r, err := c.doOne(ctx, u)
 		if err != nil {
 			return rsp, err
 		}
 		rsp = append(rsp, r)
 	}
 	return rsp, nil
+}
+
+// DoLocation invokes the request for the specified location
+func (c *Client) DoLocation(ctx context.Context, l Location) (*Response, error) {
+	return c.doOne(ctx, l)
 }
 
 func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
@@ -373,7 +376,10 @@ func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripp
 	}
 }
 
-func (c *Client) doOne(ctx context.Context, client *http.Client, l Location) (*Response, error) {
+func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
+	client := c.ensureClient(ctx)
+	c.ensureExprHandling(cli.FromContext(ctx))
+
 	rctx, u, err := l.URL(ctx)
 	if err != nil {
 		return nil, err
