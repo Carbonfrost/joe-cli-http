@@ -54,6 +54,8 @@ type headerValueCounter struct {
 	count int
 }
 
+var schemes = []string{"http://", "https://", "file:/", "unix:/", "ssh:", "ftp://"}
+
 // NewURLValue creates a new URLValue from a string
 func NewURLValue(loc string) *URLValue {
 	return &URLValue{loc}
@@ -113,11 +115,13 @@ func fixupAddress(addr string) string {
 		return addr
 	}
 
-	if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
-		addr = "http://" + addr
+	for _, scheme := range schemes {
+		if strings.HasPrefix(addr, scheme) {
+			return addr
+		}
 	}
 
-	return addr
+	return "http://" + addr
 }
 
 func (v *VirtualPath) Set(arg string) error {

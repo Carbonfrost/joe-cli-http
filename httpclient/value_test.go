@@ -31,6 +31,10 @@ var _ = Describe("URLValue", func() {
 		Entry("port", ":8080", "http://localhost:8080"),
 		Entry("rooted", "/root", "/root"),
 		Entry("empty", "", ""),
+		Entry("unix", "unix://a", "unix://a"),
+		Entry("ssh", "ssh://a", "ssh://a"),
+		Entry("file", "file://a", "file://a"),
+		Entry("ftp", "ftp://a", "ftp://a"),
 	)
 })
 
