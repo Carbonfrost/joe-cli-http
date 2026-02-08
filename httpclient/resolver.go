@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,20 +6,10 @@ package httpclient
 
 import (
 	"context"
-	"errors"
-	"net"
 	"net/url"
 
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
-
-// InterfaceResolver resolves the network interface to use
-// for connections
-type InterfaceResolver interface {
-	// Resolve converts a location, typically an IP address
-	// or adapter name, into a TCP address
-	Resolve(string) (*net.TCPAddr, error)
-}
 
 // LocationResolver provides the logic of the how the URL to request
 // is resolved.
@@ -57,8 +47,6 @@ type Location interface {
 type urlLocation struct {
 	u *url.URL
 }
-
-type defaultResolver struct{}
 
 type defaultLocationResolver struct {
 	urls []string
@@ -163,39 +151,6 @@ func (d *defaultLocationResolver) isURITemplates() bool {
 	return len(d.vars) > 0
 }
 
-func (*defaultResolver) Resolve(v string) (*net.TCPAddr, error) {
-	ip := net.ParseIP(v)
-	if ip != nil {
-		return resolveTCP(ip.String())
-	}
-	eth, err := net.InterfaceByName(v)
-	if err != nil {
-		return nil, err
-	}
-	addrs, err := eth.Addrs()
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range addrs {
-		if a.Network() == "ip+net" {
-			return resolveIPNet(a.String())
-		}
-	}
-	return nil, errors.New("failed to resolve " + v)
-}
-
 func (l urlLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
 	return ctx, l.u, nil
-}
-
-func resolveTCP(value string) (*net.TCPAddr, error) {
-	return net.ResolveTCPAddr("tcp", net.JoinHostPort(value, "0"))
-}
-
-func resolveIPNet(value string) (*net.TCPAddr, error) {
-	ip, _, err := net.ParseCIDR(value)
-	if err != nil {
-		return nil, err
-	}
-	return resolveTCP(ip.String())
 }
