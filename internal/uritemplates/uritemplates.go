@@ -1,5 +1,5 @@
 // Copyright 2013 Joshua Tacoma. All rights reserved.
-// Copyright 2023-2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2023-2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -228,20 +229,25 @@ func (u *URITemplate) Expand(value any) (string, error) {
 
 // PartialExpand expands a URI template with a set of values to produce a string, preserving
 // any unknown parameters
-func (u *URITemplate) PartialExpand(value any) (string, error) {
+func (u *URITemplate) PartialExpand(value any) (*URITemplate, error) {
 	values, err := convertToValues(value)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	parts := slices.Clone(u.parts)
 	var buf bytes.Buffer
-	for _, p := range u.parts {
+	for partIndex, p := range u.parts {
+		start := buf.Len()
 		missing, err := p.expand(&buf, values)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if len(missing) == 0 {
+			parts[partIndex] = templatePart{raw: string(buf.Bytes()[start:][:])}
 			continue
 		}
+
 		buf.WriteString("{")
 		if len(missing) == len(p.terms) {
 			buf.WriteString(p.first)
@@ -259,7 +265,10 @@ func (u *URITemplate) PartialExpand(value any) (string, error) {
 		}
 		buf.WriteString("}")
 	}
-	return buf.String(), nil
+	return &URITemplate{
+		raw:   buf.String(),
+		parts: parts,
+	}, nil
 }
 
 func convertToValues(value any) (map[string]any, error) {
@@ -295,6 +304,12 @@ func (t *templatePart) expand(buf *bytes.Buffer, values map[string]any) (missing
 		case string:
 			t.expandString(buf, term, v)
 		case []any:
+			values := make([]string, len(v))
+			for i := range v {
+				values[i] = fmt.Sprint(v[i])
+			}
+			t.expandArray(buf, term, values)
+		case []string:
 			t.expandArray(buf, term, v)
 		case map[string]any:
 			if term.truncate > 0 {
@@ -342,7 +357,7 @@ func (t *templatePart) expandString(buf *bytes.Buffer, term templateTerm, s stri
 	buf.WriteString(escape(s, t.allowReserved))
 }
 
-func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []any) {
+func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []string) {
 	if len(a) == 0 {
 		return
 	} else if !term.explode {
@@ -354,13 +369,7 @@ func (t *templatePart) expandArray(buf *bytes.Buffer, term templateTerm, a []any
 		} else if i > 0 {
 			buf.WriteString(",")
 		}
-		var s string
-		switch v := value.(type) {
-		case string:
-			s = v
-		default:
-			s = fmt.Sprintf("%v", v)
-		}
+		s := value
 		if len(s) > term.truncate && term.truncate > 0 {
 			s = s[:term.truncate]
 		}

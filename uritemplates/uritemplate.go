@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -30,9 +30,9 @@ func (u *URITemplate) Expand(value any) (string, error) {
 	return s, err
 }
 
-func (u *URITemplate) PartialExpand(value any) (string, error) {
+func (u *URITemplate) PartialExpand(value any) (*URITemplate, error) {
 	s, err := u.u.PartialExpand(ensureValues(value))
-	return s, err
+	return &URITemplate{s}, err
 }
 
 func (u *URITemplate) Names() []string {

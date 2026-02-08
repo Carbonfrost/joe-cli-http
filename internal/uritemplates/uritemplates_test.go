@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -62,6 +62,12 @@ var _ = Describe("Expand", func() {
 			&Location{Opts: Options{Format: "pdf"}},
 			"{?opts*}",
 			"?fmt=pdf",
+		), Entry("String slice",
+			map[string]any{
+				"path": []string{"a", "b"},
+			},
+			"{/path*}",
+			"/a/b",
 		), Entry("Map expansion cannot be truncated:",
 			Location{Opts: Options{Format: "pdf"}},
 			"{?opts:3}",
@@ -96,10 +102,11 @@ var _ = Describe("Expand", func() {
 var _ = Describe("UriTemplate", func() {
 
 	Describe("PartialExpand", func() {
+
 		DescribeTable("examples", func(t string, vars any, expected string) {
 			u, _ := uritemplates.Parse(t)
 			actual, _ := u.PartialExpand(vars)
-			Expect(actual).To(Equal(expected))
+			Expect(actual.String()).To(Equal(expected))
 		},
 			Entry(
 				"full expand", "{scheme}://{.domain*}",
@@ -122,6 +129,22 @@ var _ = Describe("UriTemplate", func() {
 				map[string]any{},
 				"https://example.com{?query*}"),
 		)
+
+		It("can expand multiple", func() {
+			u, _ := uritemplates.Parse("{scheme}://{.domain*}{/path*}{?query*}")
+			vars := map[string]any{"scheme": "https", "domain": []any{"app", "example", "com"}}
+			first, _ := u.PartialExpand(vars)
+			Expect(first.String()).To(Equal("https://.app.example.com{/path*}{?query*}"))
+
+			vars = map[string]any{"path": []any{"a", "b", "c"}}
+			second, _ := first.PartialExpand(vars)
+			Expect(second.String()).To(Equal("https://.app.example.com/a/b/c{?query*}"))
+
+			vars = map[string]any{"query": map[string]any{"q": "2"}}
+			third, _ := second.PartialExpand(vars)
+			Expect(third.String()).To(Equal("https://.app.example.com/a/b/c?q=2"))
+		})
+
 	})
 
 })
