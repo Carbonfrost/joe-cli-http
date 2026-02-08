@@ -36,6 +36,11 @@ var _ = Describe("Resolver", func() {
 			[]string{"https://example.com", "hello"},
 			[]string{"https://example.com", "https://example.com/hello"},
 		),
+		Entry(
+			"fixup host scheme and relative",
+			[]string{"example.com", "hello"},
+			[]string{"http://example.com", "http://example.com/hello"},
+		),
 	)
 })
 

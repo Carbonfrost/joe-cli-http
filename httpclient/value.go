@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -54,7 +55,10 @@ type headerValueCounter struct {
 	count int
 }
 
-var schemes = []string{"http://", "https://", "file:/", "unix:/", "ssh:", "ftp://"}
+var (
+	schemes             = []string{"http:", "https:", "file:", "unix:", "ssh:", "ftp:"}
+	looksLikeURLPattern = regexp.MustCompile("^(" + strings.Join(schemes, "|") + ")")
+)
 
 // NewURLValue creates a new URLValue from a string
 func NewURLValue(loc string) *URLValue {

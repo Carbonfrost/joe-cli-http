@@ -7,6 +7,7 @@ package httpclient
 import (
 	"context"
 	"net/url"
+	"path"
 
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 )
@@ -48,6 +49,16 @@ type urlLocation struct {
 	u *url.URL
 }
 
+type templateLocation struct {
+	template string
+	varfn    func(context.Context) any
+}
+
+type autoLocation struct {
+	url   string
+	varfn func(context.Context) any
+}
+
 type defaultLocationResolver struct {
 	urls []string
 	vars uritemplates.Vars
@@ -66,6 +77,32 @@ func NewDefaultLocationResolver() LocationResolver {
 // dependent upon and makes no modifications to the context
 func URLLocation(u *url.URL) Location {
 	return urlLocation{u}
+}
+
+// NewLocation provides the default implementation, which is a URL, URI template,
+// or simplified human representation of a local URL automatically determined by the
+// context. If varfn is specified,
+// it is a function that provides URI template variables using the acceptable
+// types supported by [URITemplate.Expand].  Only when varfn is present, the URL is
+// interpreted as a URI template. Otherwise, it is interpreted as a typical
+// URL except as a special case the syntax :port can be used to refer to a port
+// listening to an address on localhost or if no scheme is present, http://
+// is implicitly prepended.
+func NewLocation(url string, varfn func(context.Context) any) Location {
+	return autoLocation{
+		url:   fixupAddress(url),
+		varfn: varfn,
+	}
+}
+
+// NewURITempateLocation provides a location based on a URI template. varfn
+// is a function that provides URI template variables using the acceptable
+// types supported by [URITemplate.Expand].
+func NewURITemplateLocation(template string, varfn func(context.Context) any) Location {
+	return templateLocation{
+		template: template,
+		varfn:    varfn,
+	}
 }
 
 func (d *defaultLocationResolver) Add(location string) error {
@@ -97,54 +134,25 @@ func (d *defaultLocationResolver) SetBaseURL(base *url.URL) error {
 }
 
 func (d *defaultLocationResolver) Resolve(context.Context) ([]Location, error) {
-	var locations []string
-
-	if d.isURITemplates() {
-		locations = make([]string, len(d.urls))
-		for i, u := range d.urls {
-			tt, err := uritemplates.Parse(u)
-			if err != nil {
-				return nil, err
-			}
-
-			expanded, err := tt.Expand(d.vars)
-			if err != nil {
-				return nil, err
-			}
-			locations[i] = expanded
-		}
-	} else {
-		locations = d.urls
+	locations := make([]Location, len(d.urls))
+	varfn := func(context.Context) any {
+		return d.Vars()
+	}
+	if !d.isURITemplates() {
+		varfn = nil
 	}
 
-	var err error
-	res := make([]*url.URL, len(locations))
-	for i, loc := range locations {
+	var base string
+	for i := range d.urls {
+		u := resolveURL(base, d.urls[min(i, 1):i+1])
+		locations[i] = NewLocation(u, varfn)
+
 		if i == 0 {
-			loc = fixupAddress(loc)
-		}
-		res[i], err = url.Parse(loc)
-		if err != nil {
-			return nil, err
+			base = fixupAddress(d.urls[0])
 		}
 	}
 
-	// Resolve URLs relative to the previously specified one, and to
-	// the base for the first instance
-	for i := range res {
-		if i > 0 {
-			res[i] = res[i-1].ResolveReference(res[i])
-
-		} else if d.base != nil {
-			res[i] = d.base.ResolveReference(res[i])
-		}
-	}
-
-	ll := make([]Location, len(res))
-	for i := range res {
-		ll[i] = URLLocation(res[i])
-	}
-	return ll, nil
+	return locations, nil
 }
 
 func (d *defaultLocationResolver) isURITemplates() bool {
@@ -153,4 +161,50 @@ func (d *defaultLocationResolver) isURITemplates() bool {
 
 func (l urlLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
 	return ctx, l.u, nil
+}
+
+func (l templateLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
+	tt, err := uritemplates.Parse(l.template)
+	if err != nil {
+		return ctx, nil, err
+	}
+
+	vars := l.varfn(ctx)
+	expanded, err := tt.Expand(vars)
+	if err != nil {
+		return ctx, nil, err
+	}
+	u, err := url.Parse(expanded)
+	if err != nil {
+		return ctx, nil, err
+	}
+
+	return ctx, u.JoinPath(), nil
+}
+
+func (a autoLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
+	if a.varfn == nil {
+		u, err := url.Parse(a.url)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return URLLocation(u).URL(ctx)
+	}
+
+	return NewURITemplateLocation(a.url, a.varfn).URL(ctx)
+}
+
+func resolveURL(base string, prefix []string) string {
+	// Treat as absolute URI when it is qualified
+	if len(prefix) > 0 && looksLikeURLPattern.MatchString(prefix[0]) {
+		base = prefix[0]
+		prefix = prefix[1:]
+	}
+
+	if base != "" && len(prefix) > 0 {
+		base = base + "/"
+	}
+
+	return base + path.Join(prefix...)
 }
