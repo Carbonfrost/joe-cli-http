@@ -17,6 +17,7 @@ type URITemplate struct {
 	u *uritemplates.URITemplate
 }
 
+// Parse obtains a URI template from a string
 func Parse(text string) (*URITemplate, error) {
 	u, err := uritemplates.Parse(text)
 	if err != nil {
@@ -25,20 +26,29 @@ func Parse(text string) (*URITemplate, error) {
 	return &URITemplate{u}, err
 }
 
+// Expand expands a URI template. The value is [Vars], a map[string]any, or
+// an arbitrary struct (or pointer to one). When a struct, reflection is
+// used to obtain the values by name, and the tag `uri` can be used to
+// override the name.
 func (u *URITemplate) Expand(value any) (string, error) {
 	s, err := u.u.Expand(ensureValues(value))
 	return s, err
 }
 
+// PartialExpand expands a URI template, leaving any expansions which could
+// not be filled
 func (u *URITemplate) PartialExpand(value any) (*URITemplate, error) {
 	s, err := u.u.PartialExpand(ensureValues(value))
 	return &URITemplate{s}, err
 }
 
+// Names retrieves the names of the template variables
 func (u *URITemplate) Names() []string {
 	return u.u.Names()
 }
 
+// Set provides the behavior when the template is used as a flag on
+// the command line
 func (u *URITemplate) Set(arg string) error {
 	if u.u != nil {
 		arg = u.u.String() + arg
@@ -48,6 +58,7 @@ func (u *URITemplate) Set(arg string) error {
 	return err
 }
 
+// String converts the template to a string
 func (u *URITemplate) String() string {
 	return u.u.String()
 }
