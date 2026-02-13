@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,7 +6,7 @@ package httpclient
 
 import (
 	"context"
-	"crypto/tls"
+	gotls "crypto/tls"
 	"fmt"
 	"net"
 	"reflect"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
+	"github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	ebind "github.com/Carbonfrost/joe-cli/extensions/bind"
 	"github.com/Carbonfrost/joe-cli/value"
@@ -27,7 +28,6 @@ const (
 	networkOptions  = "Network interface options"
 	requestOptions  = "Request options"
 	responseOptions = "Response options"
-	tlsOptions      = "TLS options"
 )
 
 var (
@@ -53,8 +53,14 @@ func (c *Client) Execute(ctx context.Context) error {
 			ContextValue(c),
 			Authenticators,
 			PromptForCredentials(),
+			tls.New(),
+			WithTLSConfigFactory(tlsFromContextError),
 		),
 	)
+}
+
+func tlsFromContextError(ctx context.Context) (*gotls.Config, error) {
+	return tls.FromContext(ctx).Config, nil
 }
 
 func ContextValue(c *Client) cli.Action {
@@ -90,23 +96,6 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetIntegrity()},
 			{Uses: SetDownload()},
 
-			// TLS options
-			{Uses: SetTLSv1()},
-			{Uses: SetTLSv1_0()},
-			{Uses: SetTLSv1_1()},
-			{Uses: SetTLSv1_2()},
-			{Uses: SetTLSv1_3()},
-			{Uses: SetInsecureSkipVerify()},
-			{Uses: SetCiphers()},
-			{Uses: ListCiphers()},
-			{Uses: SetCurves()},
-			{Uses: ListCurves()},
-			{Uses: SetClientCertFile()},
-			{Uses: SetKeyFile()},
-			{Uses: SetCACertFile()},
-			{Uses: SetCACertPath()},
-			{Uses: SetTime()},
-
 			// DNS options
 			{Uses: SetDNSInterface()},
 			{Uses: SetPreferGo()},
@@ -122,8 +111,6 @@ func FlagsAndArgs() cli.Action {
 
 			{Uses: SetVerbose()},
 			{Uses: SetTraceLevel()},
-			{Uses: SetServerName()},
-			{Uses: SetNextProtos()},
 			{Uses: SetRequestID()},
 			{Uses: SetQueryString()},
 			{Uses: SetWriteOut()},
@@ -410,113 +397,6 @@ func SetURLValue(i ...*URLValue) cli.Action {
 	)
 }
 
-func SetTLSv1() cli.Action {
-	return tlsVersionFlag(tls.VersionTLS10, tls.VersionTLS13, &cli.Prototype{
-		Name:     "tlsv1",
-		HelpText: "Use TLSv1.0 or higher.  This is implied as this tool doesn't support SSLv3",
-		Category: tlsOptions,
-	})
-}
-
-func SetTLSv1_0() cli.Action {
-	return tlsVersionFlag(tls.VersionTLS10, tls.VersionTLS10, &cli.Prototype{
-		Name:     "tlsv1.0",
-		HelpText: "Use TLSv1.0",
-		Category: tlsOptions,
-	})
-}
-
-func SetTLSv1_1() cli.Action {
-	return tlsVersionFlag(tls.VersionTLS11, tls.VersionTLS11, &cli.Prototype{
-		Name:     "tlsv1.1",
-		HelpText: "Use TLSv1.1",
-		Category: tlsOptions,
-	})
-}
-
-func SetTLSv1_2() cli.Action {
-	return tlsVersionFlag(tls.VersionTLS12, tls.VersionTLS12, &cli.Prototype{
-		Name:     "tlsv1.2",
-		HelpText: "Use TLSv1.2",
-		Category: tlsOptions,
-	})
-}
-
-func SetTLSv1_3() cli.Action {
-	return tlsVersionFlag(tls.VersionTLS13, tls.VersionTLS13, &cli.Prototype{
-		Name:     "tlsv1.3",
-		HelpText: "Use TLSv1.3",
-		Category: tlsOptions,
-	})
-}
-
-func SetInsecureSkipVerify(v ...bool) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "insecure-skip-verify",
-			Aliases:  []string{"k", "insecure"},
-			HelpText: "Whether to verify the server's certificate chain and host name.",
-			Category: tlsOptions,
-			EnvVars:  []string{"INSECURE_SKIP_VERIFY"},
-			Options:  cli.ImpliedAction,
-		},
-		withBinding((*Client).SetInsecureSkipVerify, v),
-		tagged,
-	)
-}
-
-func SetCiphers(v ...*CipherSuites) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "ciphers",
-			HelpText: "List of SSL ciphers to use.  Not applicable to TLS 1.3",
-			Category: tlsOptions,
-		},
-		withBinding((*Client).SetCiphers, v),
-		tagged,
-	)
-}
-
-func SetCurves(v ...*CurveIDs) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "curves",
-			HelpText: "TLS key exchange algorithms to request",
-			Category: tlsOptions,
-		},
-		withBinding((*Client).SetCurves, v),
-		tagged,
-	)
-}
-
-func ListCiphers() cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "list-ciphers",
-			Value:    cli.Bool(),
-			Options:  cli.Exits,
-			HelpText: "List the cipher suites available and exit",
-			Category: tlsOptions,
-		},
-		cli.At(cli.ActionTiming, cli.ActionOf(doListCiphers)),
-		tagged,
-	)
-}
-
-func ListCurves() cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "list-curves",
-			Value:    cli.Bool(),
-			Options:  cli.Exits,
-			HelpText: "List the key exchange algorithms and exit",
-			Category: tlsOptions,
-		},
-		cli.At(cli.ActionTiming, cli.ActionOf(doListCurves)),
-		tagged,
-	)
-}
-
 func SetDNSInterface(s ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -690,98 +570,6 @@ func SetURITemplateVars(v ...*uritemplates.Vars) cli.Action {
 	)
 }
 
-func SetCACertFile(path ...string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:      "cacert",
-			HelpText:  "CA certificate to verify peer against (PEM format)",
-			UsageText: "PATH",
-			Options:   cli.EachOccurrence,
-			Category:  tlsOptions,
-		},
-		withBinding((*Client).SetCACertFile, path),
-		tagged,
-	)
-}
-
-func SetCACertPath(path ...string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:      "capath",
-			HelpText:  "CA directory to verify peer against",
-			UsageText: "DIRECTORY",
-			Options:   cli.EachOccurrence,
-			Category:  tlsOptions,
-		},
-		withBinding((*Client).SetCACertPath, path),
-		tagged,
-	)
-}
-
-func SetClientCertFile(path ...string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:      "cert",
-			Aliases:   []string{"E"},
-			HelpText:  "Client certificate file (PEM format)",
-			UsageText: "PATH",
-			Category:  tlsOptions,
-		},
-		withBinding((*Client).SetClientCertFile, path),
-		tagged,
-	)
-}
-
-func SetKeyFile(path ...string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:      "key",
-			HelpText:  "Private key file (PEM format)",
-			UsageText: "PATH",
-			Category:  tlsOptions,
-		},
-		withBinding((*Client).SetKeyFile, path),
-		tagged,
-	)
-}
-
-func SetTime(s ...*cli.File) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:      "time",
-			HelpText:  "Specifies a {FILE} whose mtime is used to represent the current time in TLS configuration",
-			UsageText: "PATH",
-			Category:  tlsOptions,
-		},
-		withBinding((*Client).setTimeHelper, s),
-		tagged,
-	)
-}
-
-func SetServerName(s ...string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "server-name",
-			HelpText: "Used to verify the {HOSTNAME} on certificates unless verification is being skipped",
-			Category: tlsOptions,
-		},
-		withBinding((*Client).SetServerName, s),
-		tagged,
-	)
-}
-
-func SetNextProtos(s ...[]string) cli.Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "next-protos",
-			HelpText: "List of ALPN supported application level protocols, in order of preference.",
-			Category: tlsOptions,
-		},
-		withBinding((*Client).SetNextProtos, s),
-		tagged,
-	)
-}
-
 func SetRequestID(s ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -846,28 +634,6 @@ func setHTTPHeaderStatic(name, value string) cli.Action {
 		s.Request.Header.Set(name, value)
 		return nil
 	})
-}
-
-func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) cli.Action {
-	return cli.Pipeline(
-		cli.Setup{
-			Uses: cli.Pipeline(
-				&cli.Prototype{
-					Value: new(bool),
-				},
-				proto,
-			),
-			Action: func(c *cli.Context) error {
-				s := FromContext(c)
-				if c.Bool("") {
-					s.TLSConfig().MinVersion = minVersion
-					s.TLSConfig().MaxVersion = maxVersion
-				}
-				return nil
-			},
-		},
-		tagged,
-	)
 }
 
 func listInterfaces() cli.ActionFunc {

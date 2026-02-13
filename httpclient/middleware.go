@@ -153,11 +153,7 @@ func setupQueryString(c *Client) MiddlewareFunc {
 
 func processAuth(c *Client) MiddlewareFunc {
 	return func(*http.Request) error {
-		err := c.applyAuth()
-		if err != nil {
-			return err
-		}
-		return c.loadClientTLSCreds()
+		return c.applyAuth()
 	}
 }
 

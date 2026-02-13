@@ -8,10 +8,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io"
-	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -76,16 +74,13 @@ type Client struct {
 	transportMiddleware []TransportMiddleware
 	traceLevel          TraceLevel
 
+	tls            cacheable[*tls.Config]
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
-	tlsConfig      *tls.Config
 	auth           Authenticator
 	authMiddleware []func(Authenticator) Authenticator
 	bodyForm       []*cli.NameValue
 	queryString    url.Values
-	certFile       string
-	keyFile        string
-	rootCAs        []string
 	middleware     []Middleware
 	writeOutExpr   Expr
 	writeErrExpr   Expr
@@ -105,6 +100,28 @@ type exprHandling struct {
 	errExpr   *expr.Pattern
 	outRender io.Writer
 	errRender io.Writer
+}
+
+type cacheable[T comparable] struct {
+	discrete  T
+	factory   func(context.Context) (T, error)
+	cached    T
+	cachedErr error
+}
+
+func (c *cacheable[T]) New(ctx context.Context) (T, error) {
+	var zero T
+	if c.cachedErr != nil {
+		return zero, c.cachedErr
+	}
+	if c.cached != zero {
+		return c.cached, nil
+	}
+	if c.discrete != zero {
+		return c.discrete, nil
+	}
+	c.cached, c.cachedErr = c.factory(ctx)
+	return c.cached, c.cachedErr
 }
 
 var (
@@ -146,7 +163,6 @@ func New(options ...Option) *Client {
 		},
 	}
 
-	h.tlsConfig = &tls.Config{}
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 	defaultTransport.DialContext = h.dialer.DialContext
 	defaultTransport.Proxy = http.ProxyFromEnvironment
@@ -167,6 +183,20 @@ func WithDefaultUserAgent(s string) Option {
 func WithLocationResolver(r LocationResolver) Option {
 	return func(c *Client) {
 		c.LocationResolver = r
+	}
+}
+
+// WithTLSConfig sets the TLS config for use on the client
+func WithTLSConfig(t *tls.Config) Option {
+	return func(c *Client) {
+		c.tls.discrete = t
+	}
+}
+
+// WithTLSConfigFactory provides a factory for obtaining TLS config
+func WithTLSConfigFactory(fn func(context.Context) (*tls.Config, error)) Option {
+	return func(c *Client) {
+		c.tls.factory = fn
 	}
 }
 
@@ -354,8 +384,18 @@ func (c *Client) generateMiddleware(l Location) Middleware {
 
 func (c *Client) generateTransportMiddleware() []TransportMiddleware {
 	return append([]TransportMiddleware{
+		c.setupTLSConfigTransport,
 		c.setupTraceLevelTransport,
 	}, c.transportMiddleware...)
+}
+
+func (c *Client) setupTLSConfigTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
+	// TODO Error if not default transport; better error handling
+	if defaultTransport, ok := t.(*http.Transport); ok {
+		defaultTransport.TLSClientConfig, _ = c.tls.New(ctx)
+	}
+
+	return t
 }
 
 func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
@@ -443,41 +483,6 @@ func (c *Client) applyAuth() error {
 		auth = a(auth)
 	}
 	return auth.Authenticate(c.Request, c.UserInfo)
-}
-
-func (c *Client) loadClientTLSCreds() error {
-	if c.certFile != "" || c.keyFile != "" {
-		if defaultTransport, ok := c.transport.(*http.Transport); ok {
-			defaultTransport.TLSClientConfig = c.tlsConfig
-		}
-
-		cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
-		cfg := c.TLSConfig()
-		cfg.Certificates = append(cfg.Certificates, cert)
-		if err != nil {
-			return err
-		}
-	}
-
-	caCertPool := c.TLSConfig().RootCAs
-	if caCertPool == nil {
-		caCertPool = x509.NewCertPool()
-		c.TLSConfig().RootCAs = caCertPool
-	}
-
-	for _, path := range c.rootCAs {
-		cert, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		_ = caCertPool.AppendCertsFromPEM(cert)
-	}
-
-	return nil
-}
-
-func (c *Client) TLSConfig() *tls.Config {
-	return c.tlsConfig
 }
 
 func (c *Client) Dialer() *net.Dialer {
@@ -570,21 +575,6 @@ func (c *Client) SetIntegrity(i Integrity) error {
 	c.AddDownloadMiddleware(func(downloader Downloader) Downloader {
 		return NewIntegrityDownloader(i, downloader)
 	})
-	return nil
-}
-
-func (c *Client) SetInsecureSkipVerify(v bool) error {
-	c.TLSConfig().InsecureSkipVerify = v
-	return nil
-}
-
-func (c *Client) SetCiphers(ids *CipherSuites) error {
-	c.TLSConfig().CipherSuites = []uint16(*ids)
-	return nil
-}
-
-func (c *Client) SetCurves(ids *CurveIDs) error {
-	c.TLSConfig().CurvePreferences = []tls.CurveID(*ids)
 	return nil
 }
 
@@ -746,49 +736,6 @@ func (c *Client) Authenticator() Authenticator {
 // AddAuthMiddleware adds middleware for the authenticator
 func (c *Client) AddAuthMiddleware(fn func(Authenticator) Authenticator) {
 	c.authMiddleware = append(c.authMiddleware, fn)
-}
-
-func (c *Client) SetCACertFile(path string) error {
-	c.rootCAs = append(c.rootCAs, path)
-	return nil
-}
-
-func (c *Client) SetCACertPath(path string) error {
-	paths, err := fs.Glob(os.DirFS("."), "*.pem")
-	if err != nil {
-		return err
-	}
-	c.rootCAs = append(c.rootCAs, paths...)
-	return nil
-}
-
-func (c *Client) SetClientCertFile(path string) error {
-	c.certFile = path
-	return nil
-}
-
-func (c *Client) SetKeyFile(path string) error {
-	c.keyFile = path
-	return nil
-}
-
-func (c *Client) SetServerName(s string) error {
-	c.TLSConfig().ServerName = s
-	return nil
-}
-
-func (c *Client) setTimeHelper(f *cli.File) error {
-	s, err := f.Stat()
-	if err != nil {
-		return err
-	}
-	c.TLSConfig().Time = s.ModTime
-	return nil
-}
-
-func (c *Client) SetNextProtos(s []string) error {
-	c.TLSConfig().NextProtos = s
-	return nil
 }
 
 func (c *Client) SetRequestID(s string) error {

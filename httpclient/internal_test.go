@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,7 +6,6 @@ package httpclient // intentional
 
 import (
 	"bytes"
-	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 )
 
 type ClientAttributes struct {
-	TLSConfig              *tls.Config
 	Dialer                 *net.Dialer
 	DNSDialer              *net.Dialer
 	BaseURL                string
@@ -43,7 +41,6 @@ type RequestAttributes struct {
 
 func Attributes(c *Client) *ClientAttributes {
 	return &ClientAttributes{
-		TLSConfig:   c.TLSConfig(),
 		Dialer:      c.Dialer(),
 		DNSDialer:   c.DNSDialer(),
 		BodyContent: c.BodyContent,
