@@ -114,24 +114,9 @@ func listCiphers(w io.Writer, items []*tls.CipherSuite) {
 func sprintSupportedVersions(v []uint16) string {
 	res := make([]string, len(v))
 	for i, e := range v {
-		res[i] = versionString(e)
+		res[i] = tls.VersionName(e)
 	}
 	return strings.Join(res, ", ")
-}
-
-func versionString(e uint16) string {
-	switch e {
-	case tls.VersionTLS10:
-		return "TLSv1.0"
-	case tls.VersionTLS11:
-		return "TLSv1.1"
-	case tls.VersionTLS12:
-		return "TLSv1.2"
-	case tls.VersionTLS13:
-		return "TLSv1.3"
-	default:
-		return fmt.Sprintf("0x%04X", e)
-	}
 }
 
 func doListCurves(c *cli.Context) error {

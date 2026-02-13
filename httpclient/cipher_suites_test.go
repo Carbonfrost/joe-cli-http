@@ -66,7 +66,7 @@ var _ = Describe("ListCiphers", func() {
 			Action: httpclient.ListCiphers(),
 		}
 		app.RunContext(context.Background(), []string{"app"})
-		Expect(buf.String()).To(ContainSubstring("TLS_RSA_WITH_AES_128_CBC_SHA\tTLSv1.0, TLSv1.1, TLSv1.2"))
+		Expect(buf.String()).To(ContainSubstring("TLS_RSA_WITH_AES_128_CBC_SHA\tTLS 1.0, TLS 1.1, TLS 1.2"))
 	})
 
 })

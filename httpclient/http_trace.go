@@ -403,7 +403,7 @@ func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err err
 		CipherSuite       string
 		ServerCertificate []NameValue
 	}{
-		Proto:             versionString(state.Version),
+		Proto:             tls.VersionName(state.Version),
 		CipherSuite:       tls.CipherSuiteName(state.CipherSuite),
 		ServerCertificate: formatCert(state.PeerCertificates[0]),
 	})
