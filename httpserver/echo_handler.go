@@ -7,6 +7,7 @@ package httpserver
 import (
 	"bytes"
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -36,6 +37,14 @@ type reflectedRequest struct {
 	Files   map[string][]fileInfo `json:"files,omitempty"`
 	Errors  []string              `json:"errors,omitempty"`
 	Body    fileInfo              `json:"body,omitzero"`
+	TLS     *tlsConnectionState   `json:"tls,omitzero"`
+}
+
+type tlsConnectionState struct {
+	Version     string `json:"version"`
+	CurveID     string `json:"curveID"`
+	CipherSuite string `json:"cipherSuite"`
+	ServerName  string `json:"serverName,omitempty"`
 }
 
 type echoHandler struct {
@@ -59,6 +68,18 @@ func getRemoteIP(r *http.Request) string {
 	return ip
 }
 
+func tryTLSState(r *http.Request) *tlsConnectionState {
+	if r.TLS == nil {
+		return nil
+	}
+	return &tlsConnectionState{
+		Version:     tls.VersionName(r.TLS.Version),
+		CipherSuite: tls.CipherSuiteName(r.TLS.CipherSuite),
+		CurveID:     r.TLS.CurveID.String(),
+		ServerName:  r.TLS.ServerName,
+	}
+}
+
 func (e *echoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -68,6 +89,7 @@ func (e *echoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Remote:  getRemoteIP(r),
 		Headers: r.Header,
 		Query:   r.URL.Query(),
+		TLS:     tryTLSState(r),
 	}
 
 	handleError := func(e string) {
