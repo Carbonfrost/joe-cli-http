@@ -1,15 +1,16 @@
-# Copyright 2025 The Joe-cli Authors. All rights reserved.
+# Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 
 version: 2
 
 builds:
-  - main: ./cmd/toupee
-    id: toupee
-    binary: toupee
+  - main: ./cmd/rug
+    id: rug
+    binary: rug
     <<: &build_defaults
       goos:
         - linux
@@ -30,9 +31,9 @@ builds:
     <<: *build_defaults
 
 archives:
-  - id: toupee
+  - id: rug
     builds:
-      - toupee
+      - rug
     <<: &archive_defaults
       name_template: >-
         {{ .ProjectName }}_
@@ -56,9 +57,9 @@ archives:
     <<: *archive_defaults        
 
 brews:
-  - name: toupee
+  - name: rug
     ids:
-    - toupee
+    - rug
     <<: &brew_defaults
       repository: 
         owner: Carbonfrost

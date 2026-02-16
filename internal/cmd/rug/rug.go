@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package toupee
+package rug
 
 import (
 	"github.com/Carbonfrost/joe-cli"
@@ -17,7 +17,7 @@ func Run(args []string) {
 
 func NewApp() *cli.App {
 	return &cli.App{
-		Name:     "toupee",
+		Name:     "rug",
 		HelpText: "Expands RFC 6570 (level 4) URI templates",
 		Uses: cli.Pipeline(
 			&color.Options{},

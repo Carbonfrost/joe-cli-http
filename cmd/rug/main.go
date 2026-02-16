@@ -9,9 +9,9 @@ package main
 import (
 	"os"
 
-	"github.com/Carbonfrost/joe-cli-http/internal/cmd/toupee"
+	"github.com/Carbonfrost/joe-cli-http/internal/cmd/rug"
 )
 
 func main() {
-	toupee.Run(os.Args)
+	rug.Run(os.Args)
 }

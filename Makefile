@@ -24,7 +24,7 @@ watch:
 json_info:
 	@ go run -tags json_info ./cmd/weave > docs/weave.json_info.json
 	@ go run -tags json_info ./cmd/wig > docs/wig.json_info.json
-	@ go run -tags json_info ./cmd/toupee > docs/toupee.json_info.json
+	@ go run -tags json_info ./cmd/rug > docs/rug.json_info.json
 
 generate:
 	$(Q) $(OUTPUT_COLLAPSED) go generate ./...
@@ -35,7 +35,7 @@ lint:
 	$(Q) go tool revive ./... 2>&1 || true
 	$(Q) go tool staticcheck -checks 'all,-ST*' $(shell go list ./...) 2>&1	|| true
 
-install: -install-wig -install-toupee -install-weave
+install: -install-wig -install-rug -install-weave
 
 -install-%: build -check-env-PREFIX -check-env-_GO_OUTPUT_DIR
 	$(Q) eng/install "${_GO_OUTPUT_DIR}/$*" $(PREFIX)/bin

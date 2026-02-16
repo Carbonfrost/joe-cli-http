@@ -8,9 +8,9 @@ package main
 
 import (
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
-	"github.com/Carbonfrost/joe-cli-http/internal/cmd/toupee"
+	"github.com/Carbonfrost/joe-cli-http/internal/cmd/rug"
 )
 
 func main() {
-	build.Dump(toupee.NewApp())
+	build.Dump(rug.NewApp())
 }
