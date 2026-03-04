@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,16 +9,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
-	"maps"
 )
 
 const defaultAccessLog = `%(accessLog.default)\n`
@@ -112,7 +111,10 @@ func FileServerHandlerSpec() HandlerSpec {
 // to the registry factory function.
 func RegistryHandlerSpec(name string) HandlerSpec {
 	return func(ctx context.Context, vp httpclient.VirtualPath) (http.Handler, error) {
-		reg := provider.Services(cli.FromContext(ctx)).Registry(name)
+		reg, ok := provider.Services(ctx).LookupRegistry(name)
+		if !ok {
+			return nil, fmt.Errorf("no handler for %q", name)
+		}
 		h, err := reg.New(vp.PhysicalPath, vp.Options)
 		if err != nil {
 			return nil, err

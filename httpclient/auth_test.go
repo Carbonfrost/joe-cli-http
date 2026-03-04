@@ -52,9 +52,7 @@ var _ = Describe("NewAuthenticator", func() {
 	},
 		Entry("basic", "basic", httpclient.BasicAuth, true),
 		Entry("blank", "", httpclient.NoAuth, false),
-
-		// TODO Need joe-cli@futures to support case-insensitive providers
-		XEntry("BASIC", "BASIC", httpclient.BasicAuth, true),
+		Entry("BASIC", "BASIC", httpclient.BasicAuth, true),
 		Entry("none", "none", httpclient.NoAuth, false),
 	)
 })
