@@ -1,4 +1,4 @@
-// Copyright 2022 The Joe-cli Authors. All rights reserved.
+// Copyright 2022, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -35,7 +35,7 @@ var (
 
 func (c *CipherSuites) Set(arg string) error {
 	items := *c
-	for _, name := range strings.Split(arg, ",") {
+	for name := range strings.SplitSeq(arg, ",") {
 		id, err := cipherSuite(name)
 		if err != nil {
 			return err
@@ -60,7 +60,7 @@ func (c *CipherSuites) Synopsis() string {
 
 func (c *CurveIDs) Set(arg string) error {
 	items := *c
-	for _, name := range strings.Split(arg, ",") {
+	for name := range strings.SplitSeq(arg, ",") {
 		id, err := curve(name)
 		if err != nil {
 			return err

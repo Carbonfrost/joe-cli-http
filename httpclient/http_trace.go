@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -242,7 +242,7 @@ func SetTraceLevel(s ...*TraceLevel) cli.Action {
 
 func (l *TraceLevel) Set(arg string) error {
 	var res TraceLevel
-	for _, j := range strings.Split(arg, ",") {
+	for j := range strings.SplitSeq(arg, ",") {
 		j = strings.TrimSpace(j)
 		in := indexTraceString(j)
 		if in < 0 {

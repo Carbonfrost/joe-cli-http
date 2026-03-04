@@ -418,7 +418,7 @@ func (t *templatePart) expandMap(buf *bytes.Buffer, term templateTerm, m map[str
 func struct2map(v any) (map[string]any, bool) {
 	value := reflect.ValueOf(v)
 	switch value.Type().Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return struct2map(value.Elem().Interface())
 	case reflect.Struct:
 		m := make(map[string]any)
