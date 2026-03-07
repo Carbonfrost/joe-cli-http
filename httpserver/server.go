@@ -112,23 +112,31 @@ var (
 // New creates a new HTTP server with the given handler creation callback.
 func New(options ...Option) *Server {
 	s := &Server{
-		Server: &http.Server{
-			Addr: "localhost:8000",
-		},
-		ShutdownTimeout: defaultShutdownTimeout,
-		accessLog:       defaultAccessLog,
+		Server: &http.Server{},
 	}
-	s.AddMiddleware(func(h http.Handler) http.Handler {
-		if s.accessLog != "" {
-			return NewRequestLogger(s.accessLog, os.Stderr, h)
-		}
-		return h
-	})
+	s.Apply(defaultOptions(s)...)
+	s.Apply(options...)
+	return s
+}
 
-	for _, o := range options {
+func defaultOptions(s *Server) []Option {
+	return []Option{
+		WithAddr("localhost:8000"),
+		WithShutdownTimeout(defaultShutdownTimeout),
+		WithAccessLog(defaultAccessLog),
+		WithMiddleware(func(h http.Handler) http.Handler {
+			if s.accessLog != "" {
+				return NewRequestLogger(s.accessLog, os.Stderr, h)
+			}
+			return h
+		}),
+	}
+}
+
+func (s *Server) Apply(opts ...Option) {
+	for _, o := range opts {
 		o(s)
 	}
-	return s
 }
 
 func DefaultServer() *Server {
