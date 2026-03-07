@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -102,7 +102,7 @@ const (
 // DefaultReadyFunc provides the default behavior when the server starts
 var (
 	DefaultReadyFunc = ComposeReadyFuncs(
-		ReportListening,
+		ReportListening(),
 	)
 
 	// ErrNotListening is reported when the server is not listening
@@ -279,8 +279,13 @@ func WithNoDirectoryListings() Option {
 
 // OpenInBrowser is a function to open the server in the browser.  This
 // function is passed as a value to WithReadyFunc
-func OpenInBrowser(c context.Context) {
-	FromContext(c).OpenInBrowser()
+func OpenInBrowser(path ...string) ReadyFunc {
+	return func(c context.Context) {
+		err := FromContext(c).OpenInBrowser(path...)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
 }
 
 // FromContext obtains the server from the context.
@@ -302,9 +307,11 @@ func ComposeReadyFuncs(v ...ReadyFunc) ReadyFunc {
 
 // ReportListening is a ready func that prints a message to stderr that the
 // server is listening
-func ReportListening(c context.Context) {
-	s := FromContext(c)
-	s.ReportListening()
+func ReportListening() ReadyFunc {
+	return func(c context.Context) {
+		s := FromContext(c)
+		s.ReportListening()
+	}
 }
 
 // AddMiddleware appends additional middleware to the server
@@ -537,8 +544,15 @@ func (o Option) Execute(c context.Context) error {
 	return nil
 }
 
+func (r ReadyFunc) Execute(c context.Context) error {
+	FromContext(c).Apply(AddReadyFunc(r))
+	return nil
+}
+
 func withAdapter[T any](fn func(*Server, T) error, value T) Option {
 	return func(s *Server) {
 		_ = fn(s, value)
 	}
 }
+
+var _ cli.Action = (ReadyFunc)(nil)

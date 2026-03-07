@@ -243,7 +243,7 @@ func SetOpenInBrowser() cli.Action {
 			HelpText: "When set, open the default Web browser when the server is ready",
 			Category: serverCategory,
 		},
-		cli.At(cli.ActionTiming, AddReadyFunc(OpenInBrowser)),
+		cli.At(cli.ActionTiming, AddReadyFunc(OpenInBrowser())),
 		tagged,
 	)
 }
