@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -57,7 +57,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetOpenInBrowser()},
 			{Uses: SetAccessLog()},
 			{Uses: SetNoAccessLog()},
-			{Uses: SetServer()},
+			{Uses: SetServerHeader()},
 			{Uses: SetTLSCertFile()},
 			{Uses: SetTLSKeyFile()},
 		}...),
@@ -78,7 +78,7 @@ func SetHostname(s ...string) cli.Action {
 			HelpText: "Sets the server {HOST} name to use",
 			Category: listenerCategory,
 		},
-		withBinding((*Server).SetHostname, s),
+		bind.Action(WithHostname, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -93,7 +93,7 @@ func SetPort(s ...int) cli.Action {
 			HelpText: "Sets the server {PORT} that will be used",
 			Category: listenerCategory,
 		},
-		withBinding((*Server).SetPort, s),
+		bind.Action(WithPort, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -107,7 +107,7 @@ func SetAddr(s ...string) cli.Action {
 			HelpText: "Sets the server {ADDRESS} to use",
 			Category: listenerCategory,
 		},
-		withBinding((*Server).SetAddr, s),
+		bind.Action(WithAddr, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -122,7 +122,7 @@ func SetReadTimeout(d ...time.Duration) cli.Action {
 			HelpText: "Sets the maximum {DURATION} for reading the entire request",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetReadTimeout, d),
+		bind.Action(WithReadTimeout, bind.Exact(d...)),
 		tagged,
 	)
 }
@@ -136,7 +136,7 @@ func SetShutdownTimeout(d ...time.Duration) cli.Action {
 			HelpText: "Sets the maximum {DURATION} for shutting down the server",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetShutdownTimeout, d),
+		bind.Action(WithShutdownTimeout, bind.Exact(d...)),
 		tagged,
 	)
 }
@@ -152,7 +152,7 @@ func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
 			HelpText: "Sets the amount of {TIME} allowed to read request headers",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetReadHeaderTimeout, d),
+		bind.Action(WithReadHeaderTimeout, bind.Exact(d...)),
 		tagged,
 	)
 }
@@ -168,7 +168,7 @@ func SetWriteTimeout(d ...time.Duration) cli.Action {
 			HelpText: "Sets the amount of {TIME} allowed to write response",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetWriteTimeout, d),
+		bind.Action(WithWriteTimeout, bind.Exact(d...)),
 		tagged,
 	)
 }
@@ -186,7 +186,7 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 			HelpText: "Sets the amount of {TIME} allowed to read request headers",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetIdleTimeout, d),
+		bind.Action(WithIdleTimeout, bind.Exact(d...)),
 		tagged,
 	)
 }
@@ -200,7 +200,7 @@ func SetMaxHeaderBytes(v ...int) cli.Action {
 			Value:    new(int),
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetMaxHeaderBytes, v),
+		bind.Action(WithMaxHeaderBytes, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -216,7 +216,7 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 			HelpText: "Serve static files from the specified directory",
 			Category: serverCategory,
 		},
-		withBinding(bindFileAsString((*Server).SetStaticDirectory), f),
+		bind.Action(WithStaticDirectory, bind.Exact(f...).(*bind.FileBinder).Name()),
 		tagged,
 	)
 }
@@ -229,7 +229,7 @@ func SetNoDirectoryListings() cli.Action {
 			HelpText: "When set, don't display directory listings",
 			Category: serverCategory,
 		},
-		withBinding((*Server).SetNoDirectoryListings, []bool{true}),
+		cli.At(cli.ActionTiming, WithNoDirectoryListings()),
 		tagged,
 	)
 }
@@ -243,7 +243,7 @@ func SetOpenInBrowser() cli.Action {
 			HelpText: "When set, open the default Web browser when the server is ready",
 			Category: serverCategory,
 		},
-		withBinding((*Server).setOpenInBrowserHelper, []bool{true}),
+		cli.At(cli.ActionTiming, AddReadyFunc(OpenInBrowser)),
 		tagged,
 	)
 }
@@ -307,7 +307,14 @@ func ListHandlers() cli.Action {
 
 // Handle registers the given handler with the context server
 func Handle(path string, h http.Handler) cli.Action {
-	return cli.ActionFunc(func(c *cli.Context) error {
+	return cli.ActionOf(func(c context.Context) error {
+		return FromContext(c).Handle(path, h)
+	})
+}
+
+// HandleFunc registers the given handler with the context server
+func HandleFunc(path string, h http.HandlerFunc) cli.Action {
+	return cli.ActionOf(func(c context.Context) error {
 		return FromContext(c).Handle(path, h)
 	})
 }
@@ -337,24 +344,24 @@ func SetAccessLog(v ...string) cli.Action {
 			HelpText: "Set access log format",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetAccessLog, v),
+		bind.Action(WithAccessLog, bind.Exact(v...)),
 		tagged,
 	)
 }
 
-func SetNoAccessLog(v ...bool) cli.Action {
+func SetNoAccessLog() cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "no-access-log",
 			HelpText: "Disable the access log",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetNoAccessLog, v),
+		cli.At(cli.ActionTiming, WithNoAccessLog()),
 		tagged,
 	)
 }
 
-func SetServer(v ...string) cli.Action {
+func SetServerHeader(v ...string) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "server",
@@ -362,7 +369,7 @@ func SetServer(v ...string) cli.Action {
 			HelpText: "Set value of the Server response header",
 			Category: advancedCategory,
 		},
-		withBinding((*Server).SetServer, v),
+		bind.Action(WithServerHeader, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -375,7 +382,7 @@ func SetTLSKeyFile(v ...*cli.File) cli.Action {
 			Category: listenerCategory,
 			Options:  cli.MustExist,
 		},
-		withBinding(bindFileAsString((*Server).SetTLSKeyFile), v),
+		bind.Action(WithTLSKeyFile, bind.Exact(v...).(*bind.FileBinder).Name()),
 		tagged,
 	)
 }
@@ -388,7 +395,7 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 			Category: listenerCategory,
 			Options:  cli.MustExist,
 		},
-		withBinding(bindFileAsString((*Server).SetTLSCertFile), v),
+		bind.Action(WithTLSCertFile, bind.Exact(v...).(*bind.FileBinder).Name()),
 		tagged,
 	)
 }
@@ -441,14 +448,4 @@ func execContext(c context.Context, fn func() error, ready func(context.Context)
 
 func serverFailed(err error) error {
 	return cli.Exit(fmt.Sprintf("fatal: unable to start server: %s", err), 1)
-}
-
-func withBinding[V any](binder func(*Server, V) error, args []V) cli.Action {
-	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
-}
-
-func bindFileAsString(fn func(*Server, string) error) func(*Server, *cli.File) error {
-	return func(s *Server, f *cli.File) error {
-		return fn(s, f.Name)
-	}
 }

@@ -209,6 +209,66 @@ func WithShutdownTimeout(d time.Duration) Option {
 	return withAdapter((*Server).SetShutdownTimeout, d)
 }
 
+// WithReadTimeout sets the amount of time to allow for reading requests
+func WithReadTimeout(d time.Duration) Option {
+	return withAdapter((*Server).SetReadTimeout, d)
+}
+
+// WithReadHeaderTimeout sets the amount of time to allow for reading headers
+func WithReadHeaderTimeout(d time.Duration) Option {
+	return withAdapter((*Server).SetReadHeaderTimeout, d)
+}
+
+// WithWriteTimeout sets the amount of time to allow for writing responses
+func WithWriteTimeout(d time.Duration) Option {
+	return withAdapter((*Server).SetWriteTimeout, d)
+}
+
+// WithIdleTimeout sets the amount of time to allow for idling
+func WithIdleTimeout(d time.Duration) Option {
+	return withAdapter((*Server).SetIdleTimeout, d)
+}
+
+// WithMaxHeaderBytes sets the amount max header bytes
+func WithMaxHeaderBytes(n int) Option {
+	return withAdapter((*Server).SetMaxHeaderBytes, n)
+}
+
+// WithTLSKeyFile sets the file to use for the TLS key
+func WithTLSKeyFile(filename string) Option {
+	return withAdapter((*Server).SetTLSKeyFile, filename)
+}
+
+// WithTLSCertFile sets the file to use for the TLS cert
+func WithTLSCertFile(filename string) Option {
+	return withAdapter((*Server).SetTLSCertFile, filename)
+}
+
+// WithServerHeader sets the contents of the server header
+func WithServerHeader(s string) Option {
+	return withAdapter((*Server).SetServerHeader, s)
+}
+
+// WithAccessLog sets the format string for the access log
+func WithAccessLog(s string) Option {
+	return withAdapter((*Server).SetAccessLog, s)
+}
+
+// WithNoAccessLog disables the access log
+func WithNoAccessLog() Option {
+	return withAdapter((*Server).SetNoAccessLog, true)
+}
+
+// WithStaticDirectory hosts a static directory
+func WithStaticDirectory(path string) Option {
+	return withAdapter((*Server).SetStaticDirectory, path)
+}
+
+// WithNoDirectoryListings disables directory listings
+func WithNoDirectoryListings() Option {
+	return withAdapter((*Server).SetNoDirectoryListings, true)
+}
+
 // OpenInBrowser is a function to open the server in the browser.  This
 // function is passed as a value to WithReadyFunc
 func OpenInBrowser(c context.Context) {
@@ -407,7 +467,7 @@ func (s *Server) SetNoAccessLog(v bool) error {
 	return nil
 }
 
-func (s *Server) SetServer(name string) error {
+func (s *Server) SetServerHeader(name string) error {
 	s.AddMiddleware(NewHeaderMiddleware("Server", name))
 	return nil
 }
@@ -419,11 +479,6 @@ func (s *Server) SetTLSCertFile(v string) error {
 
 func (s *Server) SetTLSKeyFile(v string) error {
 	s.TLSKeyFile = v
-	return nil
-}
-
-func (s *Server) setOpenInBrowserHelper(_ bool) error {
-	AddReadyFunc(OpenInBrowser)(s)
 	return nil
 }
 
