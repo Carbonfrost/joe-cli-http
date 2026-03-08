@@ -79,7 +79,24 @@ type ReadyFunc func(context.Context)
 
 // Option is an option to configure the server
 // Option can be used as an Action, typically within the Uses or Before pipeline.
-type Option func(*Server)
+type Option interface {
+	cli.Action
+	apply(*Server)
+}
+
+type option[T any] struct {
+	val T
+	fn  func(*Server, T) error
+}
+
+func (o option[_]) Execute(ctx context.Context) error {
+	o.apply(FromContext(ctx))
+	return nil
+}
+
+func (o option[_]) apply(s *Server) {
+	o.fn(s, o.val)
+}
 
 // MiddlewareFunc defines a function that creates a middleware wrapper around another
 // handler
@@ -135,7 +152,7 @@ func defaultOptions(s *Server) []Option {
 
 func (s *Server) Apply(opts ...Option) {
 	for _, o := range opts {
-		o(s)
+		o.apply(s)
 	}
 }
 
@@ -150,51 +167,37 @@ func DefaultServer() *Server {
 
 // WithHandler sets the handler which will run on the server
 func WithHandler(handler http.Handler) Option {
-	return func(s *Server) {
-		s.Server.Handler = handler
-	}
+	return withAdapter((*Server).WithHandler, handler)
 }
 
 // WithHandlerFactory sets how to create the handler which will run on the server
 func WithHandlerFactory(f func(*Server) (http.Handler, error)) Option {
-	return func(s *Server) {
-		s.handlerFactory = f
-	}
+	return withAdapter((*Server).WithHandlerFactory, f)
 }
 
 // WithReadyFunc sets a callback for when the server is listening
 func WithReadyFunc(ready ReadyFunc) Option {
-	return func(s *Server) {
-		s.ready = ready
-	}
+	return withAdapter((*Server).WithReadyFunc, ready)
 }
 
 // AddReadyFunc appends a callback for when the server is ready
 func AddReadyFunc(ready ReadyFunc) Option {
-	return func(s *Server) {
-		s.ready = ComposeReadyFuncs(s.ready, ready)
-	}
+	return withAdapter((*Server).AddReadyFunc, ready)
 }
 
 // WithShutdownFunc sets a callback for when the server is shutting down
 func WithShutdownFunc(shutdown ReadyFunc) Option {
-	return func(s *Server) {
-		s.shutdown = shutdown
-	}
+	return withAdapter((*Server).WithShutdownFunc, shutdown)
 }
 
 // AddShutdownFunc adds a callback for when the server is shutting down
 func AddShutdownFunc(shutdown ReadyFunc) Option {
-	return func(s *Server) {
-		s.shutdown = ComposeReadyFuncs(s.shutdown, shutdown)
-	}
+	return withAdapter((*Server).AddShutdownFunc, shutdown)
 }
 
 // WithMiddleware adds handler middleware
 func WithMiddleware(m MiddlewareFunc) Option {
-	return func(s *Server) {
-		s.AddMiddleware(m)
-	}
+	return withAdapter((*Server).AddMiddleware, m)
 }
 
 // WithAddr sets the corresponding server field
@@ -315,8 +318,45 @@ func ReportListening() ReadyFunc {
 }
 
 // AddMiddleware appends additional middleware to the server
-func (s *Server) AddMiddleware(m MiddlewareFunc) {
+func (s *Server) AddMiddleware(m MiddlewareFunc) error {
 	s.middleware = append(s.middleware, m)
+	return nil
+}
+
+// AddShutdownFunc appends additional shutdown functions
+func (s *Server) AddShutdownFunc(shutdown ReadyFunc) error {
+	s.shutdown = ComposeReadyFuncs(s.shutdown, shutdown)
+	return nil
+}
+
+// WithShutdownFunc sets the shutdown function
+func (s *Server) WithShutdownFunc(shutdown ReadyFunc) error {
+	s.shutdown = shutdown
+	return nil
+}
+
+// WithHandler sets the handler for the server
+func (s *Server) WithHandler(handler http.Handler) error {
+	s.Server.Handler = handler
+	return nil
+}
+
+// WithHandlerFactory sets the handler factory for the server
+func (s *Server) WithHandlerFactory(f func(*Server) (http.Handler, error)) error {
+	s.handlerFactory = f
+	return nil
+}
+
+// WithReadyFunc sets the ready function for the server
+func (s *Server) WithReadyFunc(ready ReadyFunc) error {
+	s.ready = ready
+	return nil
+}
+
+// AddReadyFunc appens additional ready functions
+func (s *Server) AddReadyFunc(ready ReadyFunc) error {
+	s.ready = ComposeReadyFuncs(s.ready, ready)
+	return nil
 }
 
 func (s *Server) HideDirectoryListing() bool {
@@ -539,20 +579,13 @@ func (s *Server) url() *url.URL {
 	return res
 }
 
-func (o Option) Execute(c context.Context) error {
-	o(FromContext(c))
-	return nil
-}
-
 func (r ReadyFunc) Execute(c context.Context) error {
 	FromContext(c).Apply(AddReadyFunc(r))
 	return nil
 }
 
 func withAdapter[T any](fn func(*Server, T) error, value T) Option {
-	return func(s *Server) {
-		_ = fn(s, value)
-	}
+	return option[T]{value, fn}
 }
 
 var _ cli.Action = (ReadyFunc)(nil)
