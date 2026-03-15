@@ -377,7 +377,9 @@ func SetServerHeader(v ...string) cli.Action {
 func SetTLSKeyFile(v ...*cli.File) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "key",
+			Name: "key",
+			// TODO Shouldn't be needed in joe-cli@futures where implicit binding happens on composites
+			Value:    new(cli.File),
 			HelpText: "Specify the FILE that contains the TLS private key",
 			Category: listenerCategory,
 			Options:  cli.MustExist,
@@ -391,6 +393,7 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "cert",
+			Value:    new(cli.File),
 			HelpText: "Specify the FILE that contains the TLS certificate",
 			Category: listenerCategory,
 			Options:  cli.MustExist,
