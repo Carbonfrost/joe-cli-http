@@ -95,7 +95,7 @@ func NewLocation(url string, varfn func(context.Context) any) Location {
 	}
 }
 
-// NewURITempateLocation provides a location based on a URI template. varfn
+// NewURITemplateLocation provides a location based on a URI template. varfn
 // is a function that provides URI template variables using the acceptable
 // types supported by [URITemplate.Expand].
 func NewURITemplateLocation(template string, varfn func(context.Context) any) Location {

@@ -246,12 +246,4 @@ func authModeFromName(items [2]string, s string) (AuthMode, error) {
 	return AuthMode(0), fmt.Errorf("unknown auth mode %q", s)
 }
 
-func newNoneAuthenticatorOpts(opts struct{}) (Authenticator, error) {
-	return NoAuth, nil
-}
-
-func newBasicAuthenticatorWithOpts(opts struct{}) (Authenticator, error) {
-	return BasicAuth, nil
-}
-
 var _ Authenticator = AuthMode(0)
