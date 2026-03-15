@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.7.0 (March 14, 2026)
+
+### New Features
+
+* Rename `toupee` to `rug` (9ccbb5b)
+* Extract TLS to own package and context value (2b4eaa7)
+* Adopt `tls.VersionName` for parsing flag values (6411043)
+* Report TLS connection state in echo handler (90d3561)
+* URI templates: Update `PartialExpand` to return the template (d2f8321)
+* Add explicit `ReadyFunc` return types (caafb23)
+* Introduce `AutoLocation` and encapsulate calculation from resolver (015f1f1)
+* Rework server options:
+    * Breaking change: Convert `httpserver.Option` into interface (6bbbdb9)
+    * Encapsulate flag actions as their corresponding options (2fd0d97)
+    * Introduce `Server.Apply`; `defaultOptions` (43b35f2)
+
+### Bug fixes and improvements
+
+* Detect other URL schemes as implicit (d9c9704)
+* Fix missing option initializers (1904072)
+* Use version string from metadata on version screen (eb7e7bf)
+* Safer handling of client certificates (9c3492c)
+* Report JSON Info metadata (f26a875)
+* Update tests in `Downloader`; modernize to use `TryFromContext` (3179cfa)
+* Chores:
+    * Fix documentation; unused functions (c5490ee)
+    * Update documentation (2ab3aa5)
+    * Apply go fix and modernize (1e361d0)
+    * Update dependent joe-cli version (c81cee2, 2b455f4)
+    * Update to go1.26 (d7e30c0)
+    * Split resolver.go file (a5c02b5)
+
+
 ## v0.6.0 (February 4, 2026)
 
 ### New Features
