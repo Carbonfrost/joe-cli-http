@@ -5,8 +5,8 @@
 package httpserver
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -15,13 +15,12 @@ import (
 // ReadyFunc provides a function for when the server has started or stopped
 type ReadyFunc func(context.Context)
 
-
 // DefaultReadyFunc provides the default behavior when the server starts
 var (
 	DefaultReadyFunc = ComposeReadyFuncs(
 		ReportListening(),
+		ReloadServer(),
 	)
-
 )
 
 // ComposeReadyFuncs provides a ReadyFunc that combines a sequence
@@ -44,6 +43,17 @@ func OpenInBrowser(path ...string) ReadyFunc {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
+	}
+}
+
+// ReloadServer provides a function which reloads reloadable handlers.
+// This is included in the default ready function for the server.
+// To defer loading to the first time a handler is invoked, you should
+// remove this ready func from the server. If the server does not support
+// reloading, this operation fails silently
+func ReloadServer() ReadyFunc {
+	return func(c context.Context) {
+		FromContext(c).ReloadAll()
 	}
 }
 

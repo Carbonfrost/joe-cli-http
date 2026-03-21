@@ -74,7 +74,6 @@ type Server struct {
 	}
 }
 
-
 // Option is an option to configure the server
 // Option can be used as an Action, typically within the Uses or Before pipeline.
 type Option interface {
@@ -354,7 +353,9 @@ func (s *Server) ensureMux() (mux, error) {
 		return m, nil
 	}
 	if s.Server.Handler == nil {
-		m := http.NewServeMux()
+		m := &reloadSupport{
+			ServeMux: http.NewServeMux(),
+		}
 		s.Server.Handler = m
 		return m, nil
 	}
@@ -379,6 +380,16 @@ func (s *Server) OpenInBrowser(path ...string) error {
 	bind := s.url().JoinPath(path...)
 	fmt.Fprintf(os.Stderr, "Opening default web browser %s...\n", bind)
 	return exec.Open(bind.String())
+}
+
+// ReloadAll causes the server to reload all reloadable handlers.
+// To support reloading, the built-in mux must be used. In particular,
+// you can't specify a handler or handler factory directly.
+func (s *Server) ReloadAll() {
+	mux, _ := s.ensureMux()
+	if reload, ok := mux.(reloadableMux); ok {
+		reload.ReloadAll()
+	}
 }
 
 func (s *Server) Execute(c context.Context) error {
