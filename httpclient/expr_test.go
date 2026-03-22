@@ -12,7 +12,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
-	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,9 +35,9 @@ var _ = Describe("Expr", func() {
 	}
 	DescribeTable("examples", func(text string, res *http.Response, expected types.GomegaMatcher) {
 		e := httpclient.Expr(text).Compile()
-		expander := expr.ComposeExpanders(
+		expander := expander.Compose(
 			httpclient.ExpandResponse(&httpclient.Response{Response: res}),
-			expr.Unknown,
+			expander.Unknown(),
 		)
 		Expect(e.Expand(expander)).To(expected)
 	},

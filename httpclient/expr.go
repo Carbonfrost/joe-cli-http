@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,14 +11,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
 // Expr provides the expression used within the "write out" flag
 type Expr string
 
-func (e Expr) Compile() *expr.Pattern {
-	return expr.CompilePattern(string(e), "%(", ")")
+func (e Expr) Compile() *expander.Pattern {
+	return expander.CompilePattern(string(e), "%(", ")")
 }
 
 func (e *Expr) UnmarshalText(b []byte) error {
@@ -26,8 +26,8 @@ func (e *Expr) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func ExpandResponse(r *Response) expr.Expander {
-	return expr.ComposeExpanders(func(s string) any {
+func ExpandResponse(r *Response) expander.Interface {
+	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "status":
 			return r.Status // "200 OK"
@@ -49,13 +49,13 @@ func ExpandResponse(r *Response) expr.Expander {
 			return buf.String()
 		}
 		return nil
-	}, expr.Prefix("header", ExpandHeader(r.Header)))
+	}), expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
-func ExpandHeader(h http.Header) expr.Expander {
-	return func(s string) any {
+func ExpandHeader(h http.Header) expander.Interface {
+	return expander.Func(func(s string) any {
 		return h.Get(headerCanonicalName(s))
-	}
+	})
 }
 
 func headerCanonicalName(s string) string {

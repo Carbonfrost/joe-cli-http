@@ -17,13 +17,14 @@ import (
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
 const defaultAccessLog = `%(accessLog.default)\n`
 
 var (
-	metaDefaultAccessLog = expr.Compile(
+	metaDefaultAccessLog = expander.Compile(
 		`- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`,
 	)
 )
@@ -56,7 +57,7 @@ var HandlerRegistry = &provider.Registry{
 type requestLoggerHandler struct {
 	mu     *sync.Mutex
 	out    io.Writer
-	format *expr.Pattern
+	format *expander.Pattern
 	next   http.Handler
 }
 
@@ -65,7 +66,7 @@ func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Hand
 	if format == "" {
 		format = defaultAccessLog
 	}
-	logFormat := expr.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
+	logFormat := expander.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
 	return newRequestLoggerHandler(out, next, logFormat)
 }
 
@@ -162,7 +163,7 @@ func newRedirectServerHandlerWithOpts(opts struct {
 	return http.RedirectHandler(opts.To, code), nil
 }
 
-func newRequestLoggerHandler(out io.Writer, next http.Handler, format *expr.Pattern) http.Handler {
+func newRequestLoggerHandler(out io.Writer, next http.Handler, format *expander.Pattern) http.Handler {
 	return &requestLoggerHandler{
 		mu:     new(sync.Mutex),
 		out:    out,
@@ -177,20 +178,20 @@ func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	h.next.ServeHTTP(ww, r)
 
-	expander := expr.ComposeExpanders(
-		expr.ExpandGlobals,
-		expr.ExpandColors,
+	exp := expander.Compose(
+		expander.Func(expr.ExpandGlobals),
+		expander.Colors(),
 		ExpandRequest(r, ww),
 		expandTiming(t1, time.Now()),
 	)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	expr.Fprint(h.out, h.format, expander)
+	expander.Fprint(h.out, h.format, exp)
 }
 
-func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
-	return expr.ComposeExpanders(func(s string) any {
+func ExpandRequest(r *http.Request, ww wrapResponseWriter) expander.Interface {
+	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "bytesWritten":
 			return ww.BytesWritten()
@@ -210,11 +211,11 @@ func ExpandRequest(r *http.Request, ww wrapResponseWriter) expr.Expander {
 			return buf.String()
 		}
 		return nil
-	}, expr.Prefix("header", httpclient.ExpandHeader(ww.Header())))
+	}), expander.Prefix("header", httpclient.ExpandHeader(ww.Header())))
 }
 
-func expandTiming(start, end time.Time) expr.Expander {
-	return expr.ExpandMap(map[string]any{
+func expandTiming(start, end time.Time) expander.Interface {
+	return expander.Map(map[string]any{
 		"duration": end.Sub(start),
 		"end":      end,
 		"start":    start,

@@ -12,10 +12,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/httpserver"
 	"github.com/Carbonfrost/joe-cli-http/httpserver/httpserverfakes"
-
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -116,7 +115,7 @@ var _ = Describe("ExpandRequest", func() {
 
 	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
 		request, _ := http.NewRequest("GET", "https://example.com/whistle", nil)
-		e := expr.Compile(text)
+		e := expander.Compile(text)
 
 		ww := new(httpserverfakes.FakeWrapResponseWriter)
 		ww.BytesWrittenReturns(800)
@@ -150,7 +149,7 @@ func derefANSICodes(s string) string {
 	for _, k := range []string{"reset", "blue", "reverse", "magenta", "green"} {
 		s = strings.ReplaceAll(
 			s,
-			expr.ExpandColors(k).(string),
+			expander.Colors().Expand(k).(string),
 			fmt.Sprintf("{%s}", k))
 	}
 	return s

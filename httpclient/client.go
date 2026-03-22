@@ -21,6 +21,7 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
 type contextKey string
@@ -95,8 +96,8 @@ type TransportMiddleware func(context.Context, http.RoundTripper) http.RoundTrip
 type RoundTripperFunc func(req *http.Request) *http.Response
 
 type exprHandling struct {
-	outExpr   *expr.Pattern
-	errExpr   *expr.Pattern
+	outExpr   *expander.Pattern
+	errExpr   *expander.Pattern
 	outRender io.Writer
 	errRender io.Writer
 }
@@ -129,7 +130,7 @@ var (
 	}
 
 	// These don't have values within redirects
-	noResponseExpander = expr.ExpandMap(map[string]any{
+	noResponseExpander = expander.Map(map[string]any{
 		"status":          "",
 		"statusCode":      "",
 		"http.version":    "",
@@ -139,9 +140,9 @@ var (
 		"contentLength":   "",
 		"header":          "",
 	})
-	noHeaderExpander = expr.Prefix("header", func(_ string) any {
+	noHeaderExpander = expander.Prefix("header", expander.Func(func(_ string) any {
 		return ""
-	})
+	}))
 )
 
 // Option is an option to configure the client
@@ -331,8 +332,8 @@ func (c *Client) ensureExprHandling(ctx *cli.Context) {
 	// Note that errRender always writes to stderr even if %(stdout) expr
 	// is present
 	c.exprHandlingCache = &exprHandling{
-		outRender: expr.NewRenderer(ctx.Stdout, ctx.Stderr),
-		errRender: expr.NewRenderer(ctx.Stderr, ctx.Stderr),
+		outRender: expander.NewRenderer(ctx.Stdout, ctx.Stderr),
+		errRender: expander.NewRenderer(ctx.Stderr, ctx.Stderr),
 		outExpr:   c.writeOutExpr.Compile(),
 		errExpr:   c.writeErrExpr.Compile(),
 	}
@@ -762,11 +763,11 @@ func (c *Client) SetFailFast(v bool) error {
 }
 
 func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
-	expanders := []expr.Expander{
-		expr.ExpandGlobals,
-		expr.Prefix("color", expr.ExpandColors),
-		expr.Prefix("redirect", expandRequest(req)),
-		expr.Prefix("request", expandRequest(initial)),
+	expanders := []expander.Interface{
+		expander.Func(expr.ExpandGlobals),
+		expander.Prefix("color", expander.Colors()),
+		expander.Prefix("redirect", expandRequest(req)),
+		expander.Prefix("request", expandRequest(initial)),
 	}
 
 	if resp == nil {
@@ -774,16 +775,16 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
 	} else {
 		expanders = append(expanders, ExpandResponse(resp))
 	}
-	expanders = append(expanders, expr.Unknown)
-	expander := expr.ComposeExpanders(expanders...)
+	expanders = append(expanders, expander.Unknown())
+	exp := expander.Compose(expanders...)
 
-	expr.Fprint(e.outRender, e.outExpr, expander)
-	expr.Fprint(e.errRender, e.errExpr, expander)
+	expander.Fprint(e.outRender, e.outExpr, exp)
+	expander.Fprint(e.errRender, e.errExpr, exp)
 }
 
-func expandRequest(r *http.Request) expr.Expander {
+func expandRequest(r *http.Request) expander.Interface {
 	if r == nil {
-		return func(s string) any {
+		return expander.Func(func(s string) any {
 			if s == "method" || s == "protocol" || s == "location" || s == "url" || s == "header" {
 				return ""
 			}
@@ -791,10 +792,10 @@ func expandRequest(r *http.Request) expr.Expander {
 				return ""
 			}
 			return nil
-		}
+		})
 	}
 
-	return expr.ComposeExpanders(func(s string) any {
+	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "method":
 			return httpMethod(r.Method)
@@ -811,10 +812,10 @@ func expandRequest(r *http.Request) expr.Expander {
 			return buf.String()
 		}
 		return nil
-	},
-		expr.Prefix("location", expr.ExpandURL(r.URL)),
-		expr.Prefix("url", expr.ExpandURL(r.URL)),
-		expr.Prefix("header", ExpandHeader(r.Header)))
+	}),
+		expander.Prefix("location", expr.ExpandURL(r.URL)),
+		expander.Prefix("url", expr.ExpandURL(r.URL)),
+		expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
 func (o Option) Execute(c context.Context) error {

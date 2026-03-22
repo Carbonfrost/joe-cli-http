@@ -10,7 +10,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
+
+var expandColors = expander.Colors().Expand
 
 // HTTPStatus provides a representation of an HTTP
 // status code that supports terminal formatting
@@ -79,7 +83,7 @@ func (m HTTPMethod) String() string {
 }
 
 func colorString(s string) string {
-	return ExpandColors(s).(string)
+	return expandColors(s).(string)
 }
 
 func writeFormatted(f io.Writer, a formattable) {

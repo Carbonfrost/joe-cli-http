@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
-	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
 // Downloader provides the behavior for downloading a response
@@ -144,7 +144,7 @@ func (e *exprAdapter) OpenDownload(ctx context.Context, resp *Response) (io.Writ
 }
 
 func (e *exprAdapter) FileName(r *Response) string {
-	return e.expr.Compile().Expand(expr.ComposeExpanders(e.expandIndex, ExpandResponse(r)))
+	return e.expr.Compile().Expand(expander.Compose(expander.Func(e.expandIndex), ExpandResponse(r)))
 }
 
 func (e *exprAdapter) expandIndex(k string) any {
