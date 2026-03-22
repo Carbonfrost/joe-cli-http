@@ -74,8 +74,6 @@ type Server struct {
 	}
 }
 
-// ReadyFunc provides a function for when the server has started or stopped
-type ReadyFunc func(context.Context)
 
 // Option is an option to configure the server
 // Option can be used as an Action, typically within the Uses or Before pipeline.
@@ -116,12 +114,7 @@ const (
 	defaultShutdownTimeout = 3 * time.Second
 )
 
-// DefaultReadyFunc provides the default behavior when the server starts
 var (
-	DefaultReadyFunc = ComposeReadyFuncs(
-		ReportListening(),
-	)
-
 	// ErrNotListening is reported when the server is not listening
 	ErrNotListening = errors.New("server is not listening")
 )
@@ -280,41 +273,9 @@ func WithNoDirectoryListings() Option {
 	return withAdapter((*Server).SetNoDirectoryListings, true)
 }
 
-// OpenInBrowser is a function to open the server in the browser.  This
-// function is passed as a value to WithReadyFunc
-func OpenInBrowser(path ...string) ReadyFunc {
-	return func(c context.Context) {
-		err := FromContext(c).OpenInBrowser(path...)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-	}
-}
-
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
-}
-
-// ComposeReadyFuncs provides a ReadyFunc that combines a sequence
-func ComposeReadyFuncs(v ...ReadyFunc) ReadyFunc {
-	return func(c context.Context) {
-		for _, f := range v {
-			if f == nil {
-				continue
-			}
-			f(c)
-		}
-	}
-}
-
-// ReportListening is a ready func that prints a message to stderr that the
-// server is listening
-func ReportListening() ReadyFunc {
-	return func(c context.Context) {
-		s := FromContext(c)
-		s.ReportListening()
-	}
 }
 
 // AddMiddleware appends additional middleware to the server
@@ -579,13 +540,6 @@ func (s *Server) url() *url.URL {
 	return res
 }
 
-func (r ReadyFunc) Execute(c context.Context) error {
-	FromContext(c).Apply(AddReadyFunc(r))
-	return nil
-}
-
 func withAdapter[T any](fn func(*Server, T) error, value T) Option {
 	return option[T]{value, fn}
 }
-
-var _ cli.Action = (ReadyFunc)(nil)
