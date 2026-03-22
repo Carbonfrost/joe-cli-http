@@ -509,13 +509,21 @@ func (s *Server) SetTLSKeyFile(v string) error {
 	return nil
 }
 
-func (s *Server) Handle(path string, h http.Handler) error {
-	m, err := s.ensureMux()
+func (s *Server) Handle(path string, h http.Handler) (err error) {
+	var m mux
+	m, err = s.ensureMux()
 	if err != nil {
-		return err
+		return
 	}
+
+	// Safely handle the panic possible by registering same pattern
+	defer func() {
+		if rvr := recover(); rvr != nil {
+			err = fmt.Errorf("%s", fmt.Sprint(rvr))
+		}
+	}()
 	m.Handle(path, h)
-	return nil
+	return
 }
 
 func (s *Server) actualReady() ReadyFunc {
