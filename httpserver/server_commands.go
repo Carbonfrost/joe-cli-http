@@ -248,31 +248,6 @@ func SetOpenInBrowser() cli.Action {
 	)
 }
 
-func setHandlerSpec(spec HandlerSpec, v []httpclient.VirtualPath) cli.ActionFunc {
-	switch len(v) {
-	case 0:
-		return func(c *cli.Context) error {
-			vp := c.Value("").(*httpclient.VirtualPath)
-			handler, err := spec(c, *vp)
-			if err != nil {
-				return err
-			}
-			return FromContext(c).Handle(vp.RequestPath, handler)
-		}
-	case 1:
-		return func(c *cli.Context) error {
-			vp := v[0]
-			handler, err := spec(c, vp)
-			if err != nil {
-				return err
-			}
-			return FromContext(c).Handle(vp.RequestPath, handler)
-		}
-	default:
-		panic(expectedOneArg)
-	}
-}
-
 // SetHandler adds the specified handler to the mux. This can be called multiple
 // times. SetHandler only works if a Registry named "handlers" is present
 // in the context to convert the handler spec to the correct implementation.
@@ -289,7 +264,7 @@ func SetHandler(v ...httpclient.VirtualPath) cli.Action {
 			Options:   cli.EachOccurrence,
 			Category:  serverCategory,
 		},
-		cli.At(cli.ActionTiming, setHandlerSpec(RegistryHandlerSpec("handlers"), v)),
+		bind.Action2(HandleSpec, bind.Elem(bind.Exact(pointers(v)...)), bind.Exact(RegistryHandlerSpec("handlers"))),
 		tagged,
 	)
 }
@@ -319,6 +294,17 @@ func HandleFunc(path string, h http.HandlerFunc) cli.Action {
 	})
 }
 
+// HandleSpec registers the given handler spec with the context server
+func HandleSpec(vpath httpclient.VirtualPath, spec HandlerSpec) cli.Action {
+	return cli.ActionFunc(func(c *cli.Context) error {
+		handler, err := spec(c, vpath)
+		if err != nil {
+			return err
+		}
+		return FromContext(c).Handle(vpath.RequestPath, handler)
+	})
+}
+
 // SetFileServerHandler adds the specified file server handler to the mux.
 // This can be called multiple times.
 // This handler is not included in [FlagsAndArgs]
@@ -331,9 +317,17 @@ func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
 			Value:     new(httpclient.VirtualPath),
 			Options:   cli.EachOccurrence,
 		},
-		cli.At(cli.ActionTiming, setHandlerSpec(FileServerHandlerSpec(), v)),
+		bind.Action2(HandleSpec, bind.Elem(bind.Exact(pointers(v)...)), bind.Exact(FileServerHandlerSpec())),
 		tagged,
 	)
+}
+
+func pointers[T any](args []T) []*T {
+	result := make([]*T, len(args))
+	for i := range args {
+		result[i] = &args[0]
+	}
+	return result
 }
 
 func SetAccessLog(v ...string) cli.Action {
