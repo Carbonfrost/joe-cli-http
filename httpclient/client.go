@@ -21,7 +21,6 @@ import (
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
-	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
 type contextKey string
@@ -283,10 +282,6 @@ func (c *Client) AddTransportMiddleware(m TransportMiddleware) {
 func (c *Client) SetTraceLevel(v TraceLevel) error {
 	c.traceLevel = v
 	return nil
-}
-
-func (c *Client) setTraceLevelHelper(v *TraceLevel) error {
-	return c.SetTraceLevel(*v)
 }
 
 func wrapReader(r io.Reader) io.ReadCloser {
@@ -705,20 +700,6 @@ func (c *Client) actualDownloader(ctx *cli.Context) Downloader {
 func (c *Client) SetAuth(auth Authenticator) error {
 	c.auth = auth
 	return nil
-}
-
-func (c *Client) setAuthenticatorHelper(a *provider.Value) error {
-	args := a.Args.(*map[string]string)
-	res, err := NewAuthenticator(a.Name, *args)
-	if err != nil {
-		return err
-	}
-	c.auth = res
-	return nil
-}
-
-func (c *Client) setAuthModeHelper(auth AuthMode) error {
-	return c.SetAuth(auth)
 }
 
 func (c *Client) SetUser(user *UserInfo) error {

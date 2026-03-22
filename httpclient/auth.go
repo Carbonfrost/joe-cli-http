@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/Carbonfrost/joe-cli"
+	ebind "github.com/Carbonfrost/joe-cli/extensions/bind"
 	"github.com/Carbonfrost/joe-cli/extensions/provider"
 )
 
@@ -166,8 +167,15 @@ func SetAuth(v ...*provider.Value) cli.Action {
 			HelpText:  "Sets the authorization provider for the endpoint",
 			Options:   cli.ImpliedAction,
 			Category:  requestOptions,
+			Value: &provider.Value{
+				Registry: "authenticators",
+			},
 		},
-		withBinding((*Client).setAuthenticatorHelper, v),
+		ebind.Call2(
+			(*Client).SetAuth,
+			ebind.FromContext(FromContext),
+			provider.Bind[Authenticator](),
+		),
 		cli.Accessory("-", taggedProviderArgumentFlag),
 		tagged,
 	)
@@ -217,7 +225,13 @@ func SetBasicAuth() cli.Action {
 			HelpText: "Use Basic auth",
 			Value:    new(bool),
 			Category: requestOptions,
-			Setup:    dualSetup(withBinding((*Client).setAuthModeHelper, []AuthMode{BasicAuth})),
+			Setup: dualSetup(
+				ebind.Call2(
+					(*Client).SetAuth,
+					ebind.FromContext(FromContext),
+					ebind.Exact[Authenticator](BasicAuth),
+				),
+			),
 		},
 		tagged,
 	)

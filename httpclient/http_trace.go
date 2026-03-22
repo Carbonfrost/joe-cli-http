@@ -20,6 +20,7 @@ import (
 
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
+	ebind "github.com/Carbonfrost/joe-cli/extensions/bind"
 )
 
 // TraceLevel indicates the amount of client tracing to generate
@@ -227,7 +228,7 @@ func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 
 // SetTraceLevel provides the action for a flag which sets the trace level
 // corresponding to the flag's value.
-func SetTraceLevel(s ...*TraceLevel) cli.Action {
+func SetTraceLevel(s ...TraceLevel) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "trace",
@@ -235,9 +236,21 @@ func SetTraceLevel(s ...*TraceLevel) cli.Action {
 			UsageText: "LEVEL",
 			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
 		},
-		withBinding((*Client).setTraceLevelHelper, s),
+		ebind.Call2(
+			(*Client).SetTraceLevel,
+			ebind.FromContext(FromContext),
+			ebind.Elem(ebind.Exact(pointers(s)...)),
+		),
 		tagged,
 	)
+}
+
+func pointers[T any](args []T) []*T {
+	result := make([]*T, len(args))
+	for i := range args {
+		result[i] = &args[0]
+	}
+	return result
 }
 
 func (l *TraceLevel) Set(arg string) error {
