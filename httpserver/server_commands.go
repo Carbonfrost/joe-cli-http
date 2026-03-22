@@ -349,6 +349,7 @@ func SetNoAccessLog() cli.Action {
 			Name:     "no-access-log",
 			HelpText: "Disable the access log",
 			Category: advancedCategory,
+			Value:    new(bool),
 		},
 		cli.At(cli.ActionTiming, WithNoAccessLog()),
 		tagged,
