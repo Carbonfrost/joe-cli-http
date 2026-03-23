@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.7.1 (March 22, 2026)
+
+### New Features
+
+* Introduce and bind `HandleSpec` (35b2d97)
+* Reloadable handlers (24e82cc)
+* Default header redactions (69ca338)
+
+### Bug fixes and improvements
+
+* Recover from panics on duplicate handler registration (f00520c)
+* Bug fix: ensure no parameter for `--no-access-log` flag (6cf315e)
+* Use expander definition from upstream (f6a5b92)
+* Use modern idioms for CLI binding (b6b6a78)
+* Chores:
+    * Split ReadyFunc into own file (0570e08)
+    * Update dependent versions (d893ded)
+
+
 ## v0.7.0 (March 14, 2026)
 
 ### New Features
