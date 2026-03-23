@@ -130,6 +130,9 @@ var (
 		"Blue":       fmt.Sprint,
 		"ResetColor": fmt.Sprint,
 		"Color":      printColor,
+		"RedactHeader": func(k, v string) string {
+			return v
+		},
 		"Join": func(v string, args []string) string {
 			return strings.Join(args, v)
 		},
@@ -158,7 +161,7 @@ const (
 
 {{- define "WroteHeaderField" -}}
 {{ Gray }}{{ if .Response }}< {{ else }}> {{ end -}}
-{{ .Key | Magenta }}: {{ .Value | Join ", " | Gray }}{{ResetColor}}
+{{ .Key | Magenta }}: {{ .Value | Join ", " | RedactHeader .Key | Gray }}{{ResetColor}}
 {{ end -}}
 
 {{- define "StartRequest" -}}

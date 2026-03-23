@@ -48,6 +48,7 @@ func (c *Client) Execute(ctx context.Context) error {
 			FlagsAndArgs(),
 			cli.Before(cli.Pipeline(
 				registerFallbackFuncs(),
+				cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
 				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
 			)),
 			ContextValue(c),

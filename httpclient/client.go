@@ -762,6 +762,36 @@ func (c *Client) SetFailFast(v bool) error {
 	return nil
 }
 
+func (c *Client) redactHeader(name, value string) string {
+	return redactHeader(name, value)
+}
+
+func redactHeader(name, s string) string {
+	switch {
+	case strings.EqualFold(name, "authorization"):
+		h, r, _ := strings.Cut(s, " ")
+		switch h {
+		case "Bearer":
+			return "Bearer " + redactGeneric(r)
+		case "Basic":
+			return "Basic " + redactGeneric(r)
+		}
+	case strings.Contains(strings.ToLower(name), "-key"):
+		return redactGeneric(s)
+	}
+	return s
+}
+
+func redactGeneric(s string) string {
+	if len(s) <= 8 {
+		return "********"
+	}
+	if len(s) <= 16 {
+		return strings.Repeat("*", len(s)-2) + s[len(s)-2:]
+	}
+	return s[0:4] + strings.Repeat("*", len(s)-6) + s[len(s)-2:]
+}
+
 func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
 	expanders := []expander.Interface{
 		expander.Func(expr.ExpandGlobals),
