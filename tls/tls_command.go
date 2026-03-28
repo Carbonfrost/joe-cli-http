@@ -100,6 +100,7 @@ func SetKeyFile(path ...string) cli.Action {
 			Name:      "key",
 			HelpText:  "Private key file (PEM format)",
 			UsageText: "PATH",
+			Value:     new(cli.File),
 			Category:  tlsOptions,
 		},
 		// Provides no action - it is provided by above
