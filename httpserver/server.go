@@ -133,6 +133,7 @@ func defaultOptions(s *Server) []Option {
 		WithAddr("localhost:8000"),
 		WithShutdownTimeout(defaultShutdownTimeout),
 		WithAccessLog(defaultAccessLog),
+		WithReadyFunc(DefaultReadyFunc),
 		WithMiddleware(func(h http.Handler) http.Handler {
 			if s.accessLog != "" {
 				return NewRequestLogger(s.accessLog, os.Stderr, h)
@@ -150,7 +151,6 @@ func (s *Server) Apply(opts ...Option) {
 
 func DefaultServer() *Server {
 	return New(
-		WithReadyFunc(DefaultReadyFunc),
 		WithHandlerFactory(func(s *Server) (http.Handler, error) {
 			return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil
 		}),
