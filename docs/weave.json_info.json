@@ -25,6 +25,11 @@
             "options": "EXITS"
         },
         {
+            "name": "help",
+            "helpText": "Display this help screen then exit",
+            "options": "EXITS"
+        },
+        {
             "name": "host",
             "aliases": [
                 "h"
@@ -185,17 +190,6 @@
             }
         },
         {
-            "name": "help",
-            "aliases": [
-                "h"
-            ],
-            "helpText": "Display this help screen then exit",
-            "options": "EXITS",
-            "data": {
-                "Source": "github.com/Carbonfrost/joe-cli"
-            }
-        },
-        {
             "name": "version",
             "helpText": "Print the build version then exit",
             "options": "EXITS",
@@ -223,6 +217,6 @@
         }
     ],
     "helpText": "Provides access to a simple Go HTTP server for files and proxy handling",
-    "version": "development",
-    "buildDate": "2026-02-15T22:37:38.439454912-08:00"
+    "version": "(devel)",
+    "buildDate": "2026-03-28T19:57:35.773529089-07:00"
 }

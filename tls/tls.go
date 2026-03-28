@@ -77,17 +77,17 @@ func WithInsecureSkipVerify(v bool) Option {
 }
 
 // WithCiphers sets up cipher suites
-func WithCiphers(ids *CipherSuites) Option {
+func WithCiphers(ids CipherSuites) Option {
 	return func(c *Config) error {
-		c.CipherSuites = []uint16(*ids)
+		c.CipherSuites = []uint16(ids)
 		return nil
 	}
 }
 
 // WithCiphers sets up curves
-func WithCurves(ids *CurveIDs) Option {
+func WithCurves(ids CurveIDs) Option {
 	return func(c *Config) error {
-		c.CurvePreferences = []gotls.CurveID(*ids)
+		c.CurvePreferences = []gotls.CurveID(ids)
 		return nil
 	}
 }

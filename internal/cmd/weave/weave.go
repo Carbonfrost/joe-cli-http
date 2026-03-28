@@ -47,6 +47,13 @@ func NewApp() *cli.App {
 			{
 				Uses: httpserver.ListHandlers(),
 			},
+			{
+				Name: "help",
+				Uses: cli.Pipeline(
+					cli.DisplayHelpScreen(),
+					cli.RemoveAlias("h"), // because it is provided by --host
+				),
+			},
 		},
 		Args: []*cli.Arg{
 			{

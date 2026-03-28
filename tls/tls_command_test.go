@@ -33,6 +33,8 @@ var _ = Describe("Set actions", func() {
 
 	DescribeTable("examples", func(act cli.Action, command string, expected Fields) {
 		config := tls.New()
+		// Override default action so no flags are registered; only placein the context
+		config.Action = tls.ContextValue(config)
 		app := &cli.App{
 			Uses:   config,
 			Action: func() {},

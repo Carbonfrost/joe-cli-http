@@ -85,8 +85,8 @@ func SetClientCertFile(path ...string) cli.Action {
 			HelpText:  "Client certificate file (PEM format)",
 			UsageText: "PATH",
 			Category:  tlsOptions,
+			Uses:      cli.Requires("key"),
 		},
-		// TODO Technically, these flags require each other
 		bind.Action2(
 			AddX509KeyPair, bind.File("cert").Name(), bind.File("key").Name(),
 		),
@@ -102,6 +102,7 @@ func SetKeyFile(path ...string) cli.Action {
 			UsageText: "PATH",
 			Value:     new(cli.File),
 			Category:  tlsOptions,
+			Uses:      cli.Requires("cert"),
 		},
 		// Provides no action - it is provided by above
 		tagged,
@@ -200,7 +201,7 @@ func SetInsecureSkipVerify(v ...bool) cli.Action {
 	)
 }
 
-func SetCiphers(v ...*CipherSuites) cli.Action {
+func SetCiphers(v ...CipherSuites) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "ciphers",
@@ -212,7 +213,7 @@ func SetCiphers(v ...*CipherSuites) cli.Action {
 	)
 }
 
-func SetCurves(v ...*CurveIDs) cli.Action {
+func SetCurves(v ...CurveIDs) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "curves",

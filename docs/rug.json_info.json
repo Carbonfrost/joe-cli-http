@@ -81,6 +81,6 @@
         }
     ],
     "helpText": "Expands RFC 6570 (level 4) URI templates",
-    "version": "development",
-    "buildDate": "2026-02-15T22:37:39.7123528-08:00"
+    "version": "(devel)",
+    "buildDate": "2026-03-28T19:51:43.889107-07:00"
 }

@@ -166,12 +166,10 @@ func SetBody(s ...string) cli.Action {
 			Aliases:  []string{"data-raw", "d"},
 			Category: requestOptions,
 			Options:  cli.AllowFileReference,
-			Setup: cli.Setup{
-				Uses: cli.Pipeline(
-					cli.Implies("method", "POST"),
-					cli.Implies("body-content", ContentTypeRaw.String()),
-				),
-			},
+			Uses: cli.Pipeline(
+				cli.Implies("method", "POST"),
+				cli.Implies("body-content", ContentTypeRaw.String()),
+			),
 		},
 		withBinding((*Client).SetBody, s),
 		tagged,
@@ -209,14 +207,13 @@ func SetFillValue(s ...*cli.NameValue) cli.Action {
 
 func SetJSON() cli.Action {
 	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "json",
+			HelpText: "Sets the Accept header to application/json",
+			Value:    cli.Bool(),
+			Category: requestOptions,
+		},
 		cli.Setup{
-			Optional: true,
-			Uses: &cli.Prototype{
-				Name:     "json",
-				HelpText: "Sets the Accept header to application/json",
-				Value:    cli.Bool(),
-				Category: requestOptions,
-			},
 			Action: setHTTPHeaderStatic("Accept", "application/json"),
 		},
 		tagged,
@@ -329,27 +326,24 @@ func SetIntegrity(i ...Integrity) cli.Action {
 
 func SetDownload() cli.Action {
 	return cli.Pipeline(
-		cli.Setup{
-			Optional: true,
-			Uses: &cli.Prototype{
-				Name:     "download",
-				HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
-				Aliases:  []string{"O", "remote-name"},
-				Value:    new(bool),
-				Category: responseOptions,
-			},
-			Action: func(c *cli.Context) error {
-				switch c.Occurrences("") {
-				case 1:
-					FromContext(c).SetDownloadFile(PreserveRequestFile)
-				case 2:
-					FromContext(c).SetDownloadFile(PreserveRequestPath)
-				default:
-					return fmt.Errorf("too many occurrences of -O flag")
-				}
-				return nil
-			},
+		&cli.Prototype{
+			Name:     "download",
+			HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
+			Aliases:  []string{"O", "remote-name"},
+			Value:    new(bool),
+			Category: responseOptions,
 		},
+		cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {
+			switch c.Occurrences("") {
+			case 1:
+				FromContext(c).SetDownloadFile(PreserveRequestFile)
+			case 2:
+				FromContext(c).SetDownloadFile(PreserveRequestPath)
+			default:
+				return fmt.Errorf("too many occurrences of -O flag")
+			}
+			return nil
+		})),
 		tagged,
 	)
 }
@@ -488,11 +482,9 @@ func ListInterfaces() cli.Action {
 			Value:    cli.Bool(),
 			Options:  cli.Exits,
 			HelpText: "List network interfaces and then exit",
-			Setup: cli.Setup{
-				Action: listInterfaces(),
-			},
 			Category: networkOptions,
 		},
+		listInterfaces(),
 		tagged,
 	)
 }
@@ -504,22 +496,20 @@ func SetVerbose() cli.Action {
 			Aliases:  []string{"v"},
 			Value:    new(bool),
 			HelpText: "Display verbose output; can be used multiple times to increase detail",
-			Setup: cli.Setup{
-				Action: func(c *cli.Context) {
-					switch c.Occurrences("") {
-					case 0:
-					case 1:
-						FromContext(c).SetTraceLevel(TraceOn)
-					case 2:
-						FromContext(c).SetTraceLevel(TraceVerbose)
-					case 3:
-						fallthrough
-					default:
-						FromContext(c).SetTraceLevel(TraceDebug)
-					}
-				},
-			},
 		},
+		cli.At(cli.ActionTiming, cli.ActionOf(func(c *cli.Context) {
+			switch c.Occurrences("") {
+			case 0:
+			case 1:
+				FromContext(c).SetTraceLevel(TraceOn)
+			case 2:
+				FromContext(c).SetTraceLevel(TraceVerbose)
+			case 3:
+				fallthrough
+			default:
+				FromContext(c).SetTraceLevel(TraceDebug)
+			}
+		})),
 		tagged,
 	)
 }
@@ -627,8 +617,8 @@ func setHTTPHeaderStatic(name, value string) cli.Action {
 	}, bind.FromContext(FromContext))
 }
 
-func listInterfaces() cli.ActionFunc {
-	return func(_ *cli.Context) error {
+func listInterfaces() cli.Action {
+	return cli.At(cli.ActionTiming, cli.ActionOf(func(_ *cli.Context) error {
 		eths, _ := net.Interfaces()
 		for _, s := range eths {
 			addrs, err := s.Addrs()
@@ -646,7 +636,7 @@ func listInterfaces() cli.ActionFunc {
 			fmt.Println()
 		}
 		return nil
-	}
+	}))
 }
 
 func completeInterfaces() cli.CompletionFunc {

@@ -97,6 +97,10 @@ var _ = Describe("Set actions", func() {
 				}
 			})),
 		)
+
+		// Override default action so no flags are registered; only place client
+		// in the context
+		client.Action = httpclient.ContextValue(client)
 		app := &cli.App{
 			Uses:   client,
 			Action: func() {},

@@ -222,8 +222,8 @@ func SetAuth(v ...*provider.Value) cli.Action {
 
 func taggedProviderArgumentFlag(v *provider.Value) cli.Prototype {
 	proto := v.ArgumentFlag()
-	proto.Setup.Uses = cli.Pipeline(
-		proto.Setup.Uses,
+	proto.Uses = cli.Pipeline(
+		proto.Uses,
 		tagged,
 	)
 	return proto
@@ -248,9 +248,7 @@ func SetUser(s ...*UserInfo) cli.Action {
 			HelpText: "Set the user and password",
 			Category: requestOptions,
 			Aliases:  []string{"u"},
-			Setup: cli.Setup{
-				Uses: cli.Implies("auth", BasicAuth.String()),
-			},
+			Uses:     cli.Implies("auth", BasicAuth.String()),
 		},
 		withBinding((*Client).SetUser, s),
 		tagged,

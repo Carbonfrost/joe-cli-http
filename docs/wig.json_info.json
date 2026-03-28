@@ -619,6 +619,6 @@
         }
     ],
     "helpText": "Provides access to the Go HTTP client with some cURL compatibility",
-    "version": "development",
-    "buildDate": "2026-02-15T22:37:39.128620551-08:00"
+    "version": "(devel)",
+    "buildDate": "2026-03-28T19:51:43.332721-07:00"
 }

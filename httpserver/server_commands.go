@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"slices"
 	"syscall"
 	"time"
 
@@ -79,6 +80,17 @@ func SetHostname(s ...string) cli.Action {
 			Category: listenerCategory,
 		},
 		bind.Action(WithHostname, bind.Exact(s...)),
+
+		// Remove "-h" alias from "--help" if it is present
+		// TODO Refer to joe-cli@futures for idiomatic way
+		func (c *cli.Context) error {
+			t := c.ContextOf("-h")
+			if t != nil && slices.Contains(t.Aliases(), "h") {
+				t.RemoveAlias("h")
+			}
+			return nil
+		},
+
 		tagged,
 	)
 }
@@ -265,7 +277,7 @@ func SetHandler(v ...httpclient.VirtualPath) cli.Action {
 			Options:   cli.EachOccurrence,
 			Category:  serverCategory,
 		},
-		bind.Action2(HandleSpec, bind.Elem(bind.Exact(pointers(v)...)), bind.Exact(RegistryHandlerSpec("handlers"))),
+		bind.Action2(HandleSpec, bind.Exact(v...), bind.Exact(RegistryHandlerSpec("handlers"))),
 		tagged,
 	)
 }
@@ -318,17 +330,9 @@ func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
 			Value:     new(httpclient.VirtualPath),
 			Options:   cli.EachOccurrence,
 		},
-		bind.Action2(HandleSpec, bind.Elem(bind.Exact(pointers(v)...)), bind.Exact(FileServerHandlerSpec())),
+		bind.Action2(HandleSpec, bind.Exact(v...), bind.Exact(FileServerHandlerSpec())),
 		tagged,
 	)
-}
-
-func pointers[T any](args []T) []*T {
-	result := make([]*T, len(args))
-	for i := range args {
-		result[i] = &args[0]
-	}
-	return result
 }
 
 func SetAccessLog(v ...string) cli.Action {
@@ -373,12 +377,11 @@ func SetServerHeader(v ...string) cli.Action {
 func SetTLSKeyFile(v ...*cli.File) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name: "key",
-			// TODO Shouldn't be needed in joe-cli@futures where implicit binding happens on composites
-			Value:    new(cli.File),
+			Name:     "key",
 			HelpText: "Specify the FILE that contains the TLS private key",
 			Category: listenerCategory,
 			Options:  cli.MustExist,
+			Uses:     cli.Requires("cert"),
 		},
 		bind.Action(WithTLSKeyFile, bind.Exact(v...).(*bind.FileBinder).Name()),
 		tagged,
@@ -389,10 +392,10 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "cert",
-			Value:    new(cli.File),
 			HelpText: "Specify the FILE that contains the TLS certificate",
 			Category: listenerCategory,
 			Options:  cli.MustExist,
+			Uses:     cli.Requires("key"),
 		},
 		bind.Action(WithTLSCertFile, bind.Exact(v...).(*bind.FileBinder).Name()),
 		tagged,

@@ -242,18 +242,10 @@ func SetTraceLevel(s ...TraceLevel) cli.Action {
 		bind.Call2(
 			(*Client).SetTraceLevel,
 			bind.FromContext(FromContext),
-			bind.Elem(bind.Exact(pointers(s)...)),
+			bind.Exact(s...),
 		),
 		tagged,
 	)
-}
-
-func pointers[T any](args []T) []*T {
-	result := make([]*T, len(args))
-	for i := range args {
-		result[i] = &args[0]
-	}
-	return result
 }
 
 func (l *TraceLevel) Set(arg string) error {
