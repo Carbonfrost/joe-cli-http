@@ -16,15 +16,19 @@ import (
 
 type contextKey string
 
+// Config reepresents TLS configuration plus a default action.
 type Config struct {
 	*gotls.Config
 	cli.Action
 }
 
-type Option func(*Config)
+// Option provides an option to the TLS configuration
+type Option func(*Config) error
 
 const servicesKey contextKey = "httpserver_services"
 
+// New creates a new TLS configuration. By default, it is also initialized
+// with a default action that registers useful flags.
 func New(opts ...Option) *Config {
 	c := &Config{
 		Config: new(gotls.Config),
@@ -63,89 +67,107 @@ func (c *Config) ensureCACertPool() *x509.CertPool {
 	return c.RootCAs
 }
 
+// WithInsecureSkipVerify sets up the option to skip verification in TLS
+// handshake. This option is insecure.
 func WithInsecureSkipVerify(v bool) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.InsecureSkipVerify = v
+		return nil
 	}
 }
 
+// WithCiphers sets up cipher suites
 func WithCiphers(ids *CipherSuites) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.CipherSuites = []uint16(*ids)
+		return nil
 	}
 }
 
+// WithCiphers sets up curves
 func WithCurves(ids *CurveIDs) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.CurvePreferences = []gotls.CurveID(*ids)
+		return nil
 	}
 }
 
+// WithServerName sets the server name
 func WithServerName(s string) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.ServerName = s
+		return nil
 	}
 }
 
+// WithTimeHelper specifies the file whose modtime contains the time
+// for the server
 func WithTimeHelper(f *cli.File) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		s, err := f.Stat()
-		// TODO Improve error handling
 		if err != nil {
-			panic(err)
+			return err
 		}
 		c.Time = s.ModTime
+		return nil
 	}
 }
 
+// WithNextProtos sets next protos
 func WithNextProtos(s []string) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.NextProtos = s
+		return nil
 	}
 }
 
-func WithCertificate(cert gotls.Certificate) Option {
-	return func(cfg *Config) {
+// AddCertificate adds a certificate to the pool
+func AddCertificate(cert gotls.Certificate) Option {
+	return func(cfg *Config) error {
 		cfg.Certificates = append(cfg.Certificates, cert)
+		return nil
 	}
 }
 
-func WithRootCACertPath(path string) Option {
-	return func(c *Config) {
+// AddRootCACertPath adds a search path to the CA certificate pool
+func AddRootCACertPath(path string) Option {
+	return func(c *Config) error {
 		paths, err := fs.Glob(os.DirFS("."), "*.pem")
 
-		// TODO Improve error handling
 		if err != nil {
-			panic(err)
+			return err
 		}
 		for _, p := range paths {
-			WithRootCACertFile(p)(c)
+			AddRootCACertFile(p)(c)
 		}
+		return nil
 	}
 }
 
-func WithRootCACertFile(filename string) Option {
-	return func(cfg *Config) {
-		// TODO Should read from FS fs.ReadFile
+// WithRootCACertFile adds a CA certificate to the pool
+func AddRootCACertFile(filename string) Option {
+	return func(cfg *Config) error {
 		cert, err := os.ReadFile(filename)
-		// TODO Improve error handling
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		caCertPool := cfg.ensureCACertPool()
 		_ = caCertPool.AppendCertsFromPEM(cert)
+		return nil
 	}
 }
 
-func WithX509KeyPair(certFile, keyFile string) Option {
-	cert, err := gotls.LoadX509KeyPair(certFile, keyFile)
+// AddX509KeyPair adds a certificate to the pool
+func AddX509KeyPair(certFile, keyFile string) Option {
+	return func(cfg *Config) error {
+		cert, err := gotls.LoadX509KeyPair(certFile, keyFile)
 
-	// TODO Improve error handling
-	if err != nil {
-		panic(err)
+		if err != nil {
+			return err
+		}
+		return AddCertificate(cert)(cfg)
 	}
-	return WithCertificate(cert)
 }
 
 func (o Option) Execute(c context.Context) error {

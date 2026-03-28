@@ -58,7 +58,7 @@ func SetCACertFile(path ...string) cli.Action {
 			Options:   cli.EachOccurrence,
 			Category:  tlsOptions,
 		},
-		bind.Action(WithRootCACertFile, bind.Exact(path...)),
+		bind.Action(AddRootCACertFile, bind.Exact(path...)),
 		tagged,
 	)
 }
@@ -72,7 +72,7 @@ func SetCACertPath(path ...string) cli.Action {
 			Options:   cli.EachOccurrence,
 			Category:  tlsOptions,
 		},
-		bind.Action(WithRootCACertPath, bind.Exact(path...)),
+		bind.Action(AddRootCACertPath, bind.Exact(path...)),
 		tagged,
 	)
 }
@@ -88,7 +88,7 @@ func SetClientCertFile(path ...string) cli.Action {
 		},
 		// TODO Technically, these flags require each other
 		bind.Action2(
-			WithX509KeyPair, bind.File("cert").Name(), bind.File("key").Name(),
+			AddX509KeyPair, bind.File("cert").Name(), bind.File("key").Name(),
 		),
 		tagged,
 	)
