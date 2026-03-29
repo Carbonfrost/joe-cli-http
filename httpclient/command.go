@@ -14,10 +14,9 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
-	"github.com/Carbonfrost/joe-cli-http/internal/cliutil"
 	"github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
-	ebind "github.com/Carbonfrost/joe-cli/extensions/bind"
+	"github.com/Carbonfrost/joe-cli/extensions/bind"
 	"github.com/Carbonfrost/joe-cli/value"
 )
 
@@ -416,9 +415,9 @@ func SetPreferGo() cli.Action {
 		&cli.Prototype{
 			Name:     "prefer-go",
 			HelpText: "Whether Go's built-in DNS resolver is preferred",
-			Setup:    dualSetup(withBindingTrue((*Client).SetPreferGoDialer)),
 			Category: dnsOptions,
 		},
+		withBindingTrue((*Client).SetPreferGoDialer),
 		tagged,
 	)
 }
@@ -440,9 +439,9 @@ func SetDisableDialKeepAlive() cli.Action {
 		&cli.Prototype{
 			Name:     "disable-dial-keep-alive",
 			HelpText: "Disable dialer keep-alive probes",
-			Setup:    dualSetup(withBindingTrue((*Client).SetDisableDialKeepAlive)),
 			Category: dnsOptions,
 		},
+		withBindingTrue((*Client).SetDisableDialKeepAlive),
 		tagged,
 	)
 }
@@ -452,9 +451,9 @@ func SetStrictErrorsDNS() cli.Action {
 		&cli.Prototype{
 			Name:     "strict-errors",
 			HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
-			Setup:    dualSetup(withBindingTrue((*Client).SetStrictErrorsDNS)),
 			Category: dnsOptions,
 		},
+		withBindingTrue((*Client).SetStrictErrorsDNS),
 		tagged,
 	)
 }
@@ -624,17 +623,11 @@ func SetWriteErr(w ...Expr) cli.Action {
 	)
 }
 
-func bind(fn func(*Client) error) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		return fn(FromContext(c))
-	}
-}
-
 func setHTTPHeaderStatic(name, value string) cli.Action {
-	return bind(func(s *Client) error {
+	return bind.Call(func(s *Client) error {
 		s.Request.Header.Set(name, value)
 		return nil
-	})
+	}, bind.FromContext(FromContext))
 }
 
 func listInterfaces() cli.ActionFunc {
@@ -678,16 +671,12 @@ func completeInterfaces() cli.CompletionFunc {
 	}
 }
 
-func dualSetup(a cli.Action) cli.Setup {
-	return cliutil.DualSetup(a)
-}
-
 func withBindingTrue(binder func(*Client, bool) error) cli.Action {
-	return ebind.Call2(binder, ebind.FromContext(FromContext), ebind.Exact(true))
+	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(true))
 }
 
 func withBinding[V any](binder func(*Client, V) error, args []V) cli.Action {
-	return ebind.Call2(binder, ebind.FromContext(FromContext), ebind.Exact(args...))
+	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
 }
 
 func registerFallbackFuncs() cli.ActionFunc {
