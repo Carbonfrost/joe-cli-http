@@ -55,6 +55,8 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // you only use the action httpclient.ContextValue() with the client
 // you want to add instead of add the client to the pipeline directly.
 type Client struct {
+	cli.Action
+
 	Transport              http.RoundTripper
 	CheckRedirect          func(*http.Request, []*http.Request) error
 	Request                *http.Request
@@ -148,6 +150,7 @@ var (
 // Option is an option to configure the client
 type Option func(*Client)
 
+// New creates a new client with the given option.
 func New(options ...Option) *Client {
 	h := &Client{
 		InterfaceResolver: &defaultResolver{},
@@ -168,10 +171,16 @@ func New(options ...Option) *Client {
 	defaultTransport.Proxy = http.ProxyFromEnvironment
 	h.Transport = defaultTransport
 
-	for _, o := range append(impliedOptions, options...) {
-		o(h)
-	}
+	h.Apply(append(impliedOptions, options...)...)
+	h.Action = defaultAction(h)
 	return h
+}
+
+// Apply applies the given option to the client
+func (c *Client) Apply(opts ...Option) {
+	for _, o := range opts {
+		o(c)
+	}
 }
 
 func WithDefaultUserAgent(s string) Option {

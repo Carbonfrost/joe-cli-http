@@ -40,22 +40,19 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
-func (c *Client) Execute(ctx context.Context) error {
-	return cli.Do(
-		ctx,
-		cli.Pipeline(
-			FlagsAndArgs(),
-			cli.Before(cli.Pipeline(
-				registerFallbackFuncs(),
-				cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
-				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
-			)),
-			ContextValue(c),
-			Authenticators,
-			PromptForCredentials(),
-			tls.New(),
-			WithTLSConfigFactory(tlsFromContextError),
-		),
+func defaultAction(c *Client) cli.Action {
+	return cli.Pipeline(
+		FlagsAndArgs(),
+		cli.Before(cli.Pipeline(
+			registerFallbackFuncs(),
+			cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
+			cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+		)),
+		ContextValue(c),
+		Authenticators,
+		PromptForCredentials(),
+		tls.New(),
+		WithTLSConfigFactory(tlsFromContextError),
 	)
 }
 
