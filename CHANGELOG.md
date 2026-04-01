@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.7.2 (April 1, 2026)
+
+### New Features
+
+* Bearer token auth provider support (7007d38)
+* Client: introduce `Apply`, default action patterns (18c4bcd)
+
+### Bug fixes and improvements
+
+* Add default ready funcs to default opts (cbfeafa)
+* Bug fix: ensure `--open` requires no value (29a8d77)
+* Bug fix: define missing value for `--key` flag in wig (bb70c1f)
+* Upgrade joe-cli; modernizations (cd7adf5, a76763c)
+* Add error return type to TLS config; improve documentation; rename for consistency (f4742f8)
+
+
 ## v0.7.1 (March 22, 2026)
 
 ### New Features
