@@ -146,6 +146,19 @@ func SetNextProtos(s ...[]string) cli.Action {
 	)
 }
 
+func SetRandom(r ...*cli.File) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "random",
+			HelpText:  "Specifies a {FILE} to use as a source of random data for TLS",
+			UsageText: "PATH",
+			Category:  tlsOptions,
+		},
+		bind.Action(WithRand, bind.Exact(r...).(*bind.FileBinder).OpenReader()),
+		tagged,
+	)
+}
+
 func SetTLSv1() cli.Action {
 	return tlsVersionFlag(gotls.VersionTLS10, gotls.VersionTLS13, &cli.Prototype{
 		Name:     "tlsv1",
@@ -280,6 +293,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetInsecureSkipVerify()},
 			{Uses: SetKeyFile()},
 			{Uses: SetNextProtos()},
+			{Uses: SetRandom()},
 			{Uses: SetServerName()},
 			{Uses: SetTime()},
 			{Uses: SetTLSv1()},

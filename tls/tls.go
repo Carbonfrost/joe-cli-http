@@ -153,6 +153,14 @@ func WithKeyLogWriter(w io.Writer) Option {
 	}
 }
 
+// WithRand sets the random reader for TLS
+func WithRand(r io.Reader) Option {
+	return func(c *Config) error {
+		c.Rand = r
+		return nil
+	}
+}
+
 // AddCertificate adds a certificate to the pool
 func AddCertificate(cert gotls.Certificate) Option {
 	return func(cfg *Config) error {
