@@ -8,6 +8,7 @@ import (
 	"context"
 	gotls "crypto/tls"
 	"crypto/x509"
+	"io"
 	"io/fs"
 	"os"
 
@@ -139,6 +140,15 @@ func WithTimeHelper(f *cli.File) Option {
 func WithNextProtos(s []string) Option {
 	return func(c *Config) error {
 		c.NextProtos = s
+		return nil
+	}
+}
+
+// WithKeyLogWriter sets the KeyLogWriter for debugging TLS connections.
+// This option is insecure and should only be used for debugging purposes.
+func WithKeyLogWriter(w io.Writer) Option {
+	return func(c *Config) error {
+		c.KeyLogWriter = w
 		return nil
 	}
 }

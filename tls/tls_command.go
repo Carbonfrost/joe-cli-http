@@ -201,6 +201,19 @@ func SetInsecureSkipVerify(v ...bool) cli.Action {
 	)
 }
 
+func SetInsecureKeyLogFile(s ...*cli.File) cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:      "insecure-key-log-file",
+			HelpText:  "Log TLS keys to {FILE} for debugging (insecure)",
+			UsageText: "PATH",
+			Category:  tlsOptions,
+		},
+		bind.Action(WithKeyLogWriter, bind.Exact(s...).(*bind.FileBinder).CreateWriter()),
+		tagged,
+	)
+}
+
 func SetCiphers(v ...CipherSuites) cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -263,6 +276,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetCiphers()},
 			{Uses: SetClientCertFile()},
 			{Uses: SetCurves()},
+			{Uses: SetInsecureKeyLogFile()},
 			{Uses: SetInsecureSkipVerify()},
 			{Uses: SetKeyFile()},
 			{Uses: SetNextProtos()},
