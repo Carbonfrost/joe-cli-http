@@ -53,6 +53,7 @@ import (
 // you want to add instead of add the server to the pipeline directly.
 type Server struct {
 	*http.Server
+	cli.Action
 
 	TLSCertFile string
 	TLSKeyFile  string
@@ -130,6 +131,7 @@ func New(options ...Option) *Server {
 
 func defaultOptions(s *Server) []Option {
 	return []Option{
+		WithDefaultAction(),
 		WithAddr("localhost:8000"),
 		WithShutdownTimeout(defaultShutdownTimeout),
 		WithAccessLog(defaultAccessLog),
@@ -155,6 +157,24 @@ func DefaultServer() *Server {
 			return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil
 		}),
 	)
+}
+
+// WithAction sets the action
+func WithAction(a cli.Action) Option {
+	return withAdapter[cli.Action]((*Server).setAction, a)
+}
+
+// WithAction sets the action to the default
+func WithDefaultAction() Option {
+	return option[cli.Action]{
+		nil, func(s *Server, _ cli.Action) error {
+			s.Action = cli.Pipeline(
+				ContextValue(s),
+				FlagsAndArgs(),
+			)
+			return nil
+		},
+	}
 }
 
 // WithHandler sets the handler which will run on the server
@@ -392,16 +412,6 @@ func (s *Server) ReloadAll() {
 	}
 }
 
-func (s *Server) Execute(c context.Context) error {
-	return cli.Do(
-		c,
-		cli.Pipeline(
-			FlagsAndArgs(),
-			ContextValue(s),
-		),
-	)
-}
-
 func (s *Server) updateAddr(hostname string, port string) error {
 	h, p, err := net.SplitHostPort(s.Server.Addr)
 	if err != nil {
@@ -506,6 +516,11 @@ func (s *Server) SetTLSCertFile(v string) error {
 
 func (s *Server) SetTLSKeyFile(v string) error {
 	s.TLSKeyFile = v
+	return nil
+}
+
+func (s *Server) setAction(value cli.Action) error {
+	s.Action = value
 	return nil
 }
 

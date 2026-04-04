@@ -40,22 +40,6 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
-func defaultAction(c *Client) cli.Action {
-	return cli.Pipeline(
-		FlagsAndArgs(),
-		cli.Before(cli.Pipeline(
-			registerFallbackFuncs(),
-			cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
-			cli.RegisterTemplate("HTTPTrace", outputTemplateText),
-		)),
-		ContextValue(c),
-		Authenticators,
-		PromptForCredentials(),
-		tls.New(),
-		WithTLSConfigFactory(tlsFromContextError),
-	)
-}
-
 func tlsFromContextError(ctx context.Context) (*gotls.Config, error) {
 	return tls.FromContext(ctx).Config, nil
 }

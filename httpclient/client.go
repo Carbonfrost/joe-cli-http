@@ -20,6 +20,7 @@ import (
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
+	joetls "github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
@@ -128,6 +129,7 @@ func (c *cacheable[T]) New(ctx context.Context) (T, error) {
 
 var (
 	impliedOptions = []Option{
+		WithDefaultAction(),
 		WithDefaultUserAgent(defaultUserAgent()),
 	}
 
@@ -172,7 +174,6 @@ func New(options ...Option) *Client {
 	h.Transport = defaultTransport
 
 	h.Apply(append(impliedOptions, options...)...)
-	h.Action = defaultAction(h)
 	return h
 }
 
@@ -180,6 +181,30 @@ func New(options ...Option) *Client {
 func (c *Client) Apply(opts ...Option) {
 	for _, o := range opts {
 		o(c)
+	}
+}
+
+func WithAction(a cli.Action) Option {
+	return func(c *Client) {
+		c.Action = a
+	}
+}
+
+func WithDefaultAction() Option {
+	return func(c *Client) {
+		c.Action = cli.Pipeline(
+			FlagsAndArgs(),
+			cli.Before(cli.Pipeline(
+				registerFallbackFuncs(),
+				cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
+				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+			)),
+			ContextValue(c),
+			Authenticators,
+			PromptForCredentials(),
+			joetls.New(),
+			WithTLSConfigFactory(tlsFromContextError),
+		)
 	}
 }
 

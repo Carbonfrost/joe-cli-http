@@ -83,7 +83,7 @@ func SetHostname(s ...string) cli.Action {
 
 		// Remove "-h" alias from "--help" if it is present
 		// TODO Refer to joe-cli@futures for idiomatic way
-		func (c *cli.Context) error {
+		func(c *cli.Context) error {
 			t := c.ContextOf("-h")
 			if t != nil && slices.Contains(t.Aliases(), "h") {
 				t.RemoveAlias("h")

@@ -33,9 +33,34 @@ func New(opts ...Option) *Config {
 	c := &Config{
 		Config: new(gotls.Config),
 	}
+	c.Apply(defaultOptions()...)
 	c.Apply(opts...)
-	c.Action = defaultAction(c)
 	return c
+}
+
+func defaultOptions() []Option {
+	return []Option{
+		WithDefaultAction(),
+	}
+}
+
+// WithAction sets the action
+func WithAction(a cli.Action) Option {
+	return func(c *Config) error {
+		c.Action = a
+		return nil
+	}
+}
+
+// WithAction sets the action to the default
+func WithDefaultAction() Option {
+	return func(c *Config) error {
+		c.Action = cli.Pipeline(
+			ContextValue(c),
+			FlagsAndArgs(),
+		)
+		return nil
+	}
 }
 
 func ContextValue(c *Config) cli.Action {
@@ -45,13 +70,6 @@ func ContextValue(c *Config) cli.Action {
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Config {
 	return ctx.Value(servicesKey).(*Config)
-}
-
-func defaultAction(c *Config) cli.Action {
-	return cli.Pipeline(
-		ContextValue(c),
-		FlagsAndArgs(),
-	)
 }
 
 func (c *Config) Apply(opts ...Option) {
