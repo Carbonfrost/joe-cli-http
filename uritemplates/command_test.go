@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Expand", func() {
+var _ = Describe("ExpandAndPrint", func() {
 
 	DescribeTable("examples", func(args string, expected string) {
 		var capture strings.Builder
@@ -26,13 +26,13 @@ var _ = Describe("Expand", func() {
 		}
 		app := cli.NewApp(&cli.Command{
 			Uses: cli.Pipeline(
-				uritemplates.FlagsAndArgs(),
-				uritemplates.Expand(),
+				uritemplates.ExpandAndPrint(),
 				captureOutput,
 			)})
 
 		arguments, _ := cli.Split(args)
-		app.RunContext(context.Background(), arguments)
+		err := app.RunContext(context.Background(), arguments)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(strings.TrimSpace(capture.String())).To(Equal(expected))
 	},
 		Entry(

@@ -21,10 +21,20 @@ func NewApp() *cli.App {
 		HelpText: "Expands RFC 6570 (level 4) URI templates",
 		Uses: cli.Pipeline(
 			&color.Options{},
-			uritemplates.FlagsAndArgs(),
+			uritemplates.New(),
 			cli.Sorted,
 		),
 		Version: build.Version,
-		Action:  uritemplates.Expand(),
+		Action: cli.Pipeline(
+			cli.IfMatch(
+				cli.HasSeen("template"),
+				nil,
+				cli.Pipeline(
+					cli.DisplayHelpScreen(),
+					cli.Exit(2),
+				),
+			),
+			uritemplates.ExpandAndPrint(),
+		),
 	}
 }
