@@ -12,6 +12,8 @@
 	-install-% \
 	coverage \
 	coveragereport \
+	test \
+	-integration-tests \
 
 BUILD_VERSION=$(shell git rev-parse --short HEAD)
 GO_LDFLAGS=-X 'github.com/Carbonfrost/joe-cli-http/internal/build.Version=$(BUILD_VERSION)'
@@ -39,6 +41,11 @@ install: -install-wig -install-rug -install-weave
 
 -install-%: build -check-env-PREFIX -check-env-_GO_OUTPUT_DIR
 	$(Q) eng/install "${_GO_OUTPUT_DIR}/$*" $(PREFIX)/bin
+
+test: -integration-tests
+
+-integration-tests:
+	$(Q) brat test/*.brat
 
 coverage:
 	$(Q) go test -coverprofile=coverage.txt -covermode=atomic ./...

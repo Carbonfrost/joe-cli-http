@@ -1,0 +1,161 @@
+export BUILD_FIRST=
+
+@test "core cases" {
+  run_case "simple string" \
+    'https://example.com/{name}' \
+    'https://example.com/alice' \
+    -T name=alice
+
+  run_case "encoding reserved chars" \
+    'https://example.com/{path}' \
+    'https://example.com/request%2Fpath' \
+    -T path=request/path
+
+  run_case "multiple vars" \
+    'https://example.com/{user}/{repo}' \
+    'https://example.com/octo/cat' \
+    -T user=octo -T repo=cat
+
+  run_case "array exploded" \
+    'https://example.com{/path*}' \
+    'https://example.com/a/b' \
+    -T array,path=a -T array,path=b
+
+  run_case "map exploded" \
+    'https://example.com/{?q*}' \
+    'https://example.com/?foo=bar&baz=qux' \
+    -T map,q=foo=bar -T map,q=baz=qux
+}
+
+@test "json input cases" {
+  run_case_stdin "json simple" \
+    '{ "name":"alice" }' \
+    'https://example.com/{name}' \
+    'https://example.com/alice'
+
+  run_case_stdin "json array + map" \
+    '{ "path":["a","b"], "query":{"q":"x"} }' \
+    'https://example.com{/path*}{?query*}' \
+    'https://example.com/a/b?q=x'
+}
+
+@test "edge cases: empty and missing values" {
+  run_case "missing variable" \
+    'https://example.com/{name}' \
+    'https://example.com/'
+
+  run_case "empty string" \
+    'https://example.com/{name}' \
+    'https://example.com/' \
+    -T name=
+
+  run_case "empty array (no expansion)" \
+    'https://example.com{/path*}' \
+    'https://example.com'
+
+  run_case "empty map (no query)" \
+    'https://example.com{?q*}' \
+    'https://example.com'
+}
+
+@test "edge cases: encoding and special characters" {
+  run_case "space encoding" \
+    'https://example.com/{name}' \
+    'https://example.com/a%20b' \
+    -T name='a b'
+
+  run_case "unicode encoding" \
+    'https://example.com/{name}' \
+    'https://example.com/%E2%9C%93' \
+    -T name='✓'
+
+  run_case "reserved expansion keeps slash" \
+    'https://example.com/{+path}' \
+    'https://example.com/a/b' \
+    -T path=a/b
+}
+
+@test "edge cases: duplicates and overrides" {
+  run_case "duplicate scalar uses last" \
+    'https://example.com/{name}' \
+    'https://example.com/bob' \
+    -T name=alice -T name=bob
+
+  run_case "array preserves order" \
+    'https://example.com{/path*}' \
+    'https://example.com/first/second/third' \
+    -T array,path=first \
+    -T array,path=second \
+    -T array,path=third
+}
+
+@test "edge cases: modifiers" {
+  run_case "prefix longer than string" \
+    'https://example.com/{name:10}' \
+    'https://example.com/alice' \
+    -T name=alice
+
+  run_case "prefix exact length" \
+    'https://example.com/{name:5}' \
+    'https://example.com/alice' \
+    -T name=alice
+
+  run_case "prefix shorter" \
+    'https://example.com/{name:3}' \
+    'https://example.com/ali' \
+    -T name=alice
+}
+
+@test "edge cases: malformed input (expected failures)" {
+  run rug 'https://example.com/{name' -T name=alice
+  [ "$status" -ne 0 ]
+}
+
+@test "usage errors" {
+  run rug
+  [ "$status" -eq 2 ]
+}
+
+# ---- helpers ---------------------------------------------------------------
+
+run_case() {
+  local name="$1"
+  local template="$2"
+  local expected="$3"
+  shift 3
+
+  run rug "$template" "$@"
+
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: $name (status $status)"
+    return 1
+  }
+
+  [ "$output" = "$expected" ] || {
+    echo "FAIL: $name"
+    echo "expected: $expected"
+    echo "got:      $output"
+    return 1
+  }
+}
+
+run_case_stdin() {
+  local name="$1"
+  local json="$2"
+  local template="$3"
+  local expected="$4"
+
+  run bash -c "echo '$json' | rug '$template' -t @-"
+
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: $name (status $status)"
+    return 1
+  }
+
+  [ "$output" = "$expected" ] || {
+    echo "FAIL: $name"
+    echo "expected: $expected"
+    echo "got:      $output"
+    return 1
+  }
+}
