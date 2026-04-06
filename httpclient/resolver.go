@@ -73,9 +73,9 @@ func NewDefaultLocationResolver() LocationResolver {
 	}
 }
 
-// URLLocation provides a basic implementation of Location for a URL.  It isn't
+// NewURLLocation provides a basic implementation of Location for a URL.  It isn't
 // dependent upon and makes no modifications to the context
-func URLLocation(u *url.URL) Location {
+func NewURLLocation(u *url.URL) Location {
 	return urlLocation{u}
 }
 
@@ -189,7 +189,7 @@ func (a autoLocation) URL(ctx context.Context) (context.Context, *url.URL, error
 			return nil, nil, err
 		}
 
-		return URLLocation(u).URL(ctx)
+		return NewURLLocation(u).URL(ctx)
 	}
 
 	return NewURITemplateLocation(a.url, a.varfn).URL(ctx)
