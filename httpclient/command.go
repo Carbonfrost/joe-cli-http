@@ -520,6 +520,7 @@ func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
 			Value:    new(uritemplates.Var),
 			Category: requestOptions,
 			Options:  cli.EachOccurrence,
+			Uses:     cli.ValueTransform(cli.TransformOptionalFileReference()),
 		},
 		withBinding((*Client).SetURITemplateVar, v),
 		tagged,
