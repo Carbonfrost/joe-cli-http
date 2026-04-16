@@ -145,6 +145,10 @@ func defaultOptions(s *Server) []Option {
 	}
 }
 
+func (s *Server) Pipeline() cli.Action {
+	return s.Action
+}
+
 func (s *Server) Apply(opts ...Option) {
 	for _, o := range opts {
 		o.apply(s)

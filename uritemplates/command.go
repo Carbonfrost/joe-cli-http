@@ -76,6 +76,10 @@ func New(options ...Option) *Expander {
 	return e
 }
 
+func (e *Expander) Pipeline() cli.Action {
+	return e.Action
+}
+
 // WithAction sets up the action to use when Expander is added to a pipeline
 func WithAction(a cli.Action) Option {
 	return withAdapter((*Expander).setAction, a)
@@ -108,7 +112,7 @@ func FromContext(ctx context.Context) *Expander {
 
 // ContextValue returns an action that adds the expander to the context
 func ContextValue(e *Expander) cli.Action {
-	return cli.ContextValue(expanderContextKey, e)
+	return cli.WithContextValue(expanderContextKey, e)
 }
 
 // WithURITemplateVar adds a template variable

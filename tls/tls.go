@@ -38,6 +38,10 @@ func New(opts ...Option) *Config {
 	return c
 }
 
+func (c *Config) Pipeline() cli.Action {
+	return c.Action
+}
+
 func defaultOptions() []Option {
 	return []Option{
 		WithDefaultAction(),
@@ -64,7 +68,7 @@ func WithDefaultAction() Option {
 }
 
 func ContextValue(c *Config) cli.Action {
-	return cli.ContextValue(servicesKey, c)
+	return cli.WithContextValue(servicesKey, c)
 }
 
 // FromContext obtains the server from the context.

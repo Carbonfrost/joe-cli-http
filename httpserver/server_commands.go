@@ -66,7 +66,7 @@ func FlagsAndArgs() cli.Action {
 }
 
 func ContextValue(s *Server) cli.Action {
-	return cli.ContextValue(servicesKey, s)
+	return cli.WithContextValue(servicesKey, s)
 }
 
 // SetHostname sets the server address, which either uses the specified value or reads from the
@@ -408,7 +408,7 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 func RunServer(actionopt ...cli.Action) cli.Action {
 	return cli.Setup{
 		Uses: cli.HandleSignal(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT),
-		Action: cli.Pipeline().Append(actionopt...).Append(cli.ActionFunc(func(c *cli.Context) error {
+		Action: cli.Pipeline(cli.ActionOf(actionopt), cli.ActionFunc(func(c *cli.Context) error {
 			srv := FromContext(c)
 			c.After(cli.ActionOf(func() {
 				// Shutting down happens in After because the signal handler will be unregistered

@@ -45,7 +45,7 @@ func tlsFromContextError(ctx context.Context) (*gotls.Config, error) {
 }
 
 func ContextValue(c *Client) cli.Action {
-	return cli.ContextValue(servicesKey, c)
+	return cli.WithContextValue(servicesKey, c)
 }
 
 func FetchAndPrint() cli.Action {
@@ -121,7 +121,7 @@ func SetMethod(s ...string) cli.Action {
 			HelpText:   "Sets the request method to {NAME}",
 			Options:    cli.ImpliedAction,
 			Category:   requestOptions,
-			Completion: cli.CompletionValues("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "CONNECT", "OPTIONS", "TRACE"),
+			Completion: cli.ValueCompletion("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "CONNECT", "OPTIONS", "TRACE"),
 		},
 		withBinding((*Client).SetMethod, s),
 		tagged,
@@ -639,7 +639,7 @@ func completeInterfaces() cli.CompletionFunc {
 				values = append(values, a.String())
 			}
 		}
-		return cli.CompletionValues(values...).Complete(cc)
+		return cli.ValueCompletion(values...).Complete(cc)
 	}
 }
 

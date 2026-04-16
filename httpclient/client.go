@@ -184,6 +184,10 @@ func (c *Client) Apply(opts ...Option) {
 	}
 }
 
+func (c *Client) Pipeline() cli.Action {
+	return c.Action
+}
+
 func WithAction(a cli.Action) Option {
 	return func(c *Client) {
 		c.Action = a
