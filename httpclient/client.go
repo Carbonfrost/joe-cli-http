@@ -70,8 +70,8 @@ type Client struct {
 	// FailFast causes no response output in the case of a failure
 	FailFast bool
 
-	downloader         Downloader
-	downloadMiddleware []func(Downloader) Downloader
+	downloader           Downloader
+	downloaderMiddleware []DownloaderMiddleware
 
 	transport           http.RoundTripper
 	transportMiddleware []TransportMiddleware
@@ -81,12 +81,13 @@ type Client struct {
 	dialer         *net.Dialer
 	dnsDialer      *net.Dialer
 	auth           Authenticator
-	authMiddleware []func(Authenticator) Authenticator
-	bodyForm       []*cli.NameValue
-	queryString    url.Values
-	middleware     []Middleware
-	writeOutExpr   Expr
-	writeErrExpr   Expr
+	authMiddleware []AuthenticatorMiddleware
+
+	bodyForm     []*cli.NameValue
+	queryString  url.Values
+	middleware   []Middleware
+	writeOutExpr Expr
+	writeErrExpr Expr
 
 	// These are values that are ready after the first call to Do
 	exprHandlingCache *exprHandling
@@ -95,6 +96,12 @@ type Client struct {
 
 // TransportMiddleware provides middleware to the roundtripper
 type TransportMiddleware func(context.Context, http.RoundTripper) http.RoundTripper
+
+// DownloaderMiddleware provides middleware to the downloader
+type DownloaderMiddleware func(context.Context, Downloader) Downloader
+
+// AuthenticatorMiddleware provides middleware to the authenticator
+type AuthenticatorMiddleware func(context.Context, Authenticator) Authenticator
 
 type RoundTripperFunc func(req *http.Request) *http.Response
 
@@ -106,10 +113,11 @@ type exprHandling struct {
 }
 
 type cacheable[T comparable] struct {
-	discrete  T
-	factory   func(context.Context) (T, error)
-	cached    T
-	cachedErr error
+	discrete   T
+	factory    func(context.Context) (T, error)
+	middleware []func(context.Context, T) T
+	cached     T
+	cachedErr  error
 }
 
 func (c *cacheable[T]) New(ctx context.Context) (T, error) {
@@ -120,11 +128,24 @@ func (c *cacheable[T]) New(ctx context.Context) (T, error) {
 	if c.cached != zero {
 		return c.cached, nil
 	}
+
+	var result T
 	if c.discrete != zero {
-		return c.discrete, nil
+		result = c.discrete
+	} else {
+		result, c.cachedErr = c.factory(ctx)
+		if c.cachedErr != nil {
+			return zero, c.cachedErr
+		}
 	}
-	c.cached, c.cachedErr = c.factory(ctx)
-	return c.cached, c.cachedErr
+
+	// Apply middleware
+	for _, m := range c.middleware {
+		result = m(ctx, result)
+	}
+
+	c.cached = result
+	return c.cached, nil
 }
 
 var (
@@ -253,10 +274,10 @@ func WithTransportMiddleware(m TransportMiddleware) Option {
 	}
 }
 
-// WithDownloadMiddleware adds downloader middleware
-func WithDownloadMiddleware(d func(Downloader) Downloader) Option {
+// WithDownloaderMiddleware adds downloader middleware
+func WithDownloaderMiddleware(d DownloaderMiddleware) Option {
 	return func(c *Client) {
-		c.AddDownloadMiddleware(d)
+		c.AddDownloaderMiddleware(d)
 	}
 }
 
@@ -472,7 +493,7 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 	}
 
 	c.exprHandlingCache.eval(c.Request, nil, resp)
-	err = c.handleDownload(cli.FromContext(ctx), resp)
+	err = c.handleDownload(ctx, resp)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +501,7 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 	return resp, nil
 }
 
-func (c *Client) handleDownload(ctx *cli.Context, response *Response) error {
+func (c *Client) handleDownload(ctx context.Context, response *Response) error {
 	if c.FailFast && !response.Success() {
 		return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
 	}
@@ -511,10 +532,10 @@ func (c *Client) handleDownload(ctx *cli.Context, response *Response) error {
 	return nil
 }
 
-func (c *Client) applyAuth() error {
+func (c *Client) applyAuth(ctx context.Context) error {
 	auth := c.Authenticator()
 	for _, a := range c.authMiddleware {
-		auth = a(auth)
+		auth = a(ctx, auth)
 	}
 	return auth.Authenticate(c.Request, c.UserInfo)
 }
@@ -606,7 +627,7 @@ func (c *Client) SetNoOutput(b bool) error {
 }
 
 func (c *Client) SetIntegrity(i Integrity) error {
-	c.AddDownloadMiddleware(func(downloader Downloader) Downloader {
+	c.AddDownloaderMiddleware(func(_ context.Context, downloader Downloader) Downloader {
 		return NewIntegrityDownloader(i, downloader)
 	})
 	return nil
@@ -720,18 +741,18 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 	return c.InterfaceResolver.Resolve(context.Background(), v)
 }
 
-func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.WriteCloser, error) {
+func (c *Client) openDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
 	downloader := c.actualDownloader(ctx)
 	return downloader.OpenDownload(ctx, resp)
 }
 
-func (c *Client) actualDownloader(ctx *cli.Context) Downloader {
+func (c *Client) actualDownloader(ctx context.Context) Downloader {
 	downloader := c.downloader
 	if c.downloader == nil {
-		downloader = NewDownloaderTo(ctx.Stdout)
+		downloader = NewDownloaderTo(cli.FromContext(ctx).Stdout)
 	}
-	for _, d := range c.downloadMiddleware {
-		downloader = d(downloader)
+	for _, d := range c.downloaderMiddleware {
+		downloader = d(ctx, downloader)
 	}
 	return downloader
 }
@@ -753,8 +774,8 @@ func (c *Client) Authenticator() Authenticator {
 	return c.auth
 }
 
-// AddAuthMiddleware adds middleware for the authenticator
-func (c *Client) AddAuthMiddleware(fn func(Authenticator) Authenticator) {
+// AddAuthenticatorMiddleware adds middleware for the authenticator
+func (c *Client) AddAuthenticatorMiddleware(fn AuthenticatorMiddleware) {
 	c.authMiddleware = append(c.authMiddleware, fn)
 }
 
@@ -783,13 +804,13 @@ func (c *Client) SetWriteErr(w Expr) error {
 }
 
 // AddDownloadMiddleware adds download middleware
-func (c *Client) AddDownloadMiddleware(fn func(Downloader) Downloader) {
-	c.downloadMiddleware = append(c.downloadMiddleware, fn)
+func (c *Client) AddDownloaderMiddleware(fn DownloaderMiddleware) {
+	c.downloaderMiddleware = append(c.downloaderMiddleware, fn)
 }
 
 func (c *Client) SetStripComponents(count int) error {
 	c.SetDownloadFile(PreserveRequestPath)
-	c.AddDownloadMiddleware(func(d Downloader) Downloader {
+	c.AddDownloaderMiddleware(func(_ context.Context, d Downloader) Downloader {
 		return d.(DownloadMode).WithStripComponents(count)
 	})
 	return nil

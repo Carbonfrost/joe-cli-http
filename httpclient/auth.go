@@ -5,6 +5,7 @@
 package httpclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -100,7 +101,7 @@ func NewBearerTokenAuthenticator(token string, headeropt ...string) Authenticato
 	return &bearerTokenAuth{headerAndValue: append(headeropt, token)}
 }
 
-func WithPromptForCredentials(auth Authenticator) Authenticator {
+func WithPromptForCredentials(_ context.Context, auth Authenticator) Authenticator {
 	return &promptForCredentials{auth}
 }
 
@@ -238,7 +239,7 @@ func PromptForCredentials() cli.Action {
 
 func promptForPassword(c *cli.Context) error {
 	client := FromContext(c)
-	client.AddAuthMiddleware(WithPromptForCredentials)
+	client.AddAuthenticatorMiddleware(WithPromptForCredentials)
 	return nil
 }
 

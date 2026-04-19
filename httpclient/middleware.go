@@ -152,8 +152,8 @@ func setupQueryString(c *Client) MiddlewareFunc {
 }
 
 func processAuth(c *Client) MiddlewareFunc {
-	return func(*http.Request) error {
-		return c.applyAuth()
+	return func(r *http.Request) error {
+		return c.applyAuth(r.Context())
 	}
 }
 
