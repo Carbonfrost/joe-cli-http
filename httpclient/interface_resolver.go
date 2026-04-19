@@ -5,8 +5,14 @@
 package httpclient
 
 import (
-	"errors"
+	"context"
+	"fmt"
 	"net"
+)
+
+const (
+	// DefaultInterfaceResolver is the default interface resolver
+	DefaultInterfaceResolver = defaultResolver(0)
 )
 
 // InterfaceResolver resolves the network interface to use
@@ -14,12 +20,12 @@ import (
 type InterfaceResolver interface {
 	// Resolve converts a location, typically an IP address
 	// or adapter name, into a TCP address
-	Resolve(string) (*net.TCPAddr, error)
+	Resolve(context.Context, string) (*net.TCPAddr, error)
 }
 
-type defaultResolver struct{}
+type defaultResolver int
 
-func (*defaultResolver) Resolve(v string) (*net.TCPAddr, error) {
+func (defaultResolver) Resolve(_ context.Context, v string) (*net.TCPAddr, error) {
 	ip := net.ParseIP(v)
 	if ip != nil {
 		return resolveTCP(ip.String())
@@ -37,7 +43,7 @@ func (*defaultResolver) Resolve(v string) (*net.TCPAddr, error) {
 			return resolveIPNet(a.String())
 		}
 	}
-	return nil, errors.New("failed to resolve " + v)
+	return nil, fmt.Errorf("failed to resolve %q", v)
 }
 
 func resolveTCP(value string) (*net.TCPAddr, error) {

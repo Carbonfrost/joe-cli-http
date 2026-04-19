@@ -155,7 +155,7 @@ type Option func(*Client)
 // New creates a new client with the given option.
 func New(options ...Option) *Client {
 	h := &Client{
-		InterfaceResolver: &defaultResolver{},
+		InterfaceResolver: DefaultInterfaceResolver,
 		dnsDialer:         &net.Dialer{},
 		queryString:       url.Values{},
 		Request: &http.Request{
@@ -713,7 +713,7 @@ func (c *Client) SetFillValue(v *cli.NameValue) error {
 }
 
 func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
-	return c.InterfaceResolver.Resolve(v)
+	return c.InterfaceResolver.Resolve(context.Background(), v)
 }
 
 func (c *Client) openDownload(ctx *cli.Context, resp *Response) (io.WriteCloser, error) {
