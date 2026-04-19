@@ -279,7 +279,7 @@ func WithAccessLog(s string) Option {
 
 // WithNoAccessLog disables the access log
 func WithNoAccessLog() Option {
-	return withAdapter((*Server).SetNoAccessLog, true)
+	return WithAccessLog("")
 }
 
 // WithStaticDirectory hosts a static directory
@@ -287,9 +287,9 @@ func WithStaticDirectory(path string) Option {
 	return withAdapter((*Server).SetStaticDirectory, path)
 }
 
-// WithNoDirectoryListings disables directory listings
-func WithNoDirectoryListings() Option {
-	return withAdapter((*Server).SetNoDirectoryListings, true)
+// WithHideDirectoryListings disables directory listings
+func WithHideDirectoryListings(v bool) Option {
+	return withAdapter((*Server).SetHideDirectoryListings, v)
 }
 
 // FromContext obtains the server from the context.
@@ -485,22 +485,13 @@ func (s *Server) SetStaticDirectory(path string) error {
 	return nil
 }
 
-func (s *Server) SetNoDirectoryListings(v bool) error {
+func (s *Server) SetHideDirectoryListings(v bool) error {
 	s.hideDirListings = v
 	return nil
 }
 
 func (s *Server) SetAccessLog(v string) error {
 	s.accessLog = v
-	return nil
-}
-
-func (s *Server) SetNoAccessLog(v bool) error {
-	if v {
-		s.accessLog = ""
-	} else {
-		s.accessLog = defaultAccessLog
-	}
 	return nil
 }
 

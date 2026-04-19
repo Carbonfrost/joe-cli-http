@@ -54,7 +54,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetIdleTimeout()},
 			{Uses: SetMaxHeaderBytes()},
 			{Uses: SetStaticDirectory()},
-			{Uses: SetNoDirectoryListings()},
+			{Uses: SetHideDirectoryListings()},
 			{Uses: SetOpenInBrowser()},
 			{Uses: SetAccessLog()},
 			{Uses: SetNoAccessLog()},
@@ -233,15 +233,15 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 	)
 }
 
-// SetNoDirectoryListings causes directories not to be listed
-func SetNoDirectoryListings() cli.Action {
+// SetHideDirectoryListings causes directories not to be listed
+func SetHideDirectoryListings() cli.Action {
 	return cli.Pipeline(
 		&cli.Prototype{
-			Name:     "no-directory-listings",
+			Name:     "hide-directory-listings",
 			HelpText: "When set, don't display directory listings",
 			Category: serverCategory,
 		},
-		cli.At(cli.ActionTiming, WithNoDirectoryListings()),
+		cli.At(cli.ActionTiming, WithHideDirectoryListings(true)),
 		tagged,
 	)
 }
