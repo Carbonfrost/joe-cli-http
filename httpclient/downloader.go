@@ -24,6 +24,9 @@ type Downloader interface {
 	OpenDownload(context.Context, *Response) (io.WriteCloser, error)
 }
 
+// DownloaderMiddleware provides middleware to the downloader
+type DownloaderMiddleware func(context.Context, Downloader) Downloader
+
 // DownloadMode enumerates common download methods. It implements
 // [Downloader]
 type DownloadMode int

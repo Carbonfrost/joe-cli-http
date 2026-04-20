@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -94,16 +93,8 @@ type Client struct {
 	logger            TraceLogger
 }
 
-// TransportMiddleware provides middleware to the roundtripper
-type TransportMiddleware func(context.Context, http.RoundTripper) http.RoundTripper
-
-// DownloaderMiddleware provides middleware to the downloader
-type DownloaderMiddleware func(context.Context, Downloader) Downloader
-
 // AuthenticatorMiddleware provides middleware to the authenticator
 type AuthenticatorMiddleware func(context.Context, Authenticator) Authenticator
-
-type RoundTripperFunc func(req *http.Request) *http.Response
 
 type exprHandling struct {
 	outExpr   *expander.Pattern
@@ -296,13 +287,6 @@ func WithRequestID(v ...any) Option {
 	return WithMiddleware(mw)
 }
 
-// WithTransport sets the default transport
-func WithTransport(t http.RoundTripper) Option {
-	return func(c *Client) {
-		c.transport = t
-	}
-}
-
 func requestOption(fn func(r *http.Request)) Option {
 	return func(c *Client) {
 		fn(c.Request)
@@ -333,10 +317,6 @@ func FromContext(c context.Context) *Client {
 
 func (c *Client) AddMiddleware(m Middleware) {
 	c.middleware = append(c.middleware, m)
-}
-
-func (c *Client) AddTransportMiddleware(m TransportMiddleware) {
-	c.transportMiddleware = append(c.transportMiddleware, m)
 }
 
 func (c *Client) SetTraceLevel(v TraceLevel) error {
@@ -371,20 +351,6 @@ func (c *Client) Do(ctx context.Context) ([]*Response, error) {
 // DoLocation invokes the request for the specified location
 func (c *Client) DoLocation(ctx context.Context, l Location) (*Response, error) {
 	return c.doOne(ctx, l)
-}
-
-func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
-	t := c.transport
-	if t == nil {
-		defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
-		defaultTransport.DialContext = c.dialer.DialContext
-		defaultTransport.Proxy = http.ProxyFromEnvironment
-		t = defaultTransport
-	}
-	for _, m := range c.generateTransportMiddleware() {
-		t = m(ctx, t)
-	}
-	return t
 }
 
 func (c *Client) ensureExprHandling(ctx *cli.Context) {
@@ -435,40 +401,6 @@ func (c *Client) generateMiddleware(l Location) Middleware {
 		setupQueryString(c),
 		processAuth(c),
 	}, c.middleware...)...)
-}
-
-func (c *Client) generateTransportMiddleware() []TransportMiddleware {
-	return append([]TransportMiddleware{
-		c.setupTLSConfigTransport,
-		c.setupTraceLevelTransport,
-	}, c.transportMiddleware...)
-}
-
-func (c *Client) setupTLSConfigTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
-	// TODO Error if not default transport; better error handling
-	if defaultTransport, ok := t.(*http.Transport); ok {
-		defaultTransport.TLSClientConfig, _ = c.tls.New(ctx)
-	}
-
-	return t
-}
-
-func (c *Client) setupTraceLevelTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
-	var logger TraceLogger
-	if c.traceLevel == TraceOff {
-		logger = nopTraceLogger{}
-	} else {
-		logger = &defaultTraceLogger{
-			template: traceTemplate(ctx),
-			out:      os.Stderr,
-			flags:    c.traceLevel,
-		}
-	}
-	c.logger = logger
-	return &traceableTransport{
-		logger:    logger,
-		Transport: t,
-	}
 }
 
 func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
@@ -910,10 +842,6 @@ func expandRequest(r *http.Request) expander.Interface {
 func (o Option) Execute(c context.Context) error {
 	o(FromContext(c))
 	return nil
-}
-
-func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req), nil
 }
 
 func defaultUserAgent() string {
