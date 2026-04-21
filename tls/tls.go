@@ -56,7 +56,7 @@ func WithAction(a cli.Action) Option {
 	}
 }
 
-// WithAction sets the action to the default
+// WithDefaultAction sets the action to the default
 func WithDefaultAction() Option {
 	return func(c *Config) error {
 		c.Action = cli.Pipeline(
@@ -106,7 +106,7 @@ func WithCiphers(ids CipherSuites) Option {
 	}
 }
 
-// WithCiphers sets up curves
+// WithCurves sets up curves
 func WithCurves(ids CurveIDs) Option {
 	return func(c *Config) error {
 		c.CurvePreferences = []gotls.CurveID(ids)
@@ -166,7 +166,7 @@ func AddRootCACertPath(path string) Option {
 	}
 }
 
-// WithRootCACertFile adds a CA certificate to the pool
+// AddRootCACertFile adds a CA certificate to the pool
 func AddRootCACertFile(filename string) Option {
 	return func(cfg *Config) error {
 		cert, err := os.ReadFile(filename)

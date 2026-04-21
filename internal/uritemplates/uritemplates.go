@@ -244,7 +244,7 @@ func (u *URITemplate) PartialExpand(value any) (*URITemplate, error) {
 			return nil, err
 		}
 		if len(missing) == 0 {
-			parts[partIndex] = templatePart{raw: string(buf.Bytes()[start:][:])}
+			parts[partIndex] = templatePart{raw: string(buf.Bytes()[start:])}
 			continue
 		}
 

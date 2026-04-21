@@ -21,7 +21,7 @@ var _ = Describe("ReloadableHandler", func() {
 		It("creates the underlying handler", func() {
 			fakeHandler := new(httpserverfakes.FakeHandler)
 
-			handler := httpserver.NewReloadableHandler(func(ctx context.Context) (http.Handler, error) {
+			handler := httpserver.NewReloadableHandler(func(_ context.Context) (http.Handler, error) {
 				return fakeHandler, nil
 			})
 			request, _ := http.NewRequest("GET", "example.com", nil)
@@ -33,7 +33,7 @@ var _ = Describe("ReloadableHandler", func() {
 		It("reuses the underlying handler on subsequent calls", func() {
 			var callCount int
 
-			handler := httpserver.NewReloadableHandler(func(ctx context.Context) (http.Handler, error) {
+			handler := httpserver.NewReloadableHandler(func(_ context.Context) (http.Handler, error) {
 				callCount++
 				return new(httpserverfakes.FakeHandler), nil
 			})
@@ -51,7 +51,7 @@ var _ = Describe("ReloadableHandler", func() {
 		It("recreates the underlying handler", func() {
 			var handlers []http.Handler
 
-			handler := httpserver.NewReloadableHandler(func(ctx context.Context) (http.Handler, error) {
+			handler := httpserver.NewReloadableHandler(func(_ context.Context) (http.Handler, error) {
 				result := new(httpserverfakes.FakeHandler)
 				handlers = append(handlers, result)
 				return result, nil

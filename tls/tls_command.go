@@ -275,7 +275,3 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetTLSv1_3()},
 		}...))
 }
-
-func withBinding[V any](binder func(*Config, V) error, args []V) cli.Action {
-	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
-}

@@ -17,8 +17,6 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 )
 
-const someJSON = `{"error":"Character not found"}`
-
 var _ = Describe("Set actions", func() {
 
 	It("has Source annotation", func() {

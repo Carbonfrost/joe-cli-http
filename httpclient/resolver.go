@@ -203,7 +203,7 @@ func resolveURL(base string, prefix []string) string {
 	}
 
 	if base != "" && len(prefix) > 0 {
-		base = base + "/"
+		base += "/"
 	}
 
 	return base + path.Join(prefix...)

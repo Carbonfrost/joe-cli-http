@@ -105,6 +105,6 @@ func (h *reloadableHandler) Invalidate() {
 	h.once = sync.Once{}
 }
 
-func serviceUnavailable(w http.ResponseWriter, r *http.Request) {
+func serviceUnavailable(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "Service Unavailable", http.StatusServiceUnavailable)
 }

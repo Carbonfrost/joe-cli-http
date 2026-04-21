@@ -88,11 +88,12 @@ func newBearerAuthOpts(opts struct {
 }
 
 func NewBearerTokenAuthenticator(token string, headeropt ...string) Authenticator {
-	if len(headeropt) == 0 || headeropt[0] == "" || headeropt[0] == "Authentication" {
+	switch {
+	case len(headeropt) == 0 || headeropt[0] == "" || headeropt[0] == "Authentication":
 		headeropt = []string{"Authentication", "Bearer"}
-	} else if len(headeropt) == 1 {
+	case len(headeropt) == 1:
 		headeropt = strings.Fields(headeropt[0])
-	} else {
+	default:
 		panic(expectedOneArg)
 	}
 
@@ -150,7 +151,7 @@ func (*bearerTokenAuth) RequiresUserInfo() bool {
 	return false
 }
 
-func (b *bearerTokenAuth) Authenticate(r *http.Request, u *UserInfo) error {
+func (b *bearerTokenAuth) Authenticate(r *http.Request, _ *UserInfo) error {
 	value := strings.Join(b.headerAndValue[1:], " ")
 	r.Header.Add(b.headerAndValue[0], value)
 	return nil

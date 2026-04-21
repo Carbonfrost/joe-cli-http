@@ -109,8 +109,6 @@ type contextKey string
 const servicesKey contextKey = "httpserver_services"
 
 const (
-	expectedOneArg = "expected 0 or 1 arg"
-
 	defaultShutdownTimeout = 3 * time.Second
 )
 
@@ -168,7 +166,7 @@ func WithAction(a cli.Action) Option {
 	return withAdapter[cli.Action]((*Server).setAction, a)
 }
 
-// WithAction sets the action to the default
+// WithDefaultAction sets the action to the default
 func WithDefaultAction() Option {
 	return option[cli.Action]{
 		nil, func(s *Server, _ cli.Action) error {
