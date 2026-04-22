@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.7.3 (April 21, 2026)
+
+### New Features
+
+* Add support for file references to `--param` (51d8ed5)
+* Encapsulate `Expander` in URI templates (4e7225c)
+
+### Bug fixes and improvementss
+
+* Improve consistency of Server options and API; rename to --hide-directory-listings (0cc5272)
+* Rename `URLLocation` to `NewURLLocation` (2e37892)
+* Adopt Option and default action patterns consistently (2902a57)
+* Update `InterfaceResolver` to take context; expose default (1302cbd)
+* Unify middleware definitions (b99c060)
+* Chores:
+    * Address lint errors (a112acb)
+    * Upgrade joe-cli (0a52a95)
+    * Split up downloader and transport from client.go (209da3f)
+* Add rug integration tests (18027ef)
+
+
 ## v0.7.2 (April 1, 2026)
 
 ### New Features
