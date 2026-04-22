@@ -61,7 +61,6 @@ type Client struct {
 	CheckRedirect          func(*http.Request, []*http.Request) error
 	Request                *http.Request
 	IncludeResponseHeaders bool
-	InterfaceResolver      InterfaceResolver
 	BodyContent            Content
 	UserInfo               *UserInfo
 	LocationResolver       LocationResolver
@@ -76,11 +75,12 @@ type Client struct {
 	transportMiddleware []TransportMiddleware
 	traceLevel          TraceLevel
 
-	tls            cacheable[*tls.Config]
-	dialer         *net.Dialer
-	dnsDialer      *net.Dialer
-	auth           Authenticator
-	authMiddleware []AuthenticatorMiddleware
+	tls               cacheable[*tls.Config]
+	interfaceResolver cacheable[InterfaceResolver]
+	dialer            *net.Dialer
+	dnsDialer         *net.Dialer
+	auth              Authenticator
+	authMiddleware    []AuthenticatorMiddleware
 
 	bodyForm     []*cli.NameValue
 	queryString  url.Values
@@ -143,6 +143,7 @@ var (
 	impliedOptions = []Option{
 		WithDefaultAction(),
 		WithDefaultUserAgent(defaultUserAgent()),
+		WithDefaultInterfaceResolver(),
 	}
 
 	// These don't have values within redirects
@@ -167,9 +168,8 @@ type Option func(*Client)
 // New creates a new client with the given option.
 func New(options ...Option) *Client {
 	h := &Client{
-		InterfaceResolver: DefaultInterfaceResolver,
-		dnsDialer:         &net.Dialer{},
-		queryString:       url.Values{},
+		dnsDialer:   &net.Dialer{},
+		queryString: url.Values{},
 		Request: &http.Request{
 			Method: "GET",
 		},
@@ -248,6 +248,25 @@ func WithTLSConfigFactory(fn func(context.Context) (*tls.Config, error)) Option 
 	return func(c *Client) {
 		c.tls.factory = fn
 	}
+}
+
+// WithInterfaceResolver sets the interface resolver for use on the client
+func WithInterfaceResolver(r InterfaceResolver) Option {
+	return func(c *Client) {
+		c.interfaceResolver.discrete = r
+	}
+}
+
+// WithInterfaceResolverFactory provides a factory for obtaining the interface resolver
+func WithInterfaceResolverFactory(fn func(context.Context) (InterfaceResolver, error)) Option {
+	return func(c *Client) {
+		c.interfaceResolver.factory = fn
+	}
+}
+
+// WithDefaultInterfaceResolver sets up the default interface resolver
+func WithDefaultInterfaceResolver() Option {
+	return WithInterfaceResolver(DefaultInterfaceResolver)
 }
 
 // WithMiddleware adds a middleware function that will execute before
@@ -480,6 +499,11 @@ func (c *Client) DNSDialer() *net.Dialer {
 	return c.dnsDialer
 }
 
+// NewInterfaceResolver creates the interface resolver
+func (c *Client) NewInterfaceResolver(ctx context.Context) (InterfaceResolver, error) {
+	return c.interfaceResolver.New(ctx)
+}
+
 func (c *Client) SetMethod(s string) error {
 	c.Request.Method = strings.ToUpper(s)
 	return nil
@@ -670,7 +694,11 @@ func (c *Client) SetFillValue(v *cli.NameValue) error {
 }
 
 func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
-	return c.InterfaceResolver.Resolve(context.Background(), v)
+	resolver, err := c.NewInterfaceResolver(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return resolver.Resolve(context.Background(), v)
 }
 
 func (c *Client) openDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
