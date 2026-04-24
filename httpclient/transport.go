@@ -20,36 +20,55 @@ func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-// WithTransport sets the default transport
+// WithTransport sets the transport to use directly, bypassing the default factory
 func WithTransport(t http.RoundTripper) Option {
 	return func(c *Client) {
-		c.transport = t
+		c.transport.discrete = t
 	}
+}
+
+// WithTransportFactory provides a factory for obtaining the transport
+func WithTransportFactory(fn func(context.Context) (http.RoundTripper, error)) Option {
+	return func(c *Client) {
+		c.transport.factory = fn
+	}
+}
+
+// WithDefaultTransportFactory sets up the default transport factory and built-in
+// transport middleware (TLS config and trace level).  This option is applied
+// automatically by New.
+func WithDefaultTransportFactory() Option {
+	return func(c *Client) {
+		c.transport.factory = c.defaultTransportFactory
+		c.transport.middleware = append(
+			[]func(context.Context, http.RoundTripper) http.RoundTripper{
+				c.setupTLSConfigTransport,
+				c.setupTraceLevelTransport,
+			},
+			c.transport.middleware...,
+		)
+	}
+}
+
+func (c *Client) defaultTransportFactory(_ context.Context) (http.RoundTripper, error) {
+	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+	defaultTransport.DialContext = c.dialer.DialContext
+	defaultTransport.Proxy = http.ProxyFromEnvironment
+	return defaultTransport, nil
+}
+
+// NewTransport creates (or returns the cached) transport for the client
+func (c *Client) NewTransport(ctx context.Context) (http.RoundTripper, error) {
+	return c.transport.New(ctx)
 }
 
 func (c *Client) AddTransportMiddleware(m TransportMiddleware) {
-	c.transportMiddleware = append(c.transportMiddleware, m)
+	c.transport.middleware = append(c.transport.middleware, m)
 }
 
 func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
-	t := c.transport
-	if t == nil {
-		defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
-		defaultTransport.DialContext = c.dialer.DialContext
-		defaultTransport.Proxy = http.ProxyFromEnvironment
-		t = defaultTransport
-	}
-	for _, m := range c.generateTransportMiddleware() {
-		t = m(ctx, t)
-	}
+	t, _ := c.transport.New(ctx)
 	return t
-}
-
-func (c *Client) generateTransportMiddleware() []TransportMiddleware {
-	return append([]TransportMiddleware{
-		c.setupTLSConfigTransport,
-		c.setupTraceLevelTransport,
-	}, c.transportMiddleware...)
 }
 
 func (c *Client) setupTLSConfigTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {

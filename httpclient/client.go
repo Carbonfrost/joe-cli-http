@@ -57,7 +57,6 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 type Client struct {
 	cli.Action
 
-	Transport              http.RoundTripper
 	CheckRedirect          func(*http.Request, []*http.Request) error
 	Request                *http.Request
 	IncludeResponseHeaders bool
@@ -71,9 +70,8 @@ type Client struct {
 	downloader           Downloader
 	downloaderMiddleware []DownloaderMiddleware
 
-	transport           http.RoundTripper
-	transportMiddleware []TransportMiddleware
-	traceLevel          TraceLevel
+	transport  cacheable[http.RoundTripper]
+	traceLevel TraceLevel
 
 	tls               cacheable[*tls.Config]
 	interfaceResolver cacheable[InterfaceResolver]
@@ -144,6 +142,7 @@ var (
 		WithDefaultAction(),
 		WithDefaultUserAgent(defaultUserAgent()),
 		WithDefaultInterfaceResolver(),
+		WithDefaultTransportFactory(),
 	}
 
 	// These don't have values within redirects
@@ -179,11 +178,6 @@ func New(options ...Option) *Client {
 			Dial: h.dnsDialer.DialContext,
 		},
 	}
-
-	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
-	defaultTransport.DialContext = h.dialer.DialContext
-	defaultTransport.Proxy = http.ProxyFromEnvironment
-	h.Transport = defaultTransport
 
 	h.Apply(append(impliedOptions, options...)...)
 	return h
