@@ -7,7 +7,7 @@ module github.com/Carbonfrost/joe-cli-http
 go 1.26.1
 
 require (
-	github.com/Carbonfrost/joe-cli v0.14.1
+	github.com/Carbonfrost/joe-cli v0.15.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 )
@@ -37,7 +37,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.21 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.1 // indirect
 	github.com/mgechev/dots v1.0.0 // indirect
 	github.com/mgechev/revive v1.13.0 // indirect
