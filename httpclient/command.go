@@ -481,19 +481,7 @@ func SetVerbose() cli.Action {
 			Value:    new(bool),
 			HelpText: "Display verbose output; can be used multiple times to increase detail",
 		},
-		cli.At(cli.ActionTiming, cli.ActionOf(func(c *cli.Context) {
-			switch c.Occurrences("") {
-			case 0:
-			case 1:
-				FromContext(c).SetTraceLevel(TraceOn)
-			case 2:
-				FromContext(c).SetTraceLevel(TraceVerbose)
-			case 3:
-				fallthrough
-			default:
-				FromContext(c).SetTraceLevel(TraceDebug)
-			}
-		})),
+		bind.Action(WithTraceLevel, bind.Occurrences("", TraceOff, TraceOn, TraceVerbose, TraceVerbose, TraceDebug)),
 		tagged,
 	)
 }

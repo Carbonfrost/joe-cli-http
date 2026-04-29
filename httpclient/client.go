@@ -318,6 +318,12 @@ func WithBody(b io.ReadCloser) Option {
 	})
 }
 
+func WithTraceLevel(v TraceLevel) Option {
+	return func(c *Client) {
+		c.SetTraceLevel(v)
+	}
+}
+
 // Do invokes the context client to generate corresponding responses
 func Do(c context.Context) ([]*Response, error) {
 	return FromContext(c).Do(c)
