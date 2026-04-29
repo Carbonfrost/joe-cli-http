@@ -39,7 +39,7 @@ func NewApp() *cli.App {
 		HelpText: "Provides access to the Go HTTP client with some cURL compatibility",
 		Uses: cli.Pipeline(
 			httpclient.New(
-				httpclient.WithDefaultUserAgent(defaultUserAgent()),
+				httpclient.WithUserAgent(defaultUserAgent()),
 			),
 			&color.Options{},
 			cli.Sorted,

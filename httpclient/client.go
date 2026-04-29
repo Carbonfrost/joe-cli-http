@@ -140,7 +140,7 @@ func (c *cacheable[T]) New(ctx context.Context) (T, error) {
 var (
 	impliedOptions = []Option{
 		WithDefaultAction(),
-		WithDefaultUserAgent(defaultUserAgent()),
+		WithUserAgent(defaultUserAgent()),
 		WithDefaultInterfaceResolver(),
 		WithDefaultTransportFactory(),
 	}
@@ -218,7 +218,7 @@ func WithDefaultAction() Option {
 	}
 }
 
-func WithDefaultUserAgent(s string) Option {
+func WithUserAgent(s string) Option {
 	return func(c *Client) {
 		ensureHeader(c.Request).Set("User-Agent", s)
 	}
