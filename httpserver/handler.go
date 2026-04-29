@@ -11,6 +11,7 @@ import (
 	"io"
 	"maps"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -40,16 +41,32 @@ var HandlerRegistry = &provider.Registry{
 	Name: "handlers",
 	Providers: provider.Details{
 		"ping": {
-			Factory: provider.FactoryOf(newPingHandlerWithOpts),
+			Factory:  provider.FactoryOf(newPingHandlerWithOpts),
+			HelpText: "Responds simply Generates a ping",
 		},
 		"file": {
-			Factory: provider.FactoryOf(newFileServerHandlerWithOpts),
+			Factory:  provider.FactoryOf(newFileServerHandlerWithOpts),
+			HelpText: "Serve a particular directory as static files",
+			Defaults: map[string]string{
+				"directory":              ".",
+				"hide_directory_listing": "false",
+			},
 		},
 		"redirect": {
-			Factory: provider.FactoryOf(newRedirectServerHandlerWithOpts),
+			Factory:  provider.FactoryOf(newRedirectServerHandlerWithOpts),
+			HelpText: "Redirect to the given path and provide a status code",
+			Defaults: map[string]string{
+				"to":   "/",
+				"code": strconv.Itoa(http.StatusTemporaryRedirect),
+			},
 		},
 		"echo": {
-			Factory: provider.FactoryOf(newEchoHandlerWithOpts),
+			Factory:  provider.FactoryOf(newEchoHandlerWithOpts),
+			HelpText: "Reflects the out the request and connection information",
+			Defaults: map[string]string{
+				"failsafe": "false",
+			},
+			Aliases: []string{"reflect"},
 		},
 	},
 }
