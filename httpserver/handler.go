@@ -52,6 +52,12 @@ var HandlerRegistry = &provider.Registry{
 				"hide_directory_listing": "false",
 			},
 		},
+		"reload": {
+			Value: HandlerSpec(func(ctx context.Context, _ httpclient.VirtualPath) (http.Handler, error) {
+				return NewReloadHandler(FromContext(ctx)), nil
+			}),
+			HelpText: "Reloads the server",
+		},
 		"redirect": {
 			Factory:  provider.FactoryOf(newRedirectServerHandlerWithOpts),
 			HelpText: "Redirect to the given path and provide a status code",
@@ -62,7 +68,7 @@ var HandlerRegistry = &provider.Registry{
 		},
 		"echo": {
 			Factory:  provider.FactoryOf(newEchoHandlerWithOpts),
-			HelpText: "Reflects the out the request and connection information",
+			HelpText: "Reflects out the request and connection information",
 			Defaults: map[string]string{
 				"failsafe": "false",
 			},
@@ -85,6 +91,18 @@ func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Hand
 	}
 	logFormat := expander.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
 	return newRequestLoggerHandler(out, next, logFormat)
+}
+
+// NewReloadHandler provides a handler which triggers the server to reload all handlers
+func NewReloadHandler(s *Server) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			s.ReloadAll()
+			w.WriteHeader(http.StatusNoContent)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
 }
 
 // NewPingHandler provides a handler which simply replies with a message
@@ -139,6 +157,9 @@ func RegistryHandlerSpec(name string) HandlerSpec {
 		}
 		if h == nil {
 			return nil, fmt.Errorf("no handler for %q", name)
+		}
+		if spec, ok := h.(HandlerSpec); ok {
+			return spec(ctx, vp)
 		}
 		return http.StripPrefix(vp.RequestPath, h.(http.Handler)), err
 	}
