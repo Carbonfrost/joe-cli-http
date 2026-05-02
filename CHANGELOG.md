@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.8.0 (May 2, 2026)
+
+### New Features
+
+* Server options (b636953)
+* Reload handler (d2e8a22)
+* Introduce `WithTraceLevel` and encapsulate verbose flag (7332c1a)
+
+### Bug fixes and improvements
+
+* Rename `WithDefaultUserAgent` to just `WithUserAgent` (b5d8be6)
+* Add defaults and help text to handlers in registry (63dab45)
+* Refactor transport cacheable pattern (553d6fe)
+* Refactor interface resolver cacheable pattern (e7fea1d)
+* Chores:
+    * Bump goreleaser/goreleaser-action from 6 to 7 (c76b682)
+    * Update joe-cli (8ef613a)
+
+
 ## v0.7.3 (April 21, 2026)
 
 ### New Features
@@ -7,7 +26,7 @@
 * Add support for file references to `--param` (51d8ed5)
 * Encapsulate `Expander` in URI templates (4e7225c)
 
-### Bug fixes and improvementss
+### Bug fixes and improvements
 
 * Improve consistency of Server options and API; rename to --hide-directory-listings (0cc5272)
 * Rename `URLLocation` to `NewURLLocation` (2e37892)
