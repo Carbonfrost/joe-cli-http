@@ -1,6 +1,7 @@
-# Copyright 2025 The Joe-cli Authors. All rights reserved.
+# Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
+
 name: goreleaser
 
 on:
@@ -19,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.23"
+          go-version: "1.26"
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
