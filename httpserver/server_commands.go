@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"slices"
 	"syscall"
 	"time"
 
@@ -80,17 +79,6 @@ func SetHostname(s ...string) cli.Action {
 			Category: listenerCategory,
 		},
 		bind.Action(WithHostname, bind.Exact(s...)),
-
-		// Remove "-h" alias from "--help" if it is present
-		// TODO Refer to joe-cli@futures for idiomatic way
-		func(c *cli.Context) error {
-			t := c.ContextOf("-h")
-			if t != nil && slices.Contains(t.Aliases(), "h") {
-				t.RemoveAlias("h")
-			}
-			return nil
-		},
-
 		tagged,
 	)
 }
