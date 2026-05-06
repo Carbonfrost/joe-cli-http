@@ -7,7 +7,7 @@ package httpclient
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
+	gotls "crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -19,6 +19,7 @@ import (
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
+	"github.com/Carbonfrost/joe-cli-http/tls"
 	joetls "github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
@@ -73,7 +74,7 @@ type Client struct {
 	transport  cacheable[http.RoundTripper]
 	traceLevel TraceLevel
 
-	tls               cacheable[*tls.Config]
+	tls               cacheable[*gotls.Config]
 	interfaceResolver cacheable[InterfaceResolver]
 	dialer            *net.Dialer
 	dnsDialer         *net.Dialer
@@ -213,7 +214,7 @@ func WithDefaultAction() Option {
 			Authenticators,
 			PromptForCredentials(),
 			joetls.New(),
-			WithTLSConfigFactory(tlsFromContextError),
+			WithDefaultTLSConfigFactory(),
 		)
 	}
 }
@@ -231,16 +232,26 @@ func WithLocationResolver(r LocationResolver) Option {
 }
 
 // WithTLSConfig sets the TLS config for use on the client
-func WithTLSConfig(t *tls.Config) Option {
+func WithTLSConfig(t *gotls.Config) Option {
 	return func(c *Client) {
 		c.tls.discrete = t
 	}
 }
 
 // WithTLSConfigFactory provides a factory for obtaining TLS config
-func WithTLSConfigFactory(fn func(context.Context) (*tls.Config, error)) Option {
+func WithTLSConfigFactory(fn func(context.Context) (*gotls.Config, error)) Option {
 	return func(c *Client) {
 		c.tls.factory = fn
+	}
+}
+
+// WithDefaultTLSConfigFactory provides the default factory, which provides
+// TLS from the context
+func WithDefaultTLSConfigFactory() Option {
+	return func(c *Client) {
+		c.tls.factory = func(ctx context.Context) (*gotls.Config, error) {
+			return tls.FromContext(ctx).Config, nil
+		}
 	}
 }
 
@@ -502,6 +513,11 @@ func (c *Client) DNSDialer() *net.Dialer {
 // NewInterfaceResolver creates the interface resolver
 func (c *Client) NewInterfaceResolver(ctx context.Context) (InterfaceResolver, error) {
 	return c.interfaceResolver.New(ctx)
+}
+
+// NewTLSConfig creates the TLS config
+func (c *Client) NewTLSConfig(ctx context.Context) (*gotls.Config, error) {
+	return c.tls.New(ctx)
 }
 
 func (c *Client) SetMethod(s string) error {

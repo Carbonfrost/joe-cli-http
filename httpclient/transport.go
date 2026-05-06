@@ -74,7 +74,7 @@ func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {
 func (c *Client) setupTLSConfigTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
 	// TODO Error if not default transport; better error handling
 	if defaultTransport, ok := t.(*http.Transport); ok {
-		defaultTransport.TLSClientConfig, _ = c.tls.New(ctx)
+		defaultTransport.TLSClientConfig, _ = c.NewTLSConfig(ctx)
 	}
 
 	return t

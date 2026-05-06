@@ -6,7 +6,6 @@ package httpclient
 
 import (
 	"context"
-	gotls "crypto/tls"
 	"fmt"
 	"net"
 	"reflect"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
-	"github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
 	"github.com/Carbonfrost/joe-cli/extensions/bind"
 	"github.com/Carbonfrost/joe-cli/value"
@@ -38,10 +36,6 @@ var (
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
-}
-
-func tlsFromContextError(ctx context.Context) (*gotls.Config, error) {
-	return tls.FromContext(ctx).Config, nil
 }
 
 func ContextValue(c *Client) cli.Action {
