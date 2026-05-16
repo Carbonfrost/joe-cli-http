@@ -20,7 +20,7 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/exec"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//go:generate go tool counterfeiter -generate
 
 // Server provides an HTTP server (indeed http.Server is embedded)
 // that can be initialized and hosted within a CLI app.  The server is used
