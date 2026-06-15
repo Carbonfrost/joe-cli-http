@@ -134,6 +134,7 @@ func defaultOptions(s *Server) []Option {
 		WithShutdownTimeout(defaultShutdownTimeout),
 		WithAccessLog(defaultAccessLog),
 		WithReadyFunc(DefaultReadyFunc),
+		WithShutdownFunc(DefaultShutdownFunc),
 		WithMiddleware(func(h http.Handler) http.Handler {
 			if s.accessLog != "" {
 				return NewRequestLogger(s.accessLog, os.Stderr, h)

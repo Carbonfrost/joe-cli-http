@@ -5,10 +5,6 @@
 package weave
 
 import (
-	"context"
-	"fmt"
-	"os"
-
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpserver"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
@@ -25,9 +21,6 @@ func NewApp() *cli.App {
 		HelpText: "Provides access to a simple Go HTTP server for files and proxy handling",
 		Uses: cli.Pipeline(
 			httpserver.DefaultServer(),
-			httpserver.WithShutdownFunc(func(context.Context) {
-				fmt.Fprintf(os.Stderr, "Goodbye!\n")
-			}),
 			&color.Options{},
 			httpserver.RunServer(),
 			httpserver.HandlerRegistry,

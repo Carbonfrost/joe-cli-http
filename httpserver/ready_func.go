@@ -16,10 +16,15 @@ import (
 type ReadyFunc func(context.Context)
 
 // DefaultReadyFunc provides the default behavior when the server starts
+// DefaultShutdownFunc provides the default behavior when the server shuts down
 var (
 	DefaultReadyFunc = ComposeReadyFuncs(
 		ReportListening(),
 		ReloadServer(),
+	)
+
+	DefaultShutdownFunc = ComposeReadyFuncs(
+		ReportShutdown(),
 	)
 )
 
@@ -63,6 +68,13 @@ func ReportListening() ReadyFunc {
 	return func(c context.Context) {
 		s := FromContext(c)
 		s.ReportListening()
+	}
+}
+
+// ReportShutdown is a ready func that prints a goodbye message to stderr
+func ReportShutdown() ReadyFunc {
+	return func(_ context.Context) {
+		fmt.Fprintln(os.Stderr, "Goodbye!")
 	}
 }
 
