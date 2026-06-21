@@ -172,7 +172,8 @@ func (c *varState) next(arg string) error {
 		return fmt.Errorf("invalid template var %q", arg)
 
 	case varStateEndState:
-		return cli.EndOfArguments
+		// TODO joe-cli@0.16.0 required this be nil instead of cli.EndOfArguments
+		return nil
 
 	case varStateSawName:
 		return c.parseValue(arg)
