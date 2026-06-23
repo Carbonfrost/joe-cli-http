@@ -8,7 +8,7 @@ go 1.26.4
 
 require (
 	github.com/Carbonfrost/joe-cli v0.16.1
-	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.0
 )
 
