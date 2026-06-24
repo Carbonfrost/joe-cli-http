@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.0 (June 23, 2026)
+
+### New Features
+
+* Introduce `NewTLSConfig`, `WithDefaultTLSConfigFactory` (4311e8f)
+* Random generator for TLS (17f626a)
+* Insecure key file log (ef3ffbb)
+
+### Bug fixes and improvements
+
+* Remove shutdown funcs from weave into defaults (90ab5c0)
+* Chores
+    * Update dependent versions (1be670e)
+    * Modernize tool invocations (3629001)
+    * Update GitHub CI configuration (7d67155)
+* Remove redundant --help flag configuration (8bc372c)
+
+
 ## v0.8.0 (May 2, 2026)
 
 ### New Features
