@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.10.0 (July 5, 2026)
+
+### New Features
+
+* `ExpandURLValues` (e8fd719)
+* Add transfer encoding, close, uncompressed to `ExpandRequest` (5173b6a)
+
+### Bug fixes and improvements
+
+* Make `ExpandGlobals` into func (e8fd719)
+* Remove fields from `Server` into accessors (fb446ee)
+
+* Chores:
+    * Update dependent versions (f71f590)
+* Split out server handlers, middleware, expanders; consistency (8ec394e)
+
+
 ## v0.9.0 (June 23, 2026)
 
 ### New Features
