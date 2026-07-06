@@ -154,7 +154,7 @@ func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	expander.Fprint(h.out, h.format, exp)
+	h.format.Fprint(h.out, exp)
 }
 
 func hideListing(next http.Handler) http.HandlerFunc {

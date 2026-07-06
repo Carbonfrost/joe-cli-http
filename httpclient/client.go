@@ -843,8 +843,8 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
 	expanders = append(expanders, expander.Unknown())
 	exp := expander.Compose(expanders...)
 
-	expander.Fprint(e.outRender, e.outExpr, exp)
-	expander.Fprint(e.errRender, e.errExpr, exp)
+	e.outExpr.Fprint(e.outRender, exp)
+	e.errExpr.Fprint(e.errRender, exp)
 }
 
 func expandRequest(r *http.Request) expander.Interface {
