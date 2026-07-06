@@ -133,7 +133,7 @@ func defaultOptions(s *Server) []Option {
 		WithShutdownFunc(DefaultShutdownFunc),
 		WithMiddleware(func(h http.Handler) http.Handler {
 			if s.accessLog != "" {
-				return NewRequestLogger(s.accessLog, os.Stderr, h)
+				return NewRequestLoggerMiddleware(s.accessLog, os.Stderr)(h)
 			}
 			return h
 		}),

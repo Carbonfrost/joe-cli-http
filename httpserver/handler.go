@@ -5,11 +5,8 @@
 package httpserver
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,12 +26,6 @@ var (
 		`- - [%(start:02/Jan/2006 15:04:05)] "%(method:C) %(urlPath) %(protocol)" %(statusCode:C) -`,
 	)
 )
-
-// HandlerSpec creates a handler from a virtual path.  The virtual path
-// defines how the handler works.  Typically, the physical path
-// identifies a useful feature or the location of a file,
-// and the options may be used for any purpose of customization.
-type HandlerSpec func(context.Context, httpclient.VirtualPath) (http.Handler, error)
 
 // HandlerRegistry provides the default handler registry.
 var HandlerRegistry = &provider.Registry{
@@ -84,15 +75,6 @@ type requestLoggerHandler struct {
 	next   http.Handler
 }
 
-// NewRequestLogger provides handler middleware to write to access log
-func NewRequestLogger(format string, out io.Writer, next http.Handler) http.Handler {
-	if format == "" {
-		format = defaultAccessLog
-	}
-	logFormat := expander.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
-	return newRequestLoggerHandler(out, next, logFormat)
-}
-
 // NewReloadHandler provides a handler which triggers the server to reload all handlers
 func NewReloadHandler(s *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -110,59 +92,6 @@ func NewPingHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("ping\n"))
 	})
-}
-
-// NewHeaderMiddleware provides handler middleware which simply adds the given
-// header
-func NewHeaderMiddleware(name, value string) func(http.Handler) http.Handler {
-	return func(inner http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add(name, value)
-			inner.ServeHTTP(w, r)
-		})
-	}
-}
-
-// FileServerHandlerSpec creates a file server.  The physical path in the virtual path
-// specifies the base directory for the file server.  An option named
-// hide_directory_listing controls whether the directory listing response is served.
-// The handler also consults the server for whether directory listings can be served.
-func FileServerHandlerSpec() HandlerSpec {
-	return func(_ context.Context, vp httpclient.VirtualPath) (http.Handler, error) {
-		dict := map[string]string{
-			"directory": vp.PhysicalPath,
-		}
-		update(dict, vp.Options)
-		h, err := provider.FactoryOf(newFileServerHandlerWithOpts).New(dict)
-		if err != nil {
-			return nil, err
-		}
-		return http.StripPrefix(vp.RequestPath, h.(http.Handler)), err
-	}
-}
-
-// RegistryHandlerSpec creates a handler by looking it up as a provider in the
-// registry that is named.  The physical path in the virtual path specifies the
-// name of the provider which is used.  The virtual path's options are propagated
-// to the registry factory function.
-func RegistryHandlerSpec(name string) HandlerSpec {
-	return func(ctx context.Context, vp httpclient.VirtualPath) (http.Handler, error) {
-		reg, ok := provider.Services(ctx).LookupRegistry(name)
-		if !ok {
-			return nil, fmt.Errorf("no handler for %q", name)
-		}
-		h, err := reg.New(vp.PhysicalPath, vp.Options)
-		if err != nil {
-			return nil, err
-		}
-		if h == nil {
-			return nil, fmt.Errorf("no handler for %q", name)
-		}
-		if spec, ok := h.(HandlerSpec); ok {
-			return spec(ctx, vp)
-		}
-		return http.StripPrefix(vp.RequestPath, h.(http.Handler)), err
-	}
 }
 
 func newFileServerHandlerWithOpts(opts struct {
@@ -228,38 +157,6 @@ func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	expander.Fprint(h.out, h.format, exp)
 }
 
-func ExpandRequest(r *http.Request, ww wrapResponseWriter) expander.Interface {
-	return expander.Compose(expander.Func(func(s string) any {
-		switch s {
-		case "bytesWritten":
-			return ww.BytesWritten()
-		case "method":
-			return expr.HTTPMethod(r.Method)
-		case "protocol":
-			return r.Proto
-		case "statusCode":
-			return expr.HTTPStatus(ww.Status())
-		case "status":
-			return fmt.Sprint(ww.Status(), " ", http.StatusText(ww.Status()))
-		case "urlPath":
-			return r.URL.Path
-		case "header":
-			var buf bytes.Buffer
-			ww.Header().Write(&buf)
-			return buf.String()
-		}
-		return nil
-	}), expander.Prefix("header", httpclient.ExpandHeader(ww.Header())))
-}
-
-func expandTiming(start, end time.Time) expander.Interface {
-	return expander.Map(map[string]any{
-		"duration": end.Sub(start),
-		"end":      end,
-		"start":    start,
-	})
-}
-
 func hideListing(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, "/") {
@@ -269,8 +166,4 @@ func hideListing(next http.Handler) http.HandlerFunc {
 
 		next.ServeHTTP(w, req)
 	}
-}
-
-func update(dst, src map[string]string) {
-	maps.Copy(dst, src)
 }

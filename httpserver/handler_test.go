@@ -31,7 +31,7 @@ var _ = Describe("NewPingHandler", func() {
 	})
 })
 
-var _ = Describe("NewRequestLogger", func() {
+var _ = Describe("NewRequestLoggerMiddleware", func() {
 
 	var (
 		recorder  *httptest.ResponseRecorder
@@ -43,7 +43,7 @@ var _ = Describe("NewRequestLogger", func() {
 		recorder = httptest.NewRecorder()
 		request, _ := http.NewRequest("GET", "https://example.com/ring", nil)
 
-		handler := httpserver.NewRequestLogger(accessLog, &output, httpserver.NewPingHandler())
+		handler := httpserver.NewRequestLoggerMiddleware(accessLog, &output)(httpserver.NewPingHandler())
 		output.Reset()
 		handler.ServeHTTP(recorder, request)
 	})
