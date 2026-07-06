@@ -55,13 +55,9 @@ type Server struct {
 	*http.Server
 	cli.Action
 
-	TLSCertFile string
-	TLSKeyFile  string
-
-	// ShutdownTimeout specifies how long to wait for the server to shutdown
-	// when a signal is received
-	ShutdownTimeout time.Duration
-
+	tlsCertFile     string
+	tlsKeyFile      string
+	shutdownTimeout time.Duration
 	staticDir       string
 	handlerFactory  func(*Server) (http.Handler, error)
 	ready           ReadyFunc
@@ -361,14 +357,14 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	s.actualBind.addr = listener.Addr().String()
-	s.actualBind.tls = (s.TLSCertFile != "")
+	s.actualBind.tls = (s.TLSCertFile() != "")
 	s.applyMiddleware()
 
-	if s.TLSCertFile == "" {
+	if s.TLSCertFile() == "" {
 		return s.Server.Serve(listener)
 	}
 
-	return s.Server.ServeTLS(listener, s.TLSCertFile, s.TLSKeyFile)
+	return s.Server.ServeTLS(listener, s.TLSCertFile(), s.TLSKeyFile())
 }
 
 func (s *Server) ensureMux() (mux, error) {
@@ -454,7 +450,7 @@ func (s *Server) SetAddr(addr string) error {
 }
 
 func (s *Server) SetShutdownTimeout(d time.Duration) error {
-	s.ShutdownTimeout = d
+	s.shutdownTimeout = d
 	return nil
 }
 
@@ -503,14 +499,30 @@ func (s *Server) SetServerHeader(name string) error {
 	return nil
 }
 
+// TLSCertFile specifies the certificate file to use in TLS
+func (s *Server) TLSCertFile() string {
+	return s.tlsCertFile
+}
+
 func (s *Server) SetTLSCertFile(v string) error {
-	s.TLSCertFile = v
+	s.tlsCertFile = v
 	return nil
 }
 
+// TLSKeyFile specifies the certificate file to use in TLS
+func (s *Server) TLSKeyFile() string {
+	return s.tlsKeyFile
+}
+
 func (s *Server) SetTLSKeyFile(v string) error {
-	s.TLSKeyFile = v
+	s.tlsKeyFile = v
 	return nil
+}
+
+// ShutdownTimeout specifies how long to wait for the server to shutdown
+// when a signal is received
+func (s *Server) ShutdownTimeout() time.Duration {
+	return s.shutdownTimeout
 }
 
 func (s *Server) setAction(value cli.Action) error {

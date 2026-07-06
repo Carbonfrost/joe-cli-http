@@ -400,7 +400,7 @@ func RunServer(actionopt ...cli.Action) cli.Action {
 			srv := FromContext(c)
 			c.After(cli.ActionOf(func() {
 				// Shutting down happens in After because the signal handler will be unregistered
-				timeoutCtx, cancel := context.WithTimeout(context.Background(), srv.ShutdownTimeout)
+				timeoutCtx, cancel := context.WithTimeout(context.Background(), srv.ShutdownTimeout())
 				defer cancel()
 
 				_ = srv.Shutdown(timeoutCtx)
