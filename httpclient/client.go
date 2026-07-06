@@ -829,7 +829,7 @@ func redactGeneric(s string) string {
 
 func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
 	expanders := []expander.Interface{
-		expander.Func(expr.ExpandGlobals),
+		expr.ExpandGlobals(),
 		expander.Prefix("color", expander.Colors()),
 		expander.Prefix("redirect", expandRequest(req)),
 		expander.Prefix("request", expandRequest(initial)),

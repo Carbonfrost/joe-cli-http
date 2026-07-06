@@ -28,6 +28,7 @@ var _ = Describe("ExpandURL", func() {
 		Entry("scheme", "%(url.scheme)", Equal("https")),
 		Entry("authority", "%(url.authority)", Equal("me:password@example.com")),
 		Entry("query", "%(url.query)", Equal("query=1")),
+		Entry("query.query", "%(url.query.query)", Equal("1")),
 		Entry("userInfo", "%(url.userInfo)", Equal("me:password")),
 		Entry("user", "%(url.user)", Equal("me")),
 		Entry("host", "%(url.host)", Equal("example.com")),
@@ -37,11 +38,25 @@ var _ = Describe("ExpandURL", func() {
 	)
 })
 
+var _ = Describe("ExpandURLValues", func() {
+
+	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
+		u, _ := url.ParseQuery("a=b&c=d&c=e")
+		e := expander.Compile(text)
+
+		expander := expr.ExpandURLValues(u)
+		Expect(e.Expand(expander)).To(expected)
+	},
+		Entry("nominal", "%(a)", Equal("b")),
+		Entry("list", "%(c)", Equal("d,e")),
+	)
+})
+
 var _ = Describe("ExpandGlobals", func() {
 
 	DescribeTable("examples", func(text string, expected types.GomegaMatcher) {
 		e := expander.Compile(text)
-		exp := expander.Func(expr.ExpandGlobals)
+		exp := expr.ExpandGlobals()
 		Expect(e.Expand(exp)).To(expected)
 	},
 		Entry("go version", "%(go.version)", MatchRegexp(`go\d(\.\d+)+`)),

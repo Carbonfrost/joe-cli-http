@@ -9,32 +9,47 @@ import (
 	"net"
 	"net/url"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
-func ExpandGlobals(k string) any {
-	switch k {
-	case "go.version":
-		return runtime.Version()
-	case "wig.version":
-		return build.Version
-	case "time", "time.now":
-		return time.Now()
-	case "time.now.utc":
-		return time.Now().UTC()
-	case "random":
-		return rand.Int()
-	case "random.float":
-		return rand.Float64()
-	}
-	return nil
+func ExpandGlobals() expander.Interface {
+	return expander.Func(func(k string) any {
+		switch k {
+		case "go.version":
+			return runtime.Version()
+		case "wig.version":
+			return build.Version
+		case "time", "time.now":
+			return time.Now()
+		case "time.now.utc":
+			return time.Now().UTC()
+		case "random":
+			return rand.Int()
+		case "random.float":
+			return rand.Float64()
+		}
+		return nil
+	})
 }
 
+// ExpandURLValues provides an expander for [url.Values]
+func ExpandURLValues(v url.Values) expander.Interface {
+	return expander.Func(func(s string) any {
+		value, ok := v[s]
+		if !ok {
+			return nil
+		}
+		return strings.Join(value, ",")
+	})
+}
+
+// ExpandURL provides an expander for [url.URL]
 func ExpandURL(u *url.URL) expander.Interface {
-	return expander.Func(func(k string) any {
+	return expander.Compose(expander.Func(func(k string) any {
 		switch k {
 		case "scheme":
 			return u.Scheme
@@ -65,5 +80,5 @@ func ExpandURL(u *url.URL) expander.Interface {
 			return res
 		}
 		return nil
-	})
+	}), expander.Prefix("query", ExpandURLValues(u.Query())))
 }

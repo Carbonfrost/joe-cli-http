@@ -217,7 +217,7 @@ func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	h.next.ServeHTTP(ww, r)
 
 	exp := expander.Compose(
-		expander.Func(expr.ExpandGlobals),
+		expr.ExpandGlobals(),
 		expander.Colors(),
 		ExpandRequest(r, ww),
 		expandTiming(t1, time.Now()),
