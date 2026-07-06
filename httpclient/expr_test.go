@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -31,7 +31,10 @@ var _ = Describe("Expr", func() {
 			"X-Request-Id":     []string{"3305039"},
 			"Content-Location": []string{"https://example.com/d"},
 		},
-		ContentLength: 80,
+		TransferEncoding: []string{"br", "gzip"},
+		Uncompressed:     true,
+		Close:            true,
+		ContentLength:    80,
 	}
 	DescribeTable("examples", func(text string, res *http.Response, expected types.GomegaMatcher) {
 		e := httpclient.Expr(text).Compile()
@@ -57,6 +60,9 @@ var _ = Describe("Expr", func() {
 		Entry("header direct name", "%(header.X-Request-ID)", res, Equal("3305039")),
 		Entry("header non-canonical name", "%(header.x-request-id)", res, Equal("3305039")),
 		Entry("header camel name", "%(header.xRequestId)", res, Equal("3305039")),
+		Entry("transfer encoding", "%(transferEncoding)", res, Equal("br,gzip")),
+		Entry("close", "%(close)", res, Equal("true")),
+		Entry("uncompressed", "%(uncompressed)", res, Equal("true")),
 	)
 
 	Context("when redirected", func() {

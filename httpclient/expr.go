@@ -43,6 +43,12 @@ func ExpandResponse(r *Response) expander.Interface {
 			return r.ProtoMinor
 		case "contentLength":
 			return r.ContentLength
+		case "transferEncoding":
+			return strings.Join(r.TransferEncoding, ",")
+		case "close":
+			return r.Close
+		case "uncompressed":
+			return r.Uncompressed
 		case "header":
 			var buf bytes.Buffer
 			r.Header.Write(&buf)
