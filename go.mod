@@ -7,7 +7,7 @@ module github.com/Carbonfrost/joe-cli-http
 go 1.26.4
 
 require (
-	github.com/Carbonfrost/joe-cli v0.17.0
+	github.com/Carbonfrost/joe-cli v0.18.0
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 )
