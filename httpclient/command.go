@@ -70,6 +70,7 @@ func FlagsAndArgs() cli.Action {
 			{Uses: SetOutputFile()},
 			{Uses: SetNoOutput()},
 			{Uses: SetIntegrity()},
+			{Uses: ListIntegrityAlgorithms()},
 			{Uses: SetDownload()},
 
 			// DNS options

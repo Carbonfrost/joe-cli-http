@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -14,6 +14,9 @@ import (
 	"hash"
 	"io"
 	"strings"
+
+	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli/extensions/bind"
 )
 
 type Integrity struct {
@@ -116,29 +119,52 @@ func (i *Integrity) UnmarshalText(b []byte) error {
 	return nil
 }
 
+var (
+	integrityAlgorithms = map[string]crypto.Hash{
+		"md5":        crypto.MD5,
+		"ripemd160":  crypto.RIPEMD160,
+		"sha1":       crypto.SHA1,
+		"sha224":     crypto.SHA224,
+		"sha256":     crypto.SHA256,
+		"sha384":     crypto.SHA384,
+		"sha512":     crypto.SHA512,
+		"sha512-224": crypto.SHA512_224,
+		"sha512-256": crypto.SHA512_256,
+	}
+)
+
 func parseHash(name string) (crypto.Hash, error) {
-	switch name {
-	case "md5":
-		return crypto.MD5, nil
-	case "ripemd160":
-		return crypto.RIPEMD160, nil
-	case "sha1":
-		return crypto.SHA1, nil
-	case "sha224":
-		return crypto.SHA224, nil
-	case "sha256":
-		return crypto.SHA256, nil
-	case "sha384":
-		return crypto.SHA384, nil
-	case "sha512":
-		return crypto.SHA512, nil
-	case "sha512-224":
-		return crypto.SHA512_224, nil
-	case "sha512-256":
-		return crypto.SHA512_256, nil
-	default:
+	h, ok := integrityAlgorithms[name]
+	if !ok {
 		return 0, fmt.Errorf("unknown algorithm: %s", name)
 	}
+	return h, nil
+}
+
+// ListIntegrityAlgorithms provides an action which lists the integrity algorithms
+func ListIntegrityAlgorithms() cli.Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "list-integrity-algorithms",
+			HelpText: "List hash algorithms that can be used with integrity checker",
+			Category: responseOptions,
+			Options:  cli.Exits,
+			Value:    new(bool),
+		},
+		bind.Call(doListIntegrityAlgorithms, bind.Stdout()),
+		tagged,
+	)
+}
+
+func doListIntegrityAlgorithms(w io.Writer) error {
+	for name, alg := range integrityAlgorithms {
+		available := "not available"
+		if alg.Available() {
+			available = "available"
+		}
+		fmt.Fprintf(w, "%s\t%s\n", name, available)
+	}
+	return nil
 }
 
 var _ encoding.TextUnmarshaler = (*Integrity)(nil)
