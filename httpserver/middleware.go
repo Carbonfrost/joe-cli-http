@@ -13,7 +13,7 @@ func NewRequestLoggerMiddleware(format string, out io.Writer) func(http.Handler)
 		if format == "" {
 			format = defaultAccessLog
 		}
-		logFormat := expander.Compile(format).WithMeta("accessLog.default", metaDefaultAccessLog)
+		logFormat := expander.Compile(format, expander.WithMeta("accessLog.default", metaDefaultAccessLog))
 		return newRequestLoggerHandler(out, next, logFormat)
 	}
 }

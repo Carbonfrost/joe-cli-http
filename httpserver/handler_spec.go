@@ -3,7 +3,6 @@ package httpserver
 import (
 	"context"
 	"fmt"
-	"maps"
 	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpclient"
@@ -22,10 +21,12 @@ type HandlerSpec func(context.Context, httpclient.VirtualPath) (http.Handler, er
 // The handler also consults the server for whether directory listings can be served.
 func FileServerHandlerSpec() HandlerSpec {
 	return func(_ context.Context, vp httpclient.VirtualPath) (http.Handler, error) {
-		dict := map[string]string{
+		dict := map[string]any{
 			"directory": vp.PhysicalPath,
 		}
-		maps.Copy(dict, vp.Options)
+		for k, v := range vp.Options {
+			dict[k] = v
+		}
 		h, err := provider.FactoryOf(newFileServerHandlerWithOpts).New(dict)
 		if err != nil {
 			return nil, err

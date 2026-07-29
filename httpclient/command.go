@@ -6,6 +6,7 @@ package httpclient
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"net"
 	"reflect"
@@ -529,7 +530,7 @@ func SetRequestID(s ...string) cli.Action {
 		&cli.Prototype{
 			Name:     "request-id",
 			HelpText: "Sets or generates X-Request-ID header with optional {VALUE}",
-			Options:  cli.Optional,
+			Uses:     cli.OptionalValue(rand.Text()),
 			Category: requestOptions,
 		},
 		withBinding((*Client).SetRequestID, s),

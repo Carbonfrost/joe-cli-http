@@ -38,7 +38,7 @@ var HandlerRegistry = &provider.Registry{
 		"file": {
 			Factory:  provider.FactoryOf(newFileServerHandlerWithOpts),
 			HelpText: "Serve a particular directory as static files",
-			Defaults: map[string]string{
+			Defaults: map[string]any{
 				"directory":              ".",
 				"hide_directory_listing": "false",
 			},
@@ -52,7 +52,7 @@ var HandlerRegistry = &provider.Registry{
 		"redirect": {
 			Factory:  provider.FactoryOf(newRedirectServerHandlerWithOpts),
 			HelpText: "Redirect to the given path and provide a status code",
-			Defaults: map[string]string{
+			Defaults: map[string]any{
 				"to":   "/",
 				"code": strconv.Itoa(http.StatusTemporaryRedirect),
 			},
@@ -60,7 +60,7 @@ var HandlerRegistry = &provider.Registry{
 		"echo": {
 			Factory:  provider.FactoryOf(newEchoHandlerWithOpts),
 			HelpText: "Reflects out the request and connection information",
-			Defaults: map[string]string{
+			Defaults: map[string]any{
 				"failsafe": "false",
 			},
 			Aliases: []string{"reflect"},

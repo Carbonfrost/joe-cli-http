@@ -61,7 +61,7 @@ var (
 			},
 			"bearer": {
 				Factory: provider.FactoryOf(newBearerAuthOpts),
-				Defaults: map[string]string{
+				Defaults: map[string]any{
 					"header": "Authentication",
 				},
 			},
