@@ -161,7 +161,7 @@ const (
 
 {{- define "WroteHeaderField" -}}
 {{ Gray }}{{ if .Response }}< {{ else }}> {{ end -}}
-{{ .Key | Magenta }}: {{ .Value | Join ", " | RedactHeader .Key | Gray }}{{ResetColor}}
+{{ .Key | Magenta }}: {{ .Value | RedactHeader .Key | Gray }}{{ResetColor}}
 {{ end -}}
 
 {{- define "StartRequest" -}}
