@@ -26,7 +26,7 @@ func (e *Expr) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func ExpandResponse(r *Response) expander.Interface {
+func ExpandResponse(r *http.Response) expander.Interface {
 	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "status":

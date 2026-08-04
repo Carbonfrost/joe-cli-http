@@ -39,7 +39,7 @@ var _ = Describe("Expr", func() {
 	DescribeTable("examples", func(text string, res *http.Response, expected types.GomegaMatcher) {
 		e := httpclient.Expr(text).Compile()
 		expander := expander.Compose(
-			httpclient.ExpandResponse(&httpclient.Response{Response: res}),
+			httpclient.ExpandResponse(res),
 			expander.Unknown(),
 		)
 		Expect(e.Expand(expander)).To(expected)

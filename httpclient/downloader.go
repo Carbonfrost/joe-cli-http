@@ -147,7 +147,7 @@ func (e *exprAdapter) OpenDownload(ctx context.Context, resp *Response) (io.Writ
 }
 
 func (e *exprAdapter) FileName(r *Response) string {
-	return e.expr.Compile().Expand(expander.Compose(expander.Func(e.expandIndex), ExpandResponse(r)))
+	return e.expr.Compile().Expand(expander.Compose(expander.Func(e.expandIndex), ExpandResponse(r.Response)))
 }
 
 func (e *exprAdapter) expandIndex(k string) any {

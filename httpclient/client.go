@@ -454,7 +454,7 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 		Response: netResp,
 	}
 
-	c.exprHandlingCache.eval(c.Request, nil, resp)
+	c.exprHandlingCache.eval(c.Request, nil, netResp)
 	err = c.handleDownload(ctx, resp)
 	if err != nil {
 		return nil, err
@@ -797,7 +797,7 @@ func (c *Client) SetFailFast(v bool) error {
 	return nil
 }
 
-func (e *exprHandling) eval(initial, req *http.Request, resp *Response) {
+func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 	expanders := []expander.Interface{
 		expr.ExpandGlobals(),
 		expander.Prefix("color", expander.Colors()),
