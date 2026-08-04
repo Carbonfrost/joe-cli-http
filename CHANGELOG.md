@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.11.0 (August 3, 2026)
+
+### New Features
+
+* Make redact API; detect more cases (e2c460d)
+* `NewRecoveryMiddleware` (adca4b4)
+* Add `--list-integrity-algorithms` option (04bc18d)
+
+### Bug fixes and improvements
+
+* Generalize `ExpandResponse` to net/http.Response (69a25b2)
+* Bug fix: fix fallback on missing color funcs; printf spread (cf24747)
+* Breaking change: Rename `DefaultServer` to `NewDefault` (e0bf3d9)
+* Remove redundant `RemoveAlias` implied by recent joe-cli optional alias to help (4a15a9b)
+* Chores:
+    * Upgrade dependent versions; fix breaking Joe changes (c4aa70d)
+
+
 ## v0.10.0 (July 5, 2026)
 
 ### New Features
