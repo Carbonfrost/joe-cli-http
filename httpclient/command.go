@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
@@ -640,14 +639,9 @@ func registerFallbackFuncs() cli.ActionFunc {
 		// Certain function names that control color need to be stubbed
 		// if they have not been registered already by the color extension.
 		// Build up a template and execute it to make sure all names are present.
-		var sb strings.Builder
-		for k := range funcs {
-			fmt.Fprintf(&sb, "{{ %s }}\n", k)
-		}
-
-		if err := c.RegisterTemplate("_CheckForFunctions", sb.String()); err != nil {
-			// The error occurs if functions are not present on registration
-			for k, v := range funcs {
+		for k, v := range funcs {
+			if err := c.RegisterTemplate("_CheckForFunctions_"+k, fmt.Sprintf("{{ %s }}\n", k)); err != nil {
+				// The error occurs if functions are not present on registration
 				c.RegisterTemplateFunc(k, v)
 			}
 		}

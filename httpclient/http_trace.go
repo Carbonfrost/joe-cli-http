@@ -119,15 +119,11 @@ var (
 
 var (
 	printColor = func(a ...any) string {
-		return fmt.Sprint(a[1:])
+		return fmt.Sprint(a[1:]...)
 	}
 	funcs = template.FuncMap{
 
 		// Stub color functions when used outside of Joe-cli
-		"Gray":       fmt.Sprint,
-		"Red":        fmt.Sprint,
-		"Magenta":    fmt.Sprint,
-		"Blue":       fmt.Sprint,
 		"ResetColor": fmt.Sprint,
 		"Color":      printColor,
 		"RedactHeader": func(k, v string) string {
@@ -144,43 +140,43 @@ const (
 	// Design: blue for host names, magenta for HTTP header idioms
 	outputTemplateText = `
 {{- define "TLSHandshakeStart" -}}
-{{ Gray }}* Establishing TLS connection...{{ ResetColor }}
+{{ Color "Gray" }}* Establishing TLS connection...{{ ResetColor }}
 {{ end -}}
 
 {{- define "Got1xxResponse" -}}
-{{ Gray }}< Got {{ .Code | Magenta }} {{.Header}}{{ ResetColor }}
+{{ Color "Gray" }}< Got {{ .Code | Color "Magenta" }} {{.Header}}{{ ResetColor }}
 {{ end -}}
 
 {{- define "GetConn" -}}
-{{ Gray }}* Connecting to {{ .HostPort | Blue }}{{ ResetColor }}...
+{{ Color "Gray" }}* Connecting to {{ .HostPort | Color "Blue" }}{{ ResetColor }}...
 {{ end -}}
 
 {{- define "DNSStart" -}}
-{{ Gray }}* Resolving name {{ .Host | Blue }}{{ResetColor}}...
+{{ Color "Gray" }}* Resolving name {{ .Host | Color "Blue" }}{{ResetColor}}...
 {{ end -}}
 
 {{- define "WroteHeaderField" -}}
-{{ Gray }}{{ if .Response }}< {{ else }}> {{ end -}}
-{{ .Key | Magenta }}: {{ .Value | RedactHeader .Key | Gray }}{{ResetColor}}
+{{ Color "Gray" }}{{ if .Response }}< {{ else }}> {{ end -}}
+{{ .Key | Color "Magenta" }}: {{ .Value | RedactHeader .Key | Color "Gray" }}{{ResetColor}}
 {{ end -}}
 
 {{- define "StartRequest" -}}
-{{ Gray }}> {{ .Method | Magenta }} {{ .RequestURI }} {{ .Proto }}{{ ResetColor }}
+{{ Color "Gray" }}> {{ .Method | Color "Magenta" }} {{ .RequestURI }} {{ .Proto }}{{ ResetColor }}
 {{ end -}}
 
 {{- define "Redirected" -}}
-{{ Gray }}* Redirecting to {{ .Location }}
+{{ Color "Gray" }}* Redirecting to {{ .Location }}
 {{- if gt .Times 1 }} (
     {{- .Ordinal }} redirect)
 {{- end }} ...{{ ResetColor }}
 {{ end -}}
 
 {{- define "GotConn" -}}
-{{ Gray }}* Connected to {{ .Remote }} ({{ .LocalAddr }}{{ if .Reused }}, reused{{ end }}){{ResetColor}}
+{{ Color "Gray" }}* Connected to {{ .Remote }} ({{ .LocalAddr }}{{ if .Reused }}, reused{{ end }}){{ResetColor}}
 {{ end -}}
 
 {{- define "TLSHandshakeDone" -}}
-{{ Gray -}}
+{{ Color "Gray" -}}
 * SSL connection using {{ .Proto }} / {{ .CipherSuite }}
 * Server certificate:
 {{ range .ServerCertificate -}}
@@ -190,7 +186,7 @@ const (
 {{ end -}}
 
 {{- define "DNSDone" -}}
-{{ Gray }}* Resolved to {{ .Addrs | Join ", " }}{{ResetColor}}
+{{ Color "Gray" }}* Resolved to {{ .Addrs | Join ", " }}{{ResetColor}}
 {{ end -}}
 
 {{- define "StatusCode" -}}
@@ -198,7 +194,7 @@ const (
 {{ end -}}
 
 {{- define "GenericError" -}}
-{{ Red }}{{ .Error }}{{ ResetColor }}
+{{ Color "Red" }}{{ .Error }}{{ ResetColor }}
 {{ end -}}
 
 `

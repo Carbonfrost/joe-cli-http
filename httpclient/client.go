@@ -206,8 +206,8 @@ func WithDefaultAction() Option {
 		c.Action = cli.Pipeline(
 			FlagsAndArgs(),
 			cli.Before(cli.Pipeline(
-				registerFallbackFuncs(),
 				cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
+				registerFallbackFuncs(),
 				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
 			)),
 			ContextValue(c),
