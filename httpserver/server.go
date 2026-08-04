@@ -45,7 +45,7 @@ import (
 //
 // The cmd/weave package provides weave, which is a command line utility
 // that hosts a server for files and some built-in handlers, which is
-// similar to what the DefaultServer() does.
+// similar to what the default server  does.
 //
 // If you only want to add the Server to the context (typically in
 // advanced scenarios where you are deeply customizing the behavior),
@@ -150,7 +150,7 @@ func (s *Server) Apply(opts ...Option) {
 	}
 }
 
-func DefaultServer() *Server {
+func NewDefault() *Server {
 	return New(
 		WithHandlerFactory(func(s *Server) (http.Handler, error) {
 			return newFileServerHandler(s.staticDir, s.HideDirectoryListing()), nil

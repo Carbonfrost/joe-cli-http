@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -20,7 +20,7 @@ func NewApp() *cli.App {
 		Name:     "weave",
 		HelpText: "Provides access to a simple Go HTTP server for files and proxy handling",
 		Uses: cli.Pipeline(
-			httpserver.DefaultServer(),
+			httpserver.NewDefault(),
 			&color.Options{},
 			httpserver.RunServer(),
 			httpserver.HandlerRegistry,
