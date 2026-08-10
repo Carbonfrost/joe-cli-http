@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.11.1 (August 9, 2026)
+
+### Bug fixes and improvements
+
+* Remove cacheable to internal/pattern pkg (70b7b1f)
+* Chores:
+    * Update dependent versions (05a9708)
+    * Update generated CLI documentation (cf16e5b)
+    * Update revive.toml configuration (2f3dcf3)
+    * Update GitHub CI configuration (ec633e2, c8b0cf5)
+
+
 ## v0.11.0 (August 3, 2026)
 
 ### New Features
