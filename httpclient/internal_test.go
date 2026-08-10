@@ -67,7 +67,7 @@ func Attributes(c *Client) *ClientAttributes {
 		}(),
 		IncludeResponseHeaders: c.IncludeResponseHeaders,
 		CheckRedirect:          c.CheckRedirect,
-		Transport:              c.transport.discrete,
+		Transport:              c.transport.Discrete(),
 		Request:                newRequestAttributes(c.Request),
 		Downloader:             c.downloader,
 		DownloaderWithMiddleware: c.actualDownloader(&cli.Context{

@@ -19,6 +19,7 @@ import (
 	"github.com/Carbonfrost/joe-cli"
 	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
+	"github.com/Carbonfrost/joe-cli-http/internal/pattern"
 	"github.com/Carbonfrost/joe-cli-http/tls"
 	joetls "github.com/Carbonfrost/joe-cli-http/tls"
 	"github.com/Carbonfrost/joe-cli-http/uritemplates"
@@ -95,47 +96,13 @@ type Client struct {
 // AuthenticatorMiddleware provides middleware to the authenticator
 type AuthenticatorMiddleware func(context.Context, Authenticator) Authenticator
 
+type cacheable[T comparable] = pattern.Cacheable[T]
+
 type exprHandling struct {
 	outExpr   *expander.Pattern
 	errExpr   *expander.Pattern
 	outRender io.Writer
 	errRender io.Writer
-}
-
-type cacheable[T comparable] struct {
-	discrete   T
-	factory    func(context.Context) (T, error)
-	middleware []func(context.Context, T) T
-	cached     T
-	cachedErr  error
-}
-
-func (c *cacheable[T]) New(ctx context.Context) (T, error) {
-	var zero T
-	if c.cachedErr != nil {
-		return zero, c.cachedErr
-	}
-	if c.cached != zero {
-		return c.cached, nil
-	}
-
-	var result T
-	if c.discrete != zero {
-		result = c.discrete
-	} else {
-		result, c.cachedErr = c.factory(ctx)
-		if c.cachedErr != nil {
-			return zero, c.cachedErr
-		}
-	}
-
-	// Apply middleware
-	for _, m := range c.middleware {
-		result = m(ctx, result)
-	}
-
-	c.cached = result
-	return c.cached, nil
 }
 
 var (
@@ -234,14 +201,14 @@ func WithLocationResolver(r LocationResolver) Option {
 // WithTLSConfig sets the TLS config for use on the client
 func WithTLSConfig(t *gotls.Config) Option {
 	return func(c *Client) {
-		c.tls.discrete = t
+		c.tls.SetDiscrete(t)
 	}
 }
 
 // WithTLSConfigFactory provides a factory for obtaining TLS config
 func WithTLSConfigFactory(fn func(context.Context) (*gotls.Config, error)) Option {
 	return func(c *Client) {
-		c.tls.factory = fn
+		c.tls.SetFactory(fn)
 	}
 }
 
@@ -249,23 +216,23 @@ func WithTLSConfigFactory(fn func(context.Context) (*gotls.Config, error)) Optio
 // TLS from the context
 func WithDefaultTLSConfigFactory() Option {
 	return func(c *Client) {
-		c.tls.factory = func(ctx context.Context) (*gotls.Config, error) {
+		c.tls.SetFactory(func(ctx context.Context) (*gotls.Config, error) {
 			return tls.FromContext(ctx).Config, nil
-		}
+		})
 	}
 }
 
 // WithInterfaceResolver sets the interface resolver for use on the client
 func WithInterfaceResolver(r InterfaceResolver) Option {
 	return func(c *Client) {
-		c.interfaceResolver.discrete = r
+		c.interfaceResolver.SetDiscrete(r)
 	}
 }
 
 // WithInterfaceResolverFactory provides a factory for obtaining the interface resolver
 func WithInterfaceResolverFactory(fn func(context.Context) (InterfaceResolver, error)) Option {
 	return func(c *Client) {
-		c.interfaceResolver.factory = fn
+		c.interfaceResolver.SetFactory(fn)
 	}
 }
 
