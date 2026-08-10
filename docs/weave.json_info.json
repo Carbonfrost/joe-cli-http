@@ -4,7 +4,11 @@
         {
             "name": "chdir",
             "helpText": "Change directory into the specified working {DIRECTORY}",
-            "options": "MUST_EXIST, WORKING_DIRECTORY"
+            "options": "MUST_EXIST, WORKING_DIRECTORY",
+            "value": {
+                "type": "file",
+                "string": "."
+            }
         },
         {
             "name": "handler",
@@ -17,17 +21,17 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
-            }
+            },
+            "value": {}
         },
         {
             "name": "list-handlers",
             "helpText": "List available providers for the handler option then exit",
-            "options": "EXITS"
-        },
-        {
-            "name": "help",
-            "helpText": "Display this help screen then exit",
-            "options": "EXITS"
+            "options": "EXITS",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
         },
         {
             "name": "host",
@@ -38,6 +42,9 @@
             "category": "Listener options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -46,6 +53,9 @@
             "category": "Listener options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -57,6 +67,10 @@
             "category": "Listener options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "int",
+                "string": "0"
             }
         },
         {
@@ -65,6 +79,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -73,6 +91,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -81,6 +103,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -89,6 +115,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -97,6 +127,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "int",
+                "string": "0"
             }
         },
         {
@@ -109,14 +143,20 @@
             "options": "MUST_EXIST",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
-            "name": "no-directory-listings",
+            "name": "hide-directory-listings",
             "helpText": "When set, don't display directory listings",
             "category": "Server options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -125,6 +165,10 @@
             "category": "Server options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -136,6 +180,9 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -144,6 +191,10 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -155,6 +206,9 @@
             "category": "Advanced options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -164,6 +218,9 @@
             "options": "MUST_EXIST",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -173,6 +230,9 @@
             "options": "MUST_EXIST",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -180,13 +240,30 @@
             "helpText": "Controls whether terminal color and styles are used",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
-            }
+            },
+            "value": {}
         },
         {
             "name": "no-color",
             "helpText": "Disable terminal color and styles",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "help",
+            "helpText": "Display this help screen then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -195,6 +272,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -202,6 +283,10 @@
             "options": "HIDDEN, EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         }
     ],
@@ -213,10 +298,11 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
-            }
+            },
+            "value": {}
         }
     ],
     "helpText": "Provides access to a simple Go HTTP server for files and proxy handling",
     "version": "(devel)",
-    "buildDate": "2026-03-28T19:57:35.773529089-07:00"
+    "buildDate": "2026-08-09T18:01:58.33974865-07:00"
 }

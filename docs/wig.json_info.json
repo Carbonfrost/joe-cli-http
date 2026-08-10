@@ -4,7 +4,11 @@
         {
             "name": "chdir",
             "helpText": "Change directory into the specified working {DIRECTORY}",
-            "options": "MUST_EXIST, WORKING_DIRECTORY"
+            "options": "MUST_EXIST, WORKING_DIRECTORY",
+            "value": {
+                "type": "file",
+                "string": "."
+            }
         },
         {
             "name": "method",
@@ -18,6 +22,9 @@
             "options": "IMPLIED_ACTION",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -30,7 +37,8 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "body",
@@ -43,6 +51,9 @@
             "options": "ALLOW_FILE_REFERENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -54,7 +65,8 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "param",
@@ -66,7 +78,8 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "params",
@@ -78,7 +91,8 @@
             "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "body-content",
@@ -87,7 +101,8 @@
             "options": "IMPLIED_ACTION",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "fill",
@@ -99,6 +114,10 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "namevalue",
+                "string": "="
             }
         },
         {
@@ -107,6 +126,10 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -116,6 +139,10 @@
             "options": "IMPLIED_ACTION",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -129,6 +156,10 @@
             "options": "NO",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -140,6 +171,9 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -148,6 +182,10 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -159,6 +197,10 @@
             "category": "Response options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -170,6 +212,9 @@
             "category": "Response options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -178,6 +223,10 @@
             "category": "Response options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -187,6 +236,20 @@
             "usageText": "hash:digest",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {}
+        },
+        {
+            "name": "list-integrity-algorithms",
+            "helpText": "List hash algorithms that can be used with integrity checker",
+            "category": "Response options",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -199,6 +262,10 @@
             "category": "Response options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -207,6 +274,9 @@
             "category": "DNS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -215,6 +285,10 @@
             "category": "DNS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -223,6 +297,10 @@
             "category": "DNS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -231,6 +309,10 @@
             "category": "DNS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
             }
         },
         {
@@ -239,6 +321,10 @@
             "category": "DNS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -248,6 +334,9 @@
             "usageText": "HOSTNAME|IP",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -256,6 +345,9 @@
             "category": "Network interface options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -265,6 +357,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -275,6 +371,10 @@
             "helpText": "Display verbose output; can be used multiple times to increase detail",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -286,15 +386,18 @@
             "usageText": "LEVEL",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "request-id",
             "helpText": "Sets or generates X-Request-ID header with optional {VALUE}",
             "category": "Request options",
-            "options": "OPTIONAL",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -307,6 +410,10 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "namevalue",
+                "string": "="
             }
         },
         {
@@ -318,7 +425,8 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "write-err",
@@ -329,7 +437,8 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "strip-components",
@@ -337,6 +446,10 @@
             "category": "Response options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "int",
+                "string": "0"
             }
         },
         {
@@ -349,6 +462,10 @@
             "options": "NO",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -358,6 +475,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -369,7 +490,8 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "auth",
@@ -379,7 +501,8 @@
             "options": "IMPLIED_ACTION",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         },
         {
             "name": "basic",
@@ -387,6 +510,10 @@
             "category": "Request options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -396,6 +523,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -405,6 +536,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -415,6 +550,9 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -425,6 +563,9 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -433,7 +574,8 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
-            }
+            },
+            "value": {}
         },
         {
             "name": "cert",
@@ -445,6 +587,9 @@
             "usageText": "PATH",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -453,6 +598,19 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {}
+        },
+        {
+            "name": "insecure-key-log-file",
+            "helpText": "Log TLS keys to {FILE} for debugging (insecure)",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -469,6 +627,10 @@
             "options": "IMPLIED_ACTION",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -478,6 +640,9 @@
             "usageText": "PATH",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -486,6 +651,22 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "list",
+                "string": "[]"
+            }
+        },
+        {
+            "name": "random",
+            "helpText": "Specifies a {FILE} to use as a source of random data for TLS",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -494,6 +675,9 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
             }
         },
         {
@@ -503,6 +687,9 @@
             "usageText": "PATH",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
             }
         },
         {
@@ -511,6 +698,10 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -519,6 +710,10 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -527,6 +722,10 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -535,6 +734,10 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -543,6 +746,10 @@
             "category": "TLS options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -550,13 +757,18 @@
             "helpText": "Controls whether terminal color and styles are used",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
-            }
+            },
+            "value": {}
         },
         {
             "name": "no-color",
             "helpText": "Disable terminal color and styles",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -568,6 +780,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -576,6 +792,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -583,19 +803,31 @@
             "options": "HIDDEN, EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
             "name": "no-follow-redirects",
             "helpText": "Follow redirects in the Location header",
             "category": "Request options",
-            "options": "HIDDEN"
+            "options": "HIDDEN",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
         },
         {
             "name": "no-fail",
             "helpText": "Fail fast with no output on HTTP errors",
             "category": "Response options",
-            "options": "HIDDEN"
+            "options": "HIDDEN",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
         },
         {
             "name": "auth-arg",
@@ -604,6 +836,9 @@
             "data": {
                 "DependentFlag": "auth",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "string"
             }
         }
     ],
@@ -615,10 +850,11 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
-            }
+            },
+            "value": {}
         }
     ],
     "helpText": "Provides access to the Go HTTP client with some cURL compatibility",
     "version": "(devel)",
-    "buildDate": "2026-03-28T19:51:43.332721-07:00"
+    "buildDate": "2026-08-09T18:01:59.009438701-07:00"
 }

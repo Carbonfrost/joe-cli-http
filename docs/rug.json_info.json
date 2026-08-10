@@ -6,13 +6,18 @@
             "helpText": "Controls whether terminal color and styles are used",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
-            }
+            },
+            "value": {}
         },
         {
             "name": "no-color",
             "helpText": "Disable terminal color and styles",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -24,7 +29,8 @@
             "options": "EACH_OCCURRENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
-            }
+            },
+            "value": {}
         },
         {
             "name": "params",
@@ -36,7 +42,8 @@
             "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
-            }
+            },
+            "value": {}
         },
         {
             "name": "partial",
@@ -46,6 +53,10 @@
             "helpText": "When set, partially expand the template by preserving missing variables",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -57,6 +68,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -65,6 +80,10 @@
             "options": "EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         },
         {
@@ -72,15 +91,20 @@
             "options": "HIDDEN, EXITS",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
             }
         }
     ],
     "args": [
         {
-            "name": "template"
+            "name": "template",
+            "value": {}
         }
     ],
     "helpText": "Expands RFC 6570 (level 4) URI templates",
     "version": "(devel)",
-    "buildDate": "2026-03-28T19:51:43.889107-07:00"
+    "buildDate": "2026-08-09T18:01:59.595303311-07:00"
 }
