@@ -17,12 +17,13 @@ import (
 	"time"
 
 	"github.com/Carbonfrost/joe-cli"
+	"github.com/Carbonfrost/joe-cli-http/internal/pattern"
 	"github.com/Carbonfrost/joe-cli/extensions/exec"
 )
 
 //go:generate go tool counterfeiter -generate
 
-// Server provides an HTTP server (indeed http.Server is embedded)
+// Server provides an HTTP server (which encapsulates an http.Server)
 // that can be initialized and hosted within a CLI app.  The server is used
 // within the Uses pipeline where it registers itself as a context service.
 // The action RunServer is used to actually run the server.
@@ -43,6 +44,11 @@ import (
 // mux, http.ServeMux).  There are other APIs provided by convention, documented
 // in their respective contexts.
 //
+// The server is configured exclusively with Options, either passed to New or
+// applied later using Apply.  The underlying http.Server is created on demand
+// the first time it is needed, which is available from NewServer.  How it gets
+// created can be customized with WithServer or WithServerFactory.
+//
 // The cmd/weave package provides weave, which is a command line utility
 // that hosts a server for files and some built-in handlers, which is
 // similar to what the default server  does.
@@ -52,8 +58,17 @@ import (
 // you only use the action httpserver.ContextValue() with the server
 // you want to add instead of add the server to the pipeline directly.
 type Server struct {
-	*http.Server
 	cli.Action
+
+	server cacheable[*http.Server]
+
+	addr              string
+	handler           http.Handler
+	readTimeout       time.Duration
+	readHeaderTimeout time.Duration
+	writeTimeout      time.Duration
+	idleTimeout       time.Duration
+	maxHeaderBytes    int
 
 	tlsCertFile     string
 	tlsKeyFile      string
@@ -65,7 +80,12 @@ type Server struct {
 	hideDirListings bool
 	middleware      []MiddlewareFunc
 	accessLog       string
-	actualBind      struct {
+
+	// handlerErr records the error, if any, from setting up the handler,
+	// which is reported from NewServer
+	handlerErr error
+
+	actualBind struct {
 		addr string
 		tls  bool
 	}
@@ -96,6 +116,8 @@ func (o option[_]) apply(s *Server) {
 // handler
 type MiddlewareFunc func(next http.Handler) http.Handler
 
+type cacheable[T comparable] = pattern.Cacheable[T]
+
 type mux interface {
 	Handle(string, http.Handler)
 }
@@ -115,9 +137,7 @@ var (
 
 // New creates a new HTTP server with the given handler creation callback.
 func New(options ...Option) *Server {
-	s := &Server{
-		Server: &http.Server{},
-	}
+	s := &Server{}
 	s.Apply(defaultOptions(s)...)
 	s.Apply(options...)
 	return s
@@ -126,6 +146,7 @@ func New(options ...Option) *Server {
 func defaultOptions(s *Server) []Option {
 	return []Option{
 		WithDefaultAction(),
+		WithDefaultServerFactory(),
 		WithAddr("localhost:8000"),
 		WithShutdownTimeout(defaultShutdownTimeout),
 		WithAccessLog(defaultAccessLog),
@@ -176,104 +197,132 @@ func WithDefaultAction() Option {
 	}
 }
 
+// WithServer sets the http.Server to use directly, bypassing the default
+// factory.  The connection settings and handler which have been configured
+// with the other options are still applied to it.
+func WithServer(srv *http.Server) Option {
+	return withAdapter((*Server).setServer, srv)
+}
+
+// WithServerFactory provides a factory for obtaining the http.Server.
+func WithServerFactory(fn func(context.Context) (*http.Server, error)) Option {
+	return withAdapter((*Server).setServerFactory, fn)
+}
+
+// WithDefaultServerFactory sets up the default server factory and built-in
+// server middleware (connection settings and handler setup).  This option is
+// applied automatically by New.
+func WithDefaultServerFactory() Option {
+	return option[*http.Server]{
+		nil, func(s *Server, _ *http.Server) error {
+			s.server.SetFactory(s.defaultServerFactory)
+			s.server.AddMiddleware( // FIXME A bit dubious since it makes the factory very anemic
+				s.setupConnectionSettings,
+				s.setupHandler,
+			)
+			return nil
+		},
+	}
+}
+
 // WithHandler sets the handler which will run on the server
 func WithHandler(handler http.Handler) Option {
-	return withAdapter((*Server).WithHandler, handler)
+	return withAdapter((*Server).setHandler, handler)
 }
 
 // WithHandlerFactory sets how to create the handler which will run on the server
 func WithHandlerFactory(f func(*Server) (http.Handler, error)) Option {
-	return withAdapter((*Server).WithHandlerFactory, f)
+	return withAdapter((*Server).setHandlerFactory, f)
 }
 
 // WithReadyFunc sets a callback for when the server is listening
 func WithReadyFunc(ready ReadyFunc) Option {
-	return withAdapter((*Server).WithReadyFunc, ready)
+	return withAdapter((*Server).setReadyFunc, ready)
 }
 
 // AddReadyFunc appends a callback for when the server is ready
 func AddReadyFunc(ready ReadyFunc) Option {
-	return withAdapter((*Server).AddReadyFunc, ready)
+	return withAdapter((*Server).addReadyFunc, ready)
 }
 
 // WithShutdownFunc sets a callback for when the server is shutting down
 func WithShutdownFunc(shutdown ReadyFunc) Option {
-	return withAdapter((*Server).WithShutdownFunc, shutdown)
+	return withAdapter((*Server).setShutdownFunc, shutdown)
 }
 
 // AddShutdownFunc adds a callback for when the server is shutting down
 func AddShutdownFunc(shutdown ReadyFunc) Option {
-	return withAdapter((*Server).AddShutdownFunc, shutdown)
+	return withAdapter((*Server).addShutdownFunc, shutdown)
 }
 
 // WithMiddleware adds handler middleware
 func WithMiddleware(m MiddlewareFunc) Option {
-	return withAdapter((*Server).AddMiddleware, m)
+	return withAdapter((*Server).addMiddleware, m)
 }
 
 // WithAddr sets the corresponding server field
 func WithAddr(addr string) Option {
-	return withAdapter((*Server).SetAddr, addr)
+	return withAdapter((*Server).setAddr, addr)
 }
 
 // WithHostname sets the server hostname
 func WithHostname(v string) Option {
-	return withAdapter((*Server).SetHostname, v)
+	return withAdapter((*Server).setHostname, v)
 }
 
 // WithPort sets the server port
 func WithPort(v int) Option {
-	return withAdapter((*Server).SetPort, v)
+	return withAdapter((*Server).setPort, v)
 }
 
 // WithShutdownTimeout sets the amount of time to allow the server to shutdown
 func WithShutdownTimeout(d time.Duration) Option {
-	return withAdapter((*Server).SetShutdownTimeout, d)
+	return withAdapter((*Server).setShutdownTimeout, d)
 }
 
 // WithReadTimeout sets the amount of time to allow for reading requests
 func WithReadTimeout(d time.Duration) Option {
-	return withAdapter((*Server).SetReadTimeout, d)
+	return withAdapter((*Server).setReadTimeout, d)
 }
 
 // WithReadHeaderTimeout sets the amount of time to allow for reading headers
 func WithReadHeaderTimeout(d time.Duration) Option {
-	return withAdapter((*Server).SetReadHeaderTimeout, d)
+	return withAdapter((*Server).setReadHeaderTimeout, d)
 }
 
 // WithWriteTimeout sets the amount of time to allow for writing responses
 func WithWriteTimeout(d time.Duration) Option {
-	return withAdapter((*Server).SetWriteTimeout, d)
+	return withAdapter((*Server).setWriteTimeout, d)
 }
 
 // WithIdleTimeout sets the amount of time to allow for idling
 func WithIdleTimeout(d time.Duration) Option {
-	return withAdapter((*Server).SetIdleTimeout, d)
+	return withAdapter((*Server).setIdleTimeout, d)
 }
 
 // WithMaxHeaderBytes sets the amount max header bytes
 func WithMaxHeaderBytes(n int) Option {
-	return withAdapter((*Server).SetMaxHeaderBytes, n)
+	return withAdapter((*Server).setMaxHeaderBytes, n)
 }
 
 // WithTLSKeyFile sets the file to use for the TLS key
 func WithTLSKeyFile(filename string) Option {
-	return withAdapter((*Server).SetTLSKeyFile, filename)
+	return withAdapter((*Server).setTLSKeyFile, filename)
 }
 
 // WithTLSCertFile sets the file to use for the TLS cert
 func WithTLSCertFile(filename string) Option {
-	return withAdapter((*Server).SetTLSCertFile, filename)
+	return withAdapter((*Server).setTLSCertFile, filename)
 }
 
 // WithServerHeader sets the contents of the server header
 func WithServerHeader(s string) Option {
-	return withAdapter((*Server).SetServerHeader, s)
+	return withAdapter((*Server).setServerHeader, s)
 }
 
 // WithAccessLog sets the format string for the access log
 func WithAccessLog(s string) Option {
-	return withAdapter((*Server).SetAccessLog, s)
+	return withAdapter((*Server).setAccessLog, s)
 }
 
 // WithNoAccessLog disables the access log
@@ -283,12 +332,12 @@ func WithNoAccessLog() Option {
 
 // WithStaticDirectory hosts a static directory
 func WithStaticDirectory(path string) Option {
-	return withAdapter((*Server).SetStaticDirectory, path)
+	return withAdapter((*Server).setStaticDirectory, path)
 }
 
 // WithHideDirectoryListings disables directory listings
 func WithHideDirectoryListings(v bool) Option {
-	return withAdapter((*Server).SetHideDirectoryListings, v)
+	return withAdapter((*Server).setHideDirectoryListings, v)
 }
 
 // FromContext obtains the server from the context.
@@ -296,44 +345,108 @@ func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
 }
 
-// AddMiddleware appends additional middleware to the server
-func (s *Server) AddMiddleware(m MiddlewareFunc) error {
+// NewServer creates (or returns the cached) http.Server for the server
+func (s *Server) NewServer(ctx context.Context) (*http.Server, error) {
+	srv, err := s.server.New(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.handlerErr != nil {
+		return nil, s.handlerErr
+	}
+	return srv, nil
+}
+
+func (s *Server) defaultServerFactory(_ context.Context) (*http.Server, error) {
+	return &http.Server{}, nil
+}
+
+// setupConnectionSettings copies the connection settings which have been
+// configured onto the server.  Only values which were actually set are copied
+// so that a server provided by WithServer retains its own settings.
+func (s *Server) setupConnectionSettings(_ context.Context, srv *http.Server) *http.Server {
+	if s.addr != "" {
+		srv.Addr = s.addr
+	}
+	if s.readTimeout != 0 {
+		srv.ReadTimeout = s.readTimeout
+	}
+	if s.readHeaderTimeout != 0 {
+		srv.ReadHeaderTimeout = s.readHeaderTimeout
+	}
+	if s.writeTimeout != 0 {
+		srv.WriteTimeout = s.writeTimeout
+	}
+	if s.idleTimeout != 0 {
+		srv.IdleTimeout = s.idleTimeout
+	}
+	if s.maxHeaderBytes != 0 {
+		srv.MaxHeaderBytes = s.maxHeaderBytes
+	}
+	return srv
+}
+
+func (s *Server) setupHandler(_ context.Context, srv *http.Server) *http.Server {
+	h := s.handler
+	if h == nil {
+		h = srv.Handler
+	}
+	if h == nil && s.handlerFactory != nil {
+		var err error
+		if h, err = s.handlerFactory(s); err != nil {
+			s.handlerErr = err
+			return srv
+		}
+	}
+
+	for _, m := range s.middleware {
+		h = m(h)
+	}
+	srv.Handler = h
+	return srv
+}
+
+func (s *Server) setServer(srv *http.Server) error {
+	s.server.SetDiscrete(srv)
+	return nil
+}
+
+func (s *Server) setServerFactory(fn func(context.Context) (*http.Server, error)) error {
+	s.server.SetFactory(fn)
+	return nil
+}
+
+func (s *Server) addMiddleware(m MiddlewareFunc) error {
 	s.middleware = append(s.middleware, m)
 	return nil
 }
 
-// AddShutdownFunc appends additional shutdown functions
-func (s *Server) AddShutdownFunc(shutdown ReadyFunc) error {
+func (s *Server) addShutdownFunc(shutdown ReadyFunc) error {
 	s.shutdown = ComposeReadyFuncs(s.shutdown, shutdown)
 	return nil
 }
 
-// WithShutdownFunc sets the shutdown function
-func (s *Server) WithShutdownFunc(shutdown ReadyFunc) error {
+func (s *Server) setShutdownFunc(shutdown ReadyFunc) error {
 	s.shutdown = shutdown
 	return nil
 }
 
-// WithHandler sets the handler for the server
-func (s *Server) WithHandler(handler http.Handler) error {
-	s.Server.Handler = handler
+func (s *Server) setHandler(handler http.Handler) error {
+	s.handler = handler
 	return nil
 }
 
-// WithHandlerFactory sets the handler factory for the server
-func (s *Server) WithHandlerFactory(f func(*Server) (http.Handler, error)) error {
+func (s *Server) setHandlerFactory(f func(*Server) (http.Handler, error)) error {
 	s.handlerFactory = f
 	return nil
 }
 
-// WithReadyFunc sets the ready function for the server
-func (s *Server) WithReadyFunc(ready ReadyFunc) error {
+func (s *Server) setReadyFunc(ready ReadyFunc) error {
 	s.ready = ready
 	return nil
 }
 
-// AddReadyFunc appens additional ready functions
-func (s *Server) AddReadyFunc(ready ReadyFunc) error {
+func (s *Server) addReadyFunc(ready ReadyFunc) error {
 	s.ready = ComposeReadyFuncs(s.ready, ready)
 	return nil
 }
@@ -342,51 +455,49 @@ func (s *Server) HideDirectoryListing() bool {
 	return s.hideDirListings
 }
 
-func (s *Server) ListenAndServe() error {
-	if s.Server.Handler == nil && s.handlerFactory != nil {
-		h, err := s.handlerFactory(s)
-		if err != nil {
-			return err
-		}
-		s.Server.Handler = h
+// ListenAndServe creates the server if necessary and starts listening
+func (s *Server) ListenAndServe(ctx context.Context) error {
+	srv, err := s.NewServer(ctx)
+	if err != nil {
+		return err
 	}
 
-	listener, err := net.Listen("tcp", s.Server.Addr)
+	listener, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
 		return err
 	}
 
 	s.actualBind.addr = listener.Addr().String()
 	s.actualBind.tls = (s.TLSCertFile() != "")
-	s.applyMiddleware()
 
 	if s.TLSCertFile() == "" {
-		return s.Server.Serve(listener)
+		return srv.Serve(listener)
 	}
 
-	return s.Server.ServeTLS(listener, s.TLSCertFile(), s.TLSKeyFile())
+	return srv.ServeTLS(listener, s.TLSCertFile(), s.TLSKeyFile())
+}
+
+// Shutdown gracefully shuts down the server
+func (s *Server) Shutdown(ctx context.Context) error {
+	srv, err := s.NewServer(ctx)
+	if err != nil {
+		return err
+	}
+	return srv.Shutdown(ctx)
 }
 
 func (s *Server) ensureMux() (mux, error) {
-	if m, ok := s.Server.Handler.(mux); ok {
+	if m, ok := s.handler.(mux); ok {
 		return m, nil
 	}
-	if s.Server.Handler == nil {
+	if s.handler == nil {
 		m := &reloadSupport{
 			ServeMux: http.NewServeMux(),
 		}
-		s.Server.Handler = m
+		s.handler = m
 		return m, nil
 	}
 	return nil, fmt.Errorf("server handler does not support mux")
-}
-
-func (s *Server) applyMiddleware() {
-	h := s.Server.Handler
-	for _, m := range s.middleware {
-		h = m(h)
-	}
-	s.Server.Handler = h
 }
 
 // OpenInBrowser opens in the browser.  The request path can also be
@@ -412,9 +523,9 @@ func (s *Server) ReloadAll() {
 }
 
 func (s *Server) updateAddr(hostname string, port string) error {
-	h, p, err := net.SplitHostPort(s.Server.Addr)
+	h, p, err := net.SplitHostPort(s.addr)
 	if err != nil {
-		s.Server.Addr = net.JoinHostPort(hostname, port)
+		s.addr = net.JoinHostPort(hostname, port)
 		return nil
 	}
 	if hostname == "" {
@@ -423,7 +534,7 @@ func (s *Server) updateAddr(hostname string, port string) error {
 	if port == "" {
 		port = p
 	}
-	s.Server.Addr = net.JoinHostPort(hostname, port)
+	s.addr = net.JoinHostPort(hostname, port)
 	return nil
 }
 
@@ -436,66 +547,71 @@ func (s *Server) ReportListening() error {
 	return nil
 }
 
-func (s *Server) SetHostname(name string) error {
+// Addr specifies the address that the server will listen on
+func (s *Server) Addr() string {
+	return s.addr
+}
+
+func (s *Server) setHostname(name string) error {
 	return s.updateAddr(name, "")
 }
 
-func (s *Server) SetPort(port int) error {
+func (s *Server) setPort(port int) error {
 	return s.updateAddr("", strconv.Itoa(port))
 }
 
-func (s *Server) SetAddr(addr string) error {
-	s.Server.Addr = addr
+func (s *Server) setAddr(addr string) error {
+	s.addr = addr
 	return nil
 }
 
-func (s *Server) SetShutdownTimeout(d time.Duration) error {
+func (s *Server) setShutdownTimeout(d time.Duration) error {
 	s.shutdownTimeout = d
 	return nil
 }
 
-func (s *Server) SetReadTimeout(v time.Duration) error {
-	s.Server.ReadTimeout = v
+func (s *Server) setReadTimeout(v time.Duration) error {
+	s.readTimeout = v
 	return nil
 }
 
-func (s *Server) SetWriteTimeout(v time.Duration) error {
-	s.Server.WriteTimeout = v
+func (s *Server) setWriteTimeout(v time.Duration) error {
+	s.writeTimeout = v
 	return nil
 }
 
-func (s *Server) SetReadHeaderTimeout(v time.Duration) error {
-	s.Server.ReadHeaderTimeout = v
+func (s *Server) setReadHeaderTimeout(v time.Duration) error {
+	s.readHeaderTimeout = v
 	return nil
 }
 
-func (s *Server) SetIdleTimeout(v time.Duration) error {
-	s.Server.IdleTimeout = v
+func (s *Server) setIdleTimeout(v time.Duration) error {
+	s.idleTimeout = v
 	return nil
 }
 
-func (s *Server) SetMaxHeaderBytes(v int) error {
-	s.Server.MaxHeaderBytes = v
+func (s *Server) setMaxHeaderBytes(v int) error {
+	s.maxHeaderBytes = v
 	return nil
 }
 
-func (s *Server) SetStaticDirectory(path string) error {
+func (s *Server) setStaticDirectory(path string) error {
 	s.staticDir = path
 	return nil
 }
 
-func (s *Server) SetHideDirectoryListings(v bool) error {
+func (s *Server) setHideDirectoryListings(v bool) error {
 	s.hideDirListings = v
 	return nil
 }
 
-func (s *Server) SetAccessLog(v string) error {
+func (s *Server) setAccessLog(v string) error {
 	s.accessLog = v
 	return nil
 }
 
-func (s *Server) SetServerHeader(name string) error {
-	s.AddMiddleware(NewHeaderMiddleware("Server", name))
+func (s *Server) setServerHeader(name string) error {
+	s.addMiddleware(NewHeaderMiddleware("Server", name))
 	return nil
 }
 
@@ -504,7 +620,7 @@ func (s *Server) TLSCertFile() string {
 	return s.tlsCertFile
 }
 
-func (s *Server) SetTLSCertFile(v string) error {
+func (s *Server) setTLSCertFile(v string) error {
 	s.tlsCertFile = v
 	return nil
 }
@@ -514,7 +630,7 @@ func (s *Server) TLSKeyFile() string {
 	return s.tlsKeyFile
 }
 
-func (s *Server) SetTLSKeyFile(v string) error {
+func (s *Server) setTLSKeyFile(v string) error {
 	s.tlsKeyFile = v
 	return nil
 }

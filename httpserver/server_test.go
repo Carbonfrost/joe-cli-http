@@ -19,30 +19,30 @@ var _ = Describe("Server", func() {
 
 	Describe("Addr", func() {
 
-		DescribeTable("examples", func(fn func(*httpserver.Server), expected string) {
+		DescribeTable("examples", func(opts []httpserver.Option, expected string) {
 			s := httpserver.New()
-			fn(s)
+			s.Apply(opts...)
 
-			Expect(s.Server.Addr).To(Equal(expected))
+			Expect(s.Addr()).To(Equal(expected))
 		},
 
-			Entry("default", func(_ *httpserver.Server) {}, "localhost:8000"),
+			Entry("default", nil, "localhost:8000"),
 			Entry("host",
-				func(s *httpserver.Server) {
-					s.SetHostname("elvis.localhost")
+				[]httpserver.Option{
+					httpserver.WithHostname("elvis.localhost"),
 				}, "elvis.localhost:8000"),
 			Entry("port",
-				func(s *httpserver.Server) {
-					s.SetPort(1619)
+				[]httpserver.Option{
+					httpserver.WithPort(1619),
 				}, "localhost:1619"),
 			Entry("host and port",
-				func(s *httpserver.Server) {
-					s.SetHostname("elvis.localhost")
-					s.SetPort(1619)
+				[]httpserver.Option{
+					httpserver.WithHostname("elvis.localhost"),
+					httpserver.WithPort(1619),
 				}, "elvis.localhost:1619"),
 			Entry("addr",
-				func(s *httpserver.Server) {
-					s.SetAddr("elvis.localhost:8900")
+				[]httpserver.Option{
+					httpserver.WithAddr("elvis.localhost:8900"),
 				}, "elvis.localhost:8900"),
 		)
 	})

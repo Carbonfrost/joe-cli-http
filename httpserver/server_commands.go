@@ -407,7 +407,9 @@ func RunServer(actionopt ...cli.Action) cli.Action {
 
 				srv.actualShutdown()(timeoutCtx)
 			}))
-			return execContext(c, srv.ListenAndServe, srv.actualReady())
+			return execContext(c, func() error {
+				return srv.ListenAndServe(c)
+			}, srv.actualReady())
 		})),
 	}
 }
