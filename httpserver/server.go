@@ -112,6 +112,16 @@ func (o option[_]) apply(s *Server) {
 	o.fn(s, o.val)
 }
 
+type optionFunc func(*Server) error
+
+func (f optionFunc) Execute(ctx context.Context) error {
+	return f(FromContext(ctx))
+}
+
+func (f optionFunc) apply(s *Server) {
+	f(s)
+}
+
 // MiddlewareFunc defines a function that creates a middleware wrapper around another
 // handler
 type MiddlewareFunc func(next http.Handler) http.Handler
@@ -343,6 +353,20 @@ func WithHideDirectoryListings(v bool) Option {
 // FromContext obtains the server from the context.
 func FromContext(ctx context.Context) *Server {
 	return ctx.Value(servicesKey).(*Server)
+}
+
+// Handle registers the given handler with the context server
+func Handle(path string, h http.Handler) Option {
+	return optionFunc(func(s *Server) error {
+		return s.Handle(path, h)
+	})
+}
+
+// HandleFunc registers the given handler with the context server
+func HandleFunc(path string, h http.HandlerFunc) Option {
+	return optionFunc(func(s *Server) error {
+		return s.Handle(path, h)
+	})
 }
 
 // NewServer creates (or returns the cached) http.Server for the server

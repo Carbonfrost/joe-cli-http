@@ -7,7 +7,6 @@ package httpserver
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 	"syscall"
 	"time"
@@ -281,23 +280,9 @@ func ListHandlers() cli.Action {
 	)
 }
 
-// Handle registers the given handler with the context server
-func Handle(path string, h http.Handler) cli.Action {
-	return cli.ActionOf(func(c context.Context) error {
-		return FromContext(c).Handle(path, h)
-	})
-}
-
-// HandleFunc registers the given handler with the context server
-func HandleFunc(path string, h http.HandlerFunc) cli.Action {
-	return cli.ActionOf(func(c context.Context) error {
-		return FromContext(c).Handle(path, h)
-	})
-}
-
 // HandleSpec registers the given handler spec with the context server
 func HandleSpec(vpath httpclient.VirtualPath, spec HandlerSpec) cli.Action {
-	return cli.ActionFunc(func(c *cli.Context) error {
+	return cli.ActionOf(func(c context.Context) error {
 		handler, err := spec(c, vpath)
 		if err != nil {
 			return err
