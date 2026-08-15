@@ -227,7 +227,7 @@ func newClientTrace(logger TraceLogger) *httptrace.ClientTrace {
 
 // SetTraceLevel provides the action for a flag which sets the trace level
 // corresponding to the flag's value.
-func SetTraceLevel(s ...TraceLevel) cli.Action {
+func SetTraceLevel(s ...TraceLevel) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "trace",
@@ -410,7 +410,7 @@ func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err err
 	l.render("TLSHandshakeDone", struct {
 		Proto             string
 		CipherSuite       string
-		ServerCertificate []NameValue
+		ServerCertificate []nameValue
 	}{
 		Proto:             tls.VersionName(state.Version),
 		CipherSuite:       tls.CipherSuiteName(state.CipherSuite),
@@ -418,16 +418,16 @@ func (l *defaultTraceLogger) TLSHandshakeDone(state tls.ConnectionState, err err
 	})
 }
 
-type NameValue struct {
+type nameValue struct {
 	Name  string
 	Value string
 }
 
-func formatCert(c *x509.Certificate) []NameValue {
+func formatCert(c *x509.Certificate) []nameValue {
 	if c == nil {
 		return nil
 	}
-	return []NameValue{
+	return []nameValue{
 		{"Subject", fmt.Sprint(c.Subject)},
 		{"Not Before", fmt.Sprint(c.NotBefore)},
 		{"Not After", fmt.Sprint(c.NotAfter)},

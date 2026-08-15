@@ -33,6 +33,8 @@ type Option interface {
 	apply(*Expander)
 }
 
+type Action = cli.Action
+
 type option[T any] struct {
 	val T
 	fn  func(*Expander, T) error
@@ -76,7 +78,7 @@ func New(options ...Option) *Expander {
 	return e
 }
 
-func (e *Expander) Pipeline() cli.Action {
+func (e *Expander) Pipeline() Action {
 	return e.Action
 }
 
@@ -111,7 +113,7 @@ func FromContext(ctx context.Context) *Expander {
 }
 
 // ContextValue returns an action that adds the expander to the context
-func ContextValue(e *Expander) cli.Action {
+func ContextValue(e *Expander) Action {
 	return cli.WithContextValue(expanderContextKey, e)
 }
 
@@ -193,7 +195,7 @@ func (e *Expander) expandAndPrint(stdout io.Writer) error {
 
 // ExpandAndPrint returns an action that expands the URI template and
 // prints the output
-func ExpandAndPrint() cli.Action {
+func ExpandAndPrint() Action {
 	return cli.Pipeline(
 		cli.Prototype{
 			Uses: New(),
@@ -203,7 +205,7 @@ func ExpandAndPrint() cli.Action {
 }
 
 // FlagsAndArgs returns an action that sets up flags and arguments for URI template expansion
-func FlagsAndArgs() cli.Action {
+func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
 			{Uses: SetURITemplateVar()},
@@ -216,7 +218,7 @@ func FlagsAndArgs() cli.Action {
 }
 
 // SetTemplate sets the template used
-func SetTemplate(v ...*URITemplate) cli.Action {
+func SetTemplate(v ...*URITemplate) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:  "template",
@@ -228,7 +230,7 @@ func SetTemplate(v ...*URITemplate) cli.Action {
 }
 
 // SetURITemplateVar returns an action that sets up a flag for specifying template variables
-func SetURITemplateVar(v ...*Var) cli.Action {
+func SetURITemplateVar(v ...*Var) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "param",
@@ -243,7 +245,7 @@ func SetURITemplateVar(v ...*Var) cli.Action {
 }
 
 // SetURITemplateVars returns an action that sets up a flag for specifying template variables from JSON
-func SetURITemplateVars(v ...*Vars) cli.Action {
+func SetURITemplateVars(v ...*Vars) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "params",
@@ -259,7 +261,7 @@ func SetURITemplateVars(v ...*Vars) cli.Action {
 }
 
 // SetPartialExpand returns an action that sets up a flag for enabling partial expansion
-func SetPartialExpand(b ...bool) cli.Action {
+func SetPartialExpand(b ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "partial",

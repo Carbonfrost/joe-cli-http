@@ -38,18 +38,21 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
-func ContextValue(c *Client) cli.Action {
+type Action = cli.Action
+
+// ContextValue provides an action which stores the client in the context
+func ContextValue(c *Client) Action {
 	return cli.WithContextValue(servicesKey, c)
 }
 
-func FetchAndPrint() cli.Action {
+func FetchAndPrint() Action {
 	return cli.ActionOf(func(c context.Context) error {
 		_, err := Do(c)
 		return err
 	})
 }
 
-func FlagsAndArgs() cli.Action {
+func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
 			{Uses: SetMethod()},
@@ -107,7 +110,7 @@ func FlagsAndArgs() cli.Action {
 	)
 }
 
-func SetMethod(s ...string) cli.Action {
+func SetMethod(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:       "method",
@@ -123,7 +126,7 @@ func SetMethod(s ...string) cli.Action {
 	)
 }
 
-func SetHeader(s ...*HeaderValue) cli.Action {
+func SetHeader(s ...*HeaderValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "header",
@@ -137,7 +140,7 @@ func SetHeader(s ...*HeaderValue) cli.Action {
 	)
 }
 
-func SetBody(s ...string) cli.Action {
+func SetBody(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "body",
@@ -155,7 +158,7 @@ func SetBody(s ...string) cli.Action {
 	)
 }
 
-func SetBodyContent(s ...*ContentType) cli.Action {
+func SetBodyContent(s ...*ContentType) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "body-content",
@@ -169,7 +172,7 @@ func SetBodyContent(s ...*ContentType) cli.Action {
 	)
 }
 
-func SetFillValue(s ...*cli.NameValue) cli.Action {
+func SetFillValue(s ...*cli.NameValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "fill",
@@ -184,7 +187,7 @@ func SetFillValue(s ...*cli.NameValue) cli.Action {
 	)
 }
 
-func SetJSON() cli.Action {
+func SetJSON() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "json",
@@ -199,7 +202,7 @@ func SetJSON() cli.Action {
 	)
 }
 
-func SetJSONContent() cli.Action {
+func SetJSONContent() Action {
 	c := ContentTypeJSON
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -213,7 +216,7 @@ func SetJSONContent() cli.Action {
 	)
 }
 
-func SetFollowRedirects(s ...bool) cli.Action {
+func SetFollowRedirects(s ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "follow-redirects",
@@ -227,7 +230,7 @@ func SetFollowRedirects(s ...bool) cli.Action {
 	)
 }
 
-func SetUserAgent(s ...string) cli.Action {
+func SetUserAgent(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "user-agent",
@@ -240,7 +243,7 @@ func SetUserAgent(s ...string) cli.Action {
 	)
 }
 
-func SetDialTimeout(s ...time.Duration) cli.Action {
+func SetDialTimeout(s ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "dial-timeout",
@@ -252,7 +255,7 @@ func SetDialTimeout(s ...time.Duration) cli.Action {
 	)
 }
 
-func SetIncludeResponseHeaders(s ...bool) cli.Action {
+func SetIncludeResponseHeaders(s ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "include",
@@ -265,7 +268,7 @@ func SetIncludeResponseHeaders(s ...bool) cli.Action {
 	)
 }
 
-func SetOutputFile(f ...string) cli.Action {
+func SetOutputFile(f ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "output",
@@ -278,7 +281,7 @@ func SetOutputFile(f ...string) cli.Action {
 	)
 }
 
-func SetNoOutput(b ...bool) cli.Action {
+func SetNoOutput(b ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "no-output",
@@ -290,7 +293,7 @@ func SetNoOutput(b ...bool) cli.Action {
 	)
 }
 
-func SetIntegrity(i ...Integrity) cli.Action {
+func SetIntegrity(i ...Integrity) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "integrity",
@@ -303,7 +306,7 @@ func SetIntegrity(i ...Integrity) cli.Action {
 	)
 }
 
-func SetDownload() cli.Action {
+func SetDownload() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "download",
@@ -327,7 +330,7 @@ func SetDownload() cli.Action {
 	)
 }
 
-func SetStripComponents(i ...int) cli.Action {
+func SetStripComponents(i ...int) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "strip-components",
@@ -339,7 +342,7 @@ func SetStripComponents(i ...int) cli.Action {
 	)
 }
 
-func SetFailFast(i ...bool) cli.Action {
+func SetFailFast(i ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "fail",
@@ -353,7 +356,7 @@ func SetFailFast(i ...bool) cli.Action {
 	)
 }
 
-func SetURLValue(i ...*URLValue) cli.Action {
+func SetURLValue(i ...*URLValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "url",
@@ -367,7 +370,7 @@ func SetURLValue(i ...*URLValue) cli.Action {
 	)
 }
 
-func SetDNSInterface(s ...string) cli.Action {
+func SetDNSInterface(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:       "dns-interface",
@@ -380,7 +383,7 @@ func SetDNSInterface(s ...string) cli.Action {
 	)
 }
 
-func SetPreferGo() cli.Action {
+func SetPreferGo() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "prefer-go",
@@ -392,7 +395,7 @@ func SetPreferGo() cli.Action {
 	)
 }
 
-func SetDialKeepAlive(v ...time.Duration) cli.Action {
+func SetDialKeepAlive(v ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "dial-keep-alive",
@@ -404,7 +407,7 @@ func SetDialKeepAlive(v ...time.Duration) cli.Action {
 	)
 }
 
-func SetDisableDialKeepAlive() cli.Action {
+func SetDisableDialKeepAlive() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "disable-dial-keep-alive",
@@ -416,7 +419,7 @@ func SetDisableDialKeepAlive() cli.Action {
 	)
 }
 
-func SetStrictErrorsDNS() cli.Action {
+func SetStrictErrorsDNS() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "strict-errors",
@@ -428,7 +431,7 @@ func SetStrictErrorsDNS() cli.Action {
 	)
 }
 
-func SetBindAddress(v ...string) cli.Action {
+func SetBindAddress(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "bind-address",
@@ -441,7 +444,7 @@ func SetBindAddress(v ...string) cli.Action {
 	)
 }
 
-func SetInterface(v ...string) cli.Action {
+func SetInterface(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:       "interface",
@@ -454,7 +457,7 @@ func SetInterface(v ...string) cli.Action {
 	)
 }
 
-func ListInterfaces() cli.Action {
+func ListInterfaces() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "list-interfaces",
@@ -468,7 +471,7 @@ func ListInterfaces() cli.Action {
 	)
 }
 
-func SetVerbose() cli.Action {
+func SetVerbose() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "verbose",
@@ -481,7 +484,7 @@ func SetVerbose() cli.Action {
 	)
 }
 
-func SetBaseURL(name ...*URLValue) cli.Action {
+func SetBaseURL(name ...*URLValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "base",
@@ -494,7 +497,7 @@ func SetBaseURL(name ...*URLValue) cli.Action {
 	)
 }
 
-func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
+func SetURITemplateVar(v ...*uritemplates.Var) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "param",
@@ -510,7 +513,7 @@ func SetURITemplateVar(v ...*uritemplates.Var) cli.Action {
 	)
 }
 
-func SetURITemplateVars(v ...*uritemplates.Vars) cli.Action {
+func SetURITemplateVars(v ...*uritemplates.Vars) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "params",
@@ -525,7 +528,7 @@ func SetURITemplateVars(v ...*uritemplates.Vars) cli.Action {
 	)
 }
 
-func SetRequestID(s ...string) cli.Action {
+func SetRequestID(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "request-id",
@@ -538,7 +541,7 @@ func SetRequestID(s ...string) cli.Action {
 	)
 }
 
-func SetQueryString(s ...*cli.NameValue) cli.Action {
+func SetQueryString(s ...*cli.NameValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "query",
@@ -552,7 +555,7 @@ func SetQueryString(s ...*cli.NameValue) cli.Action {
 	)
 }
 
-func SetWriteOut(w ...Expr) cli.Action {
+func SetWriteOut(w ...Expr) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "write-out",
@@ -565,7 +568,7 @@ func SetWriteOut(w ...Expr) cli.Action {
 	)
 }
 
-func SetWriteErr(w ...Expr) cli.Action {
+func SetWriteErr(w ...Expr) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "write-err",
@@ -578,14 +581,14 @@ func SetWriteErr(w ...Expr) cli.Action {
 	)
 }
 
-func setHTTPHeaderStatic(name, value string) cli.Action {
+func setHTTPHeaderStatic(name, value string) Action {
 	return bind.Call(func(s *Client) error {
 		s.Request.Header.Set(name, value)
 		return nil
 	}, bind.FromContext(FromContext))
 }
 
-func listInterfaces() cli.Action {
+func listInterfaces() Action {
 	return cli.At(cli.ActionTiming, cli.ActionOf(func(_ *cli.Context) error {
 		eths, _ := net.Interfaces()
 		for _, s := range eths {
@@ -626,11 +629,11 @@ func completeInterfaces() cli.CompletionFunc {
 	}
 }
 
-func withBindingTrue(binder func(*Client, bool) error) cli.Action {
+func withBindingTrue(binder func(*Client, bool) error) Action {
 	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(true))
 }
 
-func withBinding[V any](binder func(*Client, V) error, args []V) cli.Action {
+func withBinding[V any](binder func(*Client, V) error, args []V) Action {
 	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
 }
 

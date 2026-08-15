@@ -142,7 +142,7 @@ func parseHash(name string) (crypto.Hash, error) {
 }
 
 // ListIntegrityAlgorithms provides an action which lists the integrity algorithms
-func ListIntegrityAlgorithms() cli.Action {
+func ListIntegrityAlgorithms() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "list-integrity-algorithms",

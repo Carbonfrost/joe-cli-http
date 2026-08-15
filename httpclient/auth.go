@@ -189,7 +189,7 @@ func (*promptForCredentials) RequiresUserInfo() bool {
 }
 
 // ListAuthenticators provides an action which will list the providers
-func ListAuthenticators() cli.Action {
+func ListAuthenticators() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			HelpText: "List available authentication mechanisms",
@@ -200,7 +200,7 @@ func ListAuthenticators() cli.Action {
 	)
 }
 
-func SetAuth(v ...*provider.Value) cli.Action {
+func SetAuth(v ...*provider.Value) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "auth",
@@ -233,7 +233,7 @@ func taggedProviderArgumentFlag(v *provider.Value) cli.Prototype {
 
 // PromptForCredentials will display prompts for user and/or password credentials if
 // authentication is required.
-func PromptForCredentials() cli.Action {
+func PromptForCredentials() Action {
 	return cli.Before(cli.ActionFunc(promptForPassword))
 }
 
@@ -243,7 +243,7 @@ func promptForPassword(c *cli.Context) error {
 	return nil
 }
 
-func SetUser(s ...*UserInfo) cli.Action {
+func SetUser(s ...*UserInfo) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "user",
@@ -257,7 +257,7 @@ func SetUser(s ...*UserInfo) cli.Action {
 	)
 }
 
-func SetBasicAuth() cli.Action {
+func SetBasicAuth() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "basic",

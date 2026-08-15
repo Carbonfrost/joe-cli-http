@@ -30,6 +30,8 @@ var (
 	pkgPath = reflect.TypeFor[Server]().PkgPath()
 )
 
+type Action = cli.Action
+
 // SourceAnnotation gets the name and value of the annotation added to the Data
 // of all flags that are initialized from this package
 func SourceAnnotation() (string, string) {
@@ -40,7 +42,7 @@ func SourceAnnotation() (string, string) {
 // server in the context.
 // The default flags list contains all of the flag actions
 // in this package except for SetHandler and its variants.
-func FlagsAndArgs() cli.Action {
+func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
 			{Uses: SetHostname()},
@@ -63,13 +65,13 @@ func FlagsAndArgs() cli.Action {
 	)
 }
 
-func ContextValue(s *Server) cli.Action {
+func ContextValue(s *Server) Action {
 	return cli.WithContextValue(servicesKey, s)
 }
 
 // SetHostname sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetHostname(s ...string) cli.Action {
+func SetHostname(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "host",
@@ -84,7 +86,7 @@ func SetHostname(s ...string) cli.Action {
 
 // SetPort sets the server port, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetPort(s ...int) cli.Action {
+func SetPort(s ...int) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "port",
@@ -99,7 +101,7 @@ func SetPort(s ...int) cli.Action {
 
 // SetAddr sets the server address, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetAddr(s ...string) cli.Action {
+func SetAddr(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "addr",
@@ -114,7 +116,7 @@ func SetAddr(s ...string) cli.Action {
 // SetReadTimeout sets the maximum duration for reading the entire
 // request, including the body, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetReadTimeout(d ...time.Duration) cli.Action {
+func SetReadTimeout(d ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "read-timeout",
@@ -128,7 +130,7 @@ func SetReadTimeout(d ...time.Duration) cli.Action {
 
 // SetShutdownTimeout sets the maximum duration to wait for shutting down
 // the server.
-func SetShutdownTimeout(d ...time.Duration) cli.Action {
+func SetShutdownTimeout(d ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "shutdown-timeout",
@@ -143,7 +145,7 @@ func SetShutdownTimeout(d ...time.Duration) cli.Action {
 // SetReadHeaderTimeout sets the amount of time allowed to read
 // request headers, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
+func SetReadHeaderTimeout(d ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "read-header-timeout",
@@ -159,7 +161,7 @@ func SetReadHeaderTimeout(d ...time.Duration) cli.Action {
 // SetWriteTimeout sets the maximum duration before timing out
 // writes of the response, which either uses the specified value or reads from the
 // corresponding flag/arg to get the value to set.
-func SetWriteTimeout(d ...time.Duration) cli.Action {
+func SetWriteTimeout(d ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "write-header-timeout",
@@ -177,7 +179,7 @@ func SetWriteTimeout(d ...time.Duration) cli.Action {
 // value or reads from the corresponding flag/arg to get the value to set.
 // If zero is set, then the value of read time is used, unless both are zero
 // in which case there is no timeout.
-func SetIdleTimeout(d ...time.Duration) cli.Action {
+func SetIdleTimeout(d ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "idle-timeout",
@@ -191,7 +193,7 @@ func SetIdleTimeout(d ...time.Duration) cli.Action {
 }
 
 // SetMaxHeaderBytes sets the maximum header size in bytes
-func SetMaxHeaderBytes(v ...int) cli.Action {
+func SetMaxHeaderBytes(v ...int) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "max-header-bytes",
@@ -205,7 +207,7 @@ func SetMaxHeaderBytes(v ...int) cli.Action {
 }
 
 // SetStaticDirectory sets the static directory to host
-func SetStaticDirectory(f ...*cli.File) cli.Action {
+func SetStaticDirectory(f ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "directory",
@@ -221,7 +223,7 @@ func SetStaticDirectory(f ...*cli.File) cli.Action {
 }
 
 // SetHideDirectoryListings causes directories not to be listed
-func SetHideDirectoryListings() cli.Action {
+func SetHideDirectoryListings() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "hide-directory-listings",
@@ -235,7 +237,7 @@ func SetHideDirectoryListings() cli.Action {
 
 // SetOpenInBrowser causes the default Web browser to open when the server
 // is ready
-func SetOpenInBrowser() cli.Action {
+func SetOpenInBrowser() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "open",
@@ -253,7 +255,7 @@ func SetOpenInBrowser() cli.Action {
 // in the context to convert the handler spec to the correct implementation.
 // Consider adding [HandlerRegistry] to the Uses pipeline..
 // This handler is not included in [FlagsAndArgs]
-func SetHandler(v ...httpclient.VirtualPath) cli.Action {
+func SetHandler(v ...httpclient.VirtualPath) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "handler",
@@ -273,7 +275,7 @@ func SetHandler(v ...httpclient.VirtualPath) cli.Action {
 // handler flag. When used in the Uses pipeline, also sets reasonable defaults
 // for a flag.
 // This handler is not included in [FlagsAndArgs]
-func ListHandlers() cli.Action {
+func ListHandlers() Action {
 	return cli.Pipeline(
 		provider.ListProviders("handlers"),
 		cli.HelpText("List available providers for the handler option then exit"),
@@ -281,7 +283,7 @@ func ListHandlers() cli.Action {
 }
 
 // HandleSpec registers the given handler spec with the context server
-func HandleSpec(vpath httpclient.VirtualPath, spec HandlerSpec) cli.Action {
+func HandleSpec(vpath httpclient.VirtualPath, spec HandlerSpec) Action {
 	return cli.ActionOf(func(c context.Context) error {
 		handler, err := spec(c, vpath)
 		if err != nil {
@@ -294,7 +296,7 @@ func HandleSpec(vpath httpclient.VirtualPath, spec HandlerSpec) cli.Action {
 // SetFileServerHandler adds the specified file server handler to the mux.
 // This can be called multiple times.
 // This handler is not included in [FlagsAndArgs]
-func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
+func SetFileServerHandler(v ...httpclient.VirtualPath) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "files",
@@ -308,7 +310,7 @@ func SetFileServerHandler(v ...httpclient.VirtualPath) cli.Action {
 	)
 }
 
-func SetAccessLog(v ...string) cli.Action {
+func SetAccessLog(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "access-log",
@@ -321,7 +323,7 @@ func SetAccessLog(v ...string) cli.Action {
 	)
 }
 
-func SetNoAccessLog() cli.Action {
+func SetNoAccessLog() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "no-access-log",
@@ -334,7 +336,7 @@ func SetNoAccessLog() cli.Action {
 	)
 }
 
-func SetServerHeader(v ...string) cli.Action {
+func SetServerHeader(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "server",
@@ -347,7 +349,7 @@ func SetServerHeader(v ...string) cli.Action {
 	)
 }
 
-func SetTLSKeyFile(v ...*cli.File) cli.Action {
+func SetTLSKeyFile(v ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "key",
@@ -361,7 +363,7 @@ func SetTLSKeyFile(v ...*cli.File) cli.Action {
 	)
 }
 
-func SetTLSCertFile(v ...*cli.File) cli.Action {
+func SetTLSCertFile(v ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "cert",
@@ -378,7 +380,7 @@ func SetTLSCertFile(v ...*cli.File) cli.Action {
 // RunServer locates the server in context and runs it until interrupt signal
 // is detected. Optional actions run just before the server starts up, typically
 // used to provide context-bound modifications to the server just in time.
-func RunServer(actionopt ...cli.Action) cli.Action {
+func RunServer(actionopt ...cli.Action) Action {
 	return cli.Setup{
 		Uses: cli.HandleSignal(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT),
 		Action: cli.Pipeline(cli.ActionOf(actionopt), cli.ActionFunc(func(c *cli.Context) error {

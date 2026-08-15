@@ -27,7 +27,9 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
-func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) cli.Action {
+type Action = cli.Action
+
+func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) Action {
 	return cli.Pipeline(
 		cli.Setup{
 			Uses: cli.Pipeline(
@@ -49,7 +51,7 @@ func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) cli.Act
 	)
 }
 
-func SetCACertFile(path ...string) cli.Action {
+func SetCACertFile(path ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "cacert",
@@ -63,7 +65,7 @@ func SetCACertFile(path ...string) cli.Action {
 	)
 }
 
-func SetCACertPath(path ...string) cli.Action {
+func SetCACertPath(path ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "capath",
@@ -77,7 +79,7 @@ func SetCACertPath(path ...string) cli.Action {
 	)
 }
 
-func SetClientCertFile(path ...string) cli.Action {
+func SetClientCertFile(path ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "cert",
@@ -94,7 +96,7 @@ func SetClientCertFile(path ...string) cli.Action {
 	)
 }
 
-func SetKeyFile(path ...string) cli.Action {
+func SetKeyFile(path ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "key",
@@ -109,7 +111,7 @@ func SetKeyFile(path ...string) cli.Action {
 	)
 }
 
-func SetTime(s ...*cli.File) cli.Action {
+func SetTime(s ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "time",
@@ -122,7 +124,7 @@ func SetTime(s ...*cli.File) cli.Action {
 	)
 }
 
-func SetServerName(s ...string) cli.Action {
+func SetServerName(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "server-name",
@@ -134,7 +136,7 @@ func SetServerName(s ...string) cli.Action {
 	)
 }
 
-func SetNextProtos(s ...[]string) cli.Action {
+func SetNextProtos(s ...[]string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "next-protos",
@@ -146,7 +148,7 @@ func SetNextProtos(s ...[]string) cli.Action {
 	)
 }
 
-func SetRandom(r ...*cli.File) cli.Action {
+func SetRandom(r ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "random",
@@ -159,7 +161,7 @@ func SetRandom(r ...*cli.File) cli.Action {
 	)
 }
 
-func SetTLSv1() cli.Action {
+func SetTLSv1() Action {
 	return tlsVersionFlag(gotls.VersionTLS10, gotls.VersionTLS13, &cli.Prototype{
 		Name:     "tlsv1",
 		HelpText: "Use TLSv1.0 or higher.  This is implied as this tool doesn't support SSLv3",
@@ -167,7 +169,7 @@ func SetTLSv1() cli.Action {
 	})
 }
 
-func SetTLSv1_0() cli.Action {
+func SetTLSv1_0() Action {
 	return tlsVersionFlag(gotls.VersionTLS10, gotls.VersionTLS10, &cli.Prototype{
 		Name:     "tlsv1.0",
 		HelpText: "Use TLSv1.0",
@@ -175,7 +177,7 @@ func SetTLSv1_0() cli.Action {
 	})
 }
 
-func SetTLSv1_1() cli.Action {
+func SetTLSv1_1() Action {
 	return tlsVersionFlag(gotls.VersionTLS11, gotls.VersionTLS11, &cli.Prototype{
 		Name:     "tlsv1.1",
 		HelpText: "Use TLSv1.1",
@@ -183,7 +185,7 @@ func SetTLSv1_1() cli.Action {
 	})
 }
 
-func SetTLSv1_2() cli.Action {
+func SetTLSv1_2() Action {
 	return tlsVersionFlag(gotls.VersionTLS12, gotls.VersionTLS12, &cli.Prototype{
 		Name:     "tlsv1.2",
 		HelpText: "Use TLSv1.2",
@@ -191,7 +193,7 @@ func SetTLSv1_2() cli.Action {
 	})
 }
 
-func SetTLSv1_3() cli.Action {
+func SetTLSv1_3() Action {
 	return tlsVersionFlag(gotls.VersionTLS13, gotls.VersionTLS13, &cli.Prototype{
 		Name:     "tlsv1.3",
 		HelpText: "Use TLSv1.3",
@@ -199,7 +201,7 @@ func SetTLSv1_3() cli.Action {
 	})
 }
 
-func SetInsecureSkipVerify(v ...bool) cli.Action {
+func SetInsecureSkipVerify(v ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "insecure-skip-verify",
@@ -214,7 +216,7 @@ func SetInsecureSkipVerify(v ...bool) cli.Action {
 	)
 }
 
-func SetInsecureKeyLogFile(s ...*cli.File) cli.Action {
+func SetInsecureKeyLogFile(s ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "insecure-key-log-file",
@@ -227,7 +229,7 @@ func SetInsecureKeyLogFile(s ...*cli.File) cli.Action {
 	)
 }
 
-func SetCiphers(v ...CipherSuites) cli.Action {
+func SetCiphers(v ...CipherSuites) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "ciphers",
@@ -239,7 +241,7 @@ func SetCiphers(v ...CipherSuites) cli.Action {
 	)
 }
 
-func SetCurves(v ...CurveIDs) cli.Action {
+func SetCurves(v ...CurveIDs) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "curves",
@@ -251,7 +253,7 @@ func SetCurves(v ...CurveIDs) cli.Action {
 	)
 }
 
-func ListCiphers() cli.Action {
+func ListCiphers() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "list-ciphers",
@@ -265,7 +267,7 @@ func ListCiphers() cli.Action {
 	)
 }
 
-func ListCurves() cli.Action {
+func ListCurves() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "list-curves",
@@ -279,7 +281,7 @@ func ListCurves() cli.Action {
 	)
 }
 
-func FlagsAndArgs() cli.Action {
+func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
 			{Uses: ListCiphers()},
