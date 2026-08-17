@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Carbonfrost/joe-cli-http/httpclient/expr"
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
@@ -24,6 +25,44 @@ func (e Expr) Compile() *expander.Pattern {
 func (e *Expr) UnmarshalText(b []byte) error {
 	*e = Expr(string(b))
 	return nil
+}
+
+// ExpandRequest provides an expander that provides variables from a request
+// in the context of a client.
+func ExpandRequest(r *http.Request) expander.Interface {
+	if r == nil {
+		return expander.Func(func(s string) any {
+			if s == "method" || s == "protocol" || s == "location" || s == "url" || s == "header" {
+				return ""
+			}
+			if strings.HasPrefix(s, "location.") || strings.HasPrefix(s, "url.") || strings.HasPrefix(s, "header.") {
+				return ""
+			}
+			return nil
+		})
+	}
+
+	return expander.Compose(expander.Func(func(s string) any {
+		switch s {
+		case "method":
+			return httpMethod(r.Method)
+		case "protocol":
+			return r.Proto
+		case "location", "url":
+			// Note - technically, we encourage and have documented %(request.url)
+			// and %(redirect.location), but either is acceptable in either context
+			// (i.e. %(request.location) and %(redirect.url) also work)
+			return r.URL
+		case "header":
+			var buf bytes.Buffer
+			r.Header.Write(&buf)
+			return buf.String()
+		}
+		return nil
+	}),
+		expander.Prefix("location", expr.ExpandURL(r.URL)),
+		expander.Prefix("url", expr.ExpandURL(r.URL)),
+		expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
 func ExpandResponse(r *http.Response) expander.Interface {

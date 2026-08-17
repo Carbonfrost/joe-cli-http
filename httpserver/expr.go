@@ -11,6 +11,8 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
+// ExpandRequest provides an expander that provides variables from a request
+// in the context of a server.
 func ExpandRequest(r *http.Request, ww wrapResponseWriter) expander.Interface {
 	return expander.Compose(expander.Func(func(s string) any {
 		switch s {

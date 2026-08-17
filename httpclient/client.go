@@ -768,8 +768,8 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 	expanders := []expander.Interface{
 		expr.ExpandGlobals(),
 		expander.Prefix("color", expander.Colors()),
-		expander.Prefix("redirect", expandRequest(req)),
-		expander.Prefix("request", expandRequest(initial)),
+		expander.Prefix("redirect", ExpandRequest(req)),
+		expander.Prefix("request", ExpandRequest(initial)),
 	}
 
 	if resp == nil {
@@ -782,42 +782,6 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 
 	e.outExpr.Fprint(e.outRender, exp)
 	e.errExpr.Fprint(e.errRender, exp)
-}
-
-func expandRequest(r *http.Request) expander.Interface {
-	if r == nil {
-		return expander.Func(func(s string) any {
-			if s == "method" || s == "protocol" || s == "location" || s == "url" || s == "header" {
-				return ""
-			}
-			if strings.HasPrefix(s, "location.") || strings.HasPrefix(s, "url.") || strings.HasPrefix(s, "header.") {
-				return ""
-			}
-			return nil
-		})
-	}
-
-	return expander.Compose(expander.Func(func(s string) any {
-		switch s {
-		case "method":
-			return httpMethod(r.Method)
-		case "protocol":
-			return r.Proto
-		case "location", "url":
-			// Note - technically, we encourage and have documented %(request.url)
-			// and %(redirect.location), but either is acceptable in either context
-			// (i.e. %(request.location) and %(redirect.url) also work)
-			return r.URL
-		case "header":
-			var buf bytes.Buffer
-			r.Header.Write(&buf)
-			return buf.String()
-		}
-		return nil
-	}),
-		expander.Prefix("location", expr.ExpandURL(r.URL)),
-		expander.Prefix("url", expr.ExpandURL(r.URL)),
-		expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
 func (o Option) Execute(c context.Context) error {
