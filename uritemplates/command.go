@@ -33,6 +33,7 @@ type Option interface {
 	apply(*Expander)
 }
 
+// Action provides a context action that affects the expander
 type Action = cli.Action
 
 type option[T any] struct {

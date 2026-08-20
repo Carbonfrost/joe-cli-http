@@ -38,6 +38,7 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
+// Action provides a context action that affects the client
 type Action = cli.Action
 
 // ContextValue provides an action which stores the client in the context

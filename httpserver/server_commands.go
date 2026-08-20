@@ -30,6 +30,7 @@ var (
 	pkgPath = reflect.TypeFor[Server]().PkgPath()
 )
 
+// Action provides a context action that affects the server
 type Action = cli.Action
 
 // SourceAnnotation gets the name and value of the annotation added to the Data

@@ -27,6 +27,7 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
+// Action provides a context action that affects the TLS configuration
 type Action = cli.Action
 
 func tlsVersionFlag(minVersion, maxVersion uint16, proto *cli.Prototype) Action {
