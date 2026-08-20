@@ -24,7 +24,7 @@ func (c *Cacheable[T]) New(ctx context.Context) (T, error) {
 	var result T
 	if c.discrete != zero {
 		result = c.discrete
-	} else {
+	} else if c.factory != nil {
 		result, c.cachedErr = c.factory(ctx)
 		if c.cachedErr != nil {
 			return zero, c.cachedErr

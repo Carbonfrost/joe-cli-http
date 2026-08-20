@@ -60,10 +60,10 @@ import (
 type Server struct {
 	cli.Action
 
-	server cacheable[*http.Server]
+	server  cacheable[*http.Server]
+	handler cacheable[http.Handler]
 
 	addr              string
-	handler           http.Handler
 	readTimeout       time.Duration
 	readHeaderTimeout time.Duration
 	writeTimeout      time.Duration
@@ -74,11 +74,9 @@ type Server struct {
 	tlsKeyFile      string
 	shutdownTimeout time.Duration
 	staticDir       string
-	handlerFactory  func(*Server) (http.Handler, error)
 	ready           ReadyFunc
 	shutdown        ReadyFunc
 	hideDirListings bool
-	middleware      []MiddlewareFunc
 	accessLog       string
 
 	// handlerErr records the error, if any, from setting up the handler,
@@ -410,21 +408,17 @@ func (s *Server) setupConnectionSettings(_ context.Context, srv *http.Server) *h
 	return srv
 }
 
-func (s *Server) setupHandler(_ context.Context, srv *http.Server) *http.Server {
-	h := s.handler
-	if h == nil {
-		h = srv.Handler
-	}
-	if h == nil && s.handlerFactory != nil {
-		var err error
-		if h, err = s.handlerFactory(s); err != nil {
-			s.handlerErr = err
-			return srv
-		}
+func (s *Server) setupHandler(ctx context.Context, srv *http.Server) *http.Server {
+	// A server provided by WithServer can supply its own handler, which takes
+	// over when no handler was otherwise configured
+	if s.handler.Discrete() == nil && srv.Handler != nil {
+		s.handler.SetDiscrete(srv.Handler)
 	}
 
-	for _, m := range s.middleware {
-		h = m(h)
+	h, err := s.handler.New(ctx)
+	if err != nil {
+		s.handlerErr = err
+		return srv
 	}
 	srv.Handler = h
 	return srv
@@ -441,7 +435,9 @@ func (s *Server) setServerFactory(fn func(context.Context) (*http.Server, error)
 }
 
 func (s *Server) addMiddleware(m MiddlewareFunc) error {
-	s.middleware = append(s.middleware, m)
+	s.handler.AddMiddleware(func(_ context.Context, h http.Handler) http.Handler {
+		return m(h)
+	})
 	return nil
 }
 
@@ -456,12 +452,14 @@ func (s *Server) setShutdownFunc(shutdown ReadyFunc) error {
 }
 
 func (s *Server) setHandler(handler http.Handler) error {
-	s.handler = handler
+	s.handler.SetDiscrete(handler)
 	return nil
 }
 
 func (s *Server) setHandlerFactory(f func(*Server) (http.Handler, error)) error {
-	s.handlerFactory = f
+	s.handler.SetFactory(func(_ context.Context) (http.Handler, error) {
+		return f(s)
+	})
 	return nil
 }
 
@@ -511,14 +509,15 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) ensureMux() (mux, error) {
-	if m, ok := s.handler.(mux); ok {
+	h := s.handler.Discrete()
+	if m, ok := h.(mux); ok {
 		return m, nil
 	}
-	if s.handler == nil {
+	if h == nil {
 		m := &reloadSupport{
 			ServeMux: http.NewServeMux(),
 		}
-		s.handler = m
+		s.handler.SetDiscrete(m)
 		return m, nil
 	}
 	return nil, fmt.Errorf("server handler does not support mux")
