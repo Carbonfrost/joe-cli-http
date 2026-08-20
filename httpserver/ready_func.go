@@ -8,8 +8,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	"github.com/Carbonfrost/joe-cli"
 )
 
 // ReadyFunc provides a function for when the server has started or stopped
@@ -77,10 +75,3 @@ func ReportShutdown() ReadyFunc {
 		fmt.Fprintln(os.Stderr, "Goodbye!")
 	}
 }
-
-func (r ReadyFunc) Execute(c context.Context) error {
-	FromContext(c).Apply(AddReadyFunc(r))
-	return nil
-}
-
-var _ cli.Action = (ReadyFunc)(nil)
