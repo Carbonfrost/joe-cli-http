@@ -1,0 +1,532 @@
+{
+    "name": "mop",
+    "flags": [
+        {
+            "name": "chdir",
+            "helpText": "Change directory into the specified working {DIRECTORY}",
+            "options": "MUST_EXIST, WORKING_DIRECTORY",
+            "value": {
+                "type": "file",
+                "string": "."
+            }
+        },
+        {
+            "name": "header",
+            "aliases": [
+                "H"
+            ],
+            "helpText": "Sets header to {NAME} and {VALUE}",
+            "category": "Handshake options",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {}
+        },
+        {
+            "name": "protocol",
+            "aliases": [
+                "P"
+            ],
+            "helpText": "Requests the subprotocol {NAME} in the handshake.  Can be used multiple times",
+            "category": "Handshake options",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "origin",
+            "helpText": "Sets the Origin header to {URL}",
+            "category": "Handshake options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "handshake-timeout",
+            "helpText": "Sets the maximum {DURATION} to complete the handshake",
+            "category": "Handshake options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
+            }
+        },
+        {
+            "name": "message",
+            "aliases": [
+                "m"
+            ],
+            "helpText": "Sends the {MESSAGE} once connected.  Can be used multiple times",
+            "category": "Message options",
+            "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "file",
+            "aliases": [
+                "f"
+            ],
+            "helpText": "Sends a message for each line read from {FILE}",
+            "category": "Message options",
+            "options": "MUST_EXIST",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "fileset"
+            }
+        },
+        {
+            "name": "message-type",
+            "helpText": "Sets the type of messages that are sent: text, binary",
+            "category": "Message options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {}
+        },
+        {
+            "name": "binary",
+            "helpText": "Sends messages as binary rather than text",
+            "category": "Message options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "read-timeout",
+            "helpText": "Sets the maximum {DURATION} to wait for a message to be received",
+            "category": "Message options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
+            }
+        },
+        {
+            "name": "write-timeout",
+            "helpText": "Sets the maximum {DURATION} to write a message",
+            "category": "Message options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
+            }
+        },
+        {
+            "name": "close-timeout",
+            "helpText": "Sets the maximum {DURATION} to complete the closing handshake",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "duration",
+                "string": "0s"
+            }
+        },
+        {
+            "name": "read-buffer-size",
+            "helpText": "Specify the size in bytes of the read buffer",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "int",
+                "string": "0"
+            }
+        },
+        {
+            "name": "write-buffer-size",
+            "helpText": "Specify the size in bytes of the write buffer",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "int",
+                "string": "0"
+            }
+        },
+        {
+            "name": "read-limit",
+            "helpText": "Specify the maximum size in bytes of a message that can be received",
+            "category": "Advanced options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "int64",
+                "string": "0"
+            }
+        },
+        {
+            "name": "compression",
+            "helpText": "Negotiate per-message compression",
+            "category": "Advanced options",
+            "options": "NO",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "verbose",
+            "aliases": [
+                "v"
+            ],
+            "helpText": "Display the messages which are sent",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "list-ciphers",
+            "helpText": "List the cipher suites available and exit",
+            "category": "TLS options",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "list-curves",
+            "helpText": "List the key exchange algorithms and exit",
+            "category": "TLS options",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "cacert",
+            "helpText": "CA certificate to verify peer against (PEM format)",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "capath",
+            "helpText": "CA directory to verify peer against",
+            "category": "TLS options",
+            "usageText": "DIRECTORY",
+            "options": "EACH_OCCURRENCE",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "ciphers",
+            "helpText": "List of SSL ciphers to use.  Not applicable to TLS 1.3",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {}
+        },
+        {
+            "name": "cert",
+            "aliases": [
+                "E"
+            ],
+            "helpText": "Client certificate file (PEM format)",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
+            }
+        },
+        {
+            "name": "curves",
+            "helpText": "TLS key exchange algorithms to request",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {}
+        },
+        {
+            "name": "insecure-key-log-file",
+            "helpText": "Log TLS keys to {FILE} for debugging (insecure)",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
+            }
+        },
+        {
+            "name": "insecure-skip-verify",
+            "aliases": [
+                "k",
+                "insecure"
+            ],
+            "envVars": [
+                "INSECURE_SKIP_VERIFY"
+            ],
+            "helpText": "Whether to verify the server's certificate chain and host name.",
+            "category": "TLS options",
+            "options": "IMPLIED_ACTION",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "key",
+            "helpText": "Private key file (PEM format)",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
+            }
+        },
+        {
+            "name": "next-protos",
+            "helpText": "List of ALPN supported application level protocols, in order of preference.",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "list",
+                "string": "[]"
+            }
+        },
+        {
+            "name": "random",
+            "helpText": "Specifies a {FILE} to use as a source of random data for TLS",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
+            }
+        },
+        {
+            "name": "server-name",
+            "helpText": "Used to verify the {HOSTNAME} on certificates unless verification is being skipped",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "string"
+            }
+        },
+        {
+            "name": "time",
+            "helpText": "Specifies a {FILE} whose mtime is used to represent the current time in TLS configuration",
+            "category": "TLS options",
+            "usageText": "PATH",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "file"
+            }
+        },
+        {
+            "name": "tlsv1",
+            "helpText": "Use TLSv1.0 or higher.  This is implied as this tool doesn't support SSLv3",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "tlsv1.0",
+            "helpText": "Use TLSv1.0",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "tlsv1.1",
+            "helpText": "Use TLSv1.1",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "tlsv1.2",
+            "helpText": "Use TLSv1.2",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "tlsv1.3",
+            "helpText": "Use TLSv1.3",
+            "category": "TLS options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/tls"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "color",
+            "helpText": "Controls whether terminal color and styles are used",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            },
+            "value": {}
+        },
+        {
+            "name": "no-color",
+            "helpText": "Disable terminal color and styles",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli/extensions/color"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "help",
+            "aliases": [
+                "h"
+            ],
+            "helpText": "Display this help screen then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "version",
+            "helpText": "Print the build version then exit",
+            "options": "EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "zsh-completion",
+            "options": "HIDDEN, EXITS",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
+            "name": "no-compression",
+            "helpText": "Negotiate per-message compression",
+            "category": "Advanced options",
+            "options": "HIDDEN",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        }
+    ],
+    "args": [
+        {
+            "name": "url",
+            "helpText": "Set the {URL} of the WebSocket server",
+            "category": "Handshake options",
+            "data": {
+                "Source": "github.com/Carbonfrost/joe-cli-http/websocket"
+            },
+            "value": {}
+        }
+    ],
+    "helpText": "Provides access to a WebSocket client for sending and receiving messages",
+    "version": "(devel)",
+    "buildDate": "2026-08-20T15:31:56.703626446-07:00"
+}
