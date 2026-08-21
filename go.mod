@@ -4,7 +4,7 @@
 
 module github.com/Carbonfrost/joe-cli-http
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/Carbonfrost/joe-cli v0.20.0
