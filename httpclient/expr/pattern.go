@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"uuid"
 
 	"github.com/Carbonfrost/joe-cli-http/internal/build"
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
@@ -31,6 +32,8 @@ func ExpandGlobals() expander.Interface {
 			return rand.Int()
 		case "random.float":
 			return rand.Float64()
+		case "random.uuid":
+			return uuid.NewV4()
 		}
 		return nil
 	})
