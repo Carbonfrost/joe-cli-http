@@ -112,10 +112,10 @@ var _ = Describe("Options", func() {
 	It("applies each of the parts", func() {
 		client := websocket.New()
 		options := &websocket.Options{
-			URL:          str("wss://example.com/graphql"),
+			URL:          new("wss://example.com/graphql"),
 			Headers:      map[string]string{"X-Trace": "on"},
 			Subprotocols: []string{"wamp"},
-			ReadLimit:    int64Value(2048),
+			ReadLimit:    new(int64(2048)),
 		}
 		client.Apply(options)
 
@@ -128,11 +128,3 @@ var _ = Describe("Options", func() {
 		Expect(dialer.Subprotocols).To(Equal([]string{"wamp"}))
 	})
 })
-
-func str(v string) *string {
-	return &v
-}
-
-func int64Value(v int64) *int64 {
-	return &v
-}

@@ -14,7 +14,7 @@ import (
 var _ = Describe("WrapResponseWriter", func() {
 
 	It("remembers wrote header when flushed", func() {
-		f := &httpFancyWriter{basicWriter: basicWriter{ResponseWriter: httptest.NewRecorder()}}
+		f := &httpFancyWriter{ResponseWriter: httptest.NewRecorder()}
 		f.Flush()
 
 		Expect(f.wroteHeader).To(BeTrue(), "want Flush to have set wroteHeader=true")
