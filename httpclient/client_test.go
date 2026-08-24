@@ -14,20 +14,22 @@ import (
 
 var _ = Describe("Client", func() {
 
-	Describe("SetHeader", func() {
+	Describe("AddRequestHeader", func() {
 		It("aggregates header values", func() {
 			s := httpclient.New()
-			s.SetHeader(&httpclient.HeaderValue{"Link", "Something"})
-			s.SetHeader(&httpclient.HeaderValue{"Link", "SomethingElse"})
+			s.Apply(
+				httpclient.AddRequestHeader(&httpclient.HeaderValue{"Link", "Something"}),
+				httpclient.AddRequestHeader(&httpclient.HeaderValue{"Link", "SomethingElse"}),
+			)
 
 			Expect(s.Request.Header).To(HaveKeyWithValue("Link", []string{"Something", "SomethingElse"}))
 		})
 	})
 
-	Describe("SetBody", func() {
+	Describe("WithBodyContentString", func() {
 		It("sets raw body value", func() {
 			s := httpclient.New()
-			s.SetBody("raw content")
+			s.Apply(httpclient.WithBodyContentString("raw content"))
 
 			body, _ := io.ReadAll(s.BodyContent.Read())
 			Expect(string(body)).To(Equal("raw content"))

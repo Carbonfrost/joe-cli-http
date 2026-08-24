@@ -212,11 +212,7 @@ func SetAuth(v ...*provider.Value) Action {
 				Registry: "authenticators",
 			},
 		},
-		bind.Call2(
-			(*Client).SetAuth,
-			bind.FromContext(FromContext),
-			provider.Bind[Authenticator](),
-		),
+		bind.Action(WithAuth, provider.Bind[Authenticator]()),
 		cli.Accessory("-", taggedProviderArgumentFlag),
 		tagged,
 	)
@@ -234,13 +230,7 @@ func taggedProviderArgumentFlag(v *provider.Value) cli.Prototype {
 // PromptForCredentials will display prompts for user and/or password credentials if
 // authentication is required.
 func PromptForCredentials() Action {
-	return cli.Before(cli.ActionFunc(promptForPassword))
-}
-
-func promptForPassword(c *cli.Context) error {
-	client := FromContext(c)
-	client.AddAuthenticatorMiddleware(WithPromptForCredentials)
-	return nil
+	return cli.Before(WithAuthenticatorMiddleware(WithPromptForCredentials))
 }
 
 func SetUser(s ...*UserInfo) Action {
@@ -252,7 +242,7 @@ func SetUser(s ...*UserInfo) Action {
 			Aliases:  []string{"u"},
 			Uses:     cli.Implies("auth", BasicAuth.String()),
 		},
-		withBinding((*Client).SetUser, s),
+		bind.Action(WithUser, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -265,11 +255,7 @@ func SetBasicAuth() Action {
 			Value:    new(bool),
 			Category: requestOptions,
 		},
-		bind.Call2(
-			(*Client).SetAuth,
-			bind.FromContext(FromContext),
-			bind.Exact[Authenticator](BasicAuth),
-		),
+		bind.Action(WithAuth, bind.Exact[Authenticator](BasicAuth)),
 		tagged,
 	)
 }

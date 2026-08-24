@@ -22,29 +22,36 @@ func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // WithTransport sets the transport to use directly, bypassing the default factory
 func WithTransport(t http.RoundTripper) Option {
-	return func(c *Client) {
-		c.transport.SetDiscrete(t)
-	}
+	return withAdapter((*Client).setTransport, t)
 }
 
 // WithTransportFactory provides a factory for obtaining the transport
 func WithTransportFactory(fn func(context.Context) (http.RoundTripper, error)) Option {
-	return func(c *Client) {
-		c.transport.SetFactory(fn)
-	}
+	return withAdapter((*Client).setTransportFactory, fn)
 }
 
 // WithDefaultTransportFactory sets up the default transport factory and built-in
 // transport middleware (TLS config and trace level).  This option is applied
 // automatically by New.
 func WithDefaultTransportFactory() Option {
-	return func(c *Client) {
+	return optionFunc(func(c *Client) error {
 		c.transport.SetFactory(c.defaultTransportFactory)
 		c.transport.AddMiddleware(
 			c.setupTLSConfigTransport,
 			c.setupTraceLevelTransport,
 		)
-	}
+		return nil
+	})
+}
+
+func (c *Client) setTransport(t http.RoundTripper) error {
+	c.transport.SetDiscrete(t)
+	return nil
+}
+
+func (c *Client) setTransportFactory(fn func(context.Context) (http.RoundTripper, error)) error {
+	c.transport.SetFactory(fn)
+	return nil
 }
 
 func (c *Client) defaultTransportFactory(_ context.Context) (http.RoundTripper, error) {
@@ -59,8 +66,9 @@ func (c *Client) NewTransport(ctx context.Context) (http.RoundTripper, error) {
 	return c.transport.New(ctx)
 }
 
-func (c *Client) AddTransportMiddleware(m TransportMiddleware) {
+func (c *Client) addTransportMiddleware(m TransportMiddleware) error {
 	c.transport.AddMiddleware(m)
+	return nil
 }
 
 func (c *Client) actualTransport(ctx context.Context) http.RoundTripper {

@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
+	"net/http"
 	"reflect"
 	"time"
 
@@ -122,7 +123,7 @@ func SetMethod(s ...string) Action {
 			Category:   requestOptions,
 			Completion: cli.ValueCompletion("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "CONNECT", "OPTIONS", "TRACE"),
 		},
-		withBinding((*Client).SetMethod, s),
+		bind.Action(WithRequestMethod, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -136,7 +137,7 @@ func SetHeader(s ...*HeaderValue) Action {
 			Options:  cli.EachOccurrence,
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetHeader, s),
+		bind.Action(AddRequestHeader, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -154,7 +155,7 @@ func SetBody(s ...string) Action {
 				cli.Implies("body-content", ContentTypeRaw.String()),
 			),
 		},
-		withBinding((*Client).SetBody, s),
+		bind.Action(WithBodyContentString, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -168,7 +169,7 @@ func SetBodyContent(s ...*ContentType) Action {
 			Category: requestOptions,
 		},
 		cli.Implies("method", "POST"),
-		withBinding((*Client).setBodyContentHelper, s),
+		bind.Action(withBodyContentType, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -183,7 +184,7 @@ func SetFillValue(s ...*cli.NameValue) Action {
 			Options:  cli.EachOccurrence,
 		},
 		cli.Implies("method", "POST"),
-		withBinding((*Client).SetFillValue, s),
+		bind.Action(WithFillValue, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -226,7 +227,7 @@ func SetFollowRedirects(s ...bool) Action {
 			HelpText: "Follow redirects in the Location header",
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetFollowRedirects, s),
+		bind.Action(WithFollowRedirects, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -239,7 +240,7 @@ func SetUserAgent(s ...string) Action {
 			HelpText: "Send the specified user-agent {NAME} to server",
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetUserAgent, s),
+		bind.Action(WithUserAgent, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -251,7 +252,7 @@ func SetDialTimeout(s ...time.Duration) Action {
 			HelpText: "maximum amount of time a dial will wait for a connect to complete",
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetDialTimeout, s),
+		bind.Action(WithDialTimeout, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -264,7 +265,7 @@ func SetIncludeResponseHeaders(s ...bool) Action {
 			HelpText: "Include response headers in the output",
 			Category: responseOptions,
 		},
-		withBinding((*Client).SetIncludeResponseHeaders, s),
+		bind.Action(WithIncludeResponseHeaders, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -277,7 +278,7 @@ func SetOutputFile(f ...string) Action {
 			Aliases:  []string{"o"},
 			Category: responseOptions,
 		},
-		withBinding((*Client).SetOutputFile, f),
+		bind.Action(WithOutputFile, bind.Exact(f...)),
 		tagged,
 	)
 }
@@ -289,7 +290,7 @@ func SetNoOutput(b ...bool) Action {
 			HelpText: "Don't write the response output to stdout",
 			Category: responseOptions,
 		},
-		withBinding((*Client).SetNoOutput, b),
+		bind.Action(WithNoOutput, bind.Exact(b...)),
 		tagged,
 	)
 }
@@ -302,7 +303,7 @@ func SetIntegrity(i ...Integrity) Action {
 			HelpText:  "Validate the integrity of the download",
 			Category:  responseOptions,
 		},
-		withBinding((*Client).SetIntegrity, i),
+		bind.Action(WithIntegrity, bind.Exact(i...)),
 		tagged,
 	)
 }
@@ -319,9 +320,9 @@ func SetDownload() Action {
 		cli.At(cli.ActionTiming, cli.ActionFunc(func(c *cli.Context) error {
 			switch c.Occurrences("") {
 			case 1:
-				FromContext(c).SetDownloadFile(PreserveRequestFile)
+				FromContext(c).Apply(WithDownloadFile(PreserveRequestFile))
 			case 2:
-				FromContext(c).SetDownloadFile(PreserveRequestPath)
+				FromContext(c).Apply(WithDownloadFile(PreserveRequestPath))
 			default:
 				return fmt.Errorf("too many occurrences of -O flag")
 			}
@@ -338,7 +339,7 @@ func SetStripComponents(i ...int) Action {
 			HelpText: "Remove the specified number of leading path elements when downloading files",
 			Category: responseOptions,
 		},
-		withBinding((*Client).SetStripComponents, i),
+		bind.Action(WithStripComponents, bind.Exact(i...)),
 		tagged,
 	)
 }
@@ -352,7 +353,7 @@ func SetFailFast(i ...bool) Action {
 			Category: responseOptions,
 			Options:  cli.No,
 		},
-		withBinding((*Client).SetFailFast, i),
+		bind.Action(WithFailFast, bind.Exact(i...)),
 		tagged,
 	)
 }
@@ -366,7 +367,7 @@ func SetURLValue(i ...*URLValue) Action {
 			Options:  cli.EachOccurrence,
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetURLValue, i),
+		bind.Action(WithURLValue, bind.Exact(i...)),
 		tagged,
 	)
 }
@@ -379,7 +380,7 @@ func SetDNSInterface(s ...string) Action {
 			Category:   dnsOptions,
 			Completion: completeInterfaces(),
 		},
-		withBinding((*Client).SetDNSInterface, s),
+		bind.Action(WithDNSInterface, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -391,7 +392,7 @@ func SetPreferGo() Action {
 			HelpText: "Whether Go's built-in DNS resolver is preferred",
 			Category: dnsOptions,
 		},
-		withBindingTrue((*Client).SetPreferGoDialer),
+		cli.At(cli.ActionTiming, WithPreferGoDialer(true)),
 		tagged,
 	)
 }
@@ -403,7 +404,7 @@ func SetDialKeepAlive(v ...time.Duration) Action {
 			HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
 			Category: dnsOptions,
 		},
-		withBinding((*Client).SetDialKeepAlive, v),
+		bind.Action(WithDialKeepAlive, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -415,7 +416,7 @@ func SetDisableDialKeepAlive() Action {
 			HelpText: "Disable dialer keep-alive probes",
 			Category: dnsOptions,
 		},
-		withBindingTrue((*Client).SetDisableDialKeepAlive),
+		cli.At(cli.ActionTiming, WithDisableDialKeepAlive(true)),
 		tagged,
 	)
 }
@@ -427,7 +428,7 @@ func SetStrictErrorsDNS() Action {
 			HelpText: "When set, returns errors instead of partial results with the Go built-in DNS resolver.",
 			Category: dnsOptions,
 		},
-		withBindingTrue((*Client).SetStrictErrorsDNS),
+		cli.At(cli.ActionTiming, WithStrictErrorsDNS(true)),
 		tagged,
 	)
 }
@@ -440,7 +441,7 @@ func SetBindAddress(v ...string) Action {
 			HelpText:  "Bind client TCP/IP connections to ADDRESS on the local machine",
 			Category:  networkOptions,
 		},
-		withBinding((*Client).SetBindAddress, v),
+		bind.Action(WithBindAddress, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -453,7 +454,7 @@ func SetInterface(v ...string) Action {
 			Category:   networkOptions,
 			Completion: completeInterfaces(),
 		},
-		withBinding((*Client).SetInterface, v),
+		bind.Action(WithInterface, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -493,7 +494,7 @@ func SetBaseURL(name ...*URLValue) Action {
 			HelpText: "Specify a base URL.  Can be used multiple times",
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetBaseURL, name),
+		bind.Action(WithBaseURL, bind.Exact(name...)),
 		tagged,
 	)
 }
@@ -509,7 +510,7 @@ func SetURITemplateVar(v ...*uritemplates.Var) Action {
 			Options:  cli.EachOccurrence,
 			Uses:     cli.ValueTransform(cli.TransformOptionalFileReference()),
 		},
-		withBinding((*Client).SetURITemplateVar, v),
+		bind.Action(WithURITemplateVar, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -524,7 +525,7 @@ func SetURITemplateVars(v ...*uritemplates.Vars) Action {
 			Value:     value.JSON(&uritemplates.Vars{}),
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
-		withBinding((*Client).SetURITemplateVars, v),
+		bind.Action(WithURITemplateVars, bind.Exact(v...)),
 		tagged,
 	)
 }
@@ -537,7 +538,7 @@ func SetRequestID(s ...string) Action {
 			Uses:     cli.OptionalValue(rand.Text()),
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetRequestID, s),
+		bind.Action(withRequestID, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -551,7 +552,7 @@ func SetQueryString(s ...*cli.NameValue) Action {
 			Category: requestOptions,
 			Options:  cli.EachOccurrence,
 		},
-		withBinding((*Client).SetQueryString, s),
+		bind.Action(WithQueryString, bind.Exact(s...)),
 		tagged,
 	)
 }
@@ -564,7 +565,7 @@ func SetWriteOut(w ...Expr) Action {
 			Aliases:  []string{"w"},
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetWriteOut, w),
+		bind.Action(WithWriteOut, bind.Exact(w...)),
 		tagged,
 	)
 }
@@ -577,16 +578,16 @@ func SetWriteErr(w ...Expr) Action {
 			Aliases:  []string{"W"},
 			Category: requestOptions,
 		},
-		withBinding((*Client).SetWriteErr, w),
+		bind.Action(WithWriteErr, bind.Exact(w...)),
 		tagged,
 	)
 }
 
 func setHTTPHeaderStatic(name, value string) Action {
-	return bind.Call(func(s *Client) error {
-		s.Request.Header.Set(name, value)
+	return cli.At(cli.ActionTiming, requestOption(func(r *http.Request) error {
+		ensureHeader(r).Set(name, value)
 		return nil
-	}, bind.FromContext(FromContext))
+	}))
 }
 
 func listInterfaces() Action {
@@ -628,14 +629,6 @@ func completeInterfaces() cli.CompletionFunc {
 		}
 		return cli.ValueCompletion(values...).Complete(cc)
 	}
-}
-
-func withBindingTrue(binder func(*Client, bool) error) Action {
-	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(true))
-}
-
-func withBinding[V any](binder func(*Client, V) error, args []V) Action {
-	return bind.Call2(binder, bind.FromContext(FromContext), bind.Exact(args...))
 }
 
 func registerFallbackFuncs() cli.ActionFunc {

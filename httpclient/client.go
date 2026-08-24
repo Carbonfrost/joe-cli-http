@@ -49,6 +49,11 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 //
 //	gocurl https://example.com/
 //
+// The client is configured exclusively with Options, either passed to New or
+// applied later using Apply.  Because an Option is also an Action, options can
+// likewise be used within the Uses or Before pipeline, where they apply to the
+// client which is in the context.
+//
 // The cmd/wig package provides wig, which is a command line utility
 // very similar to this.
 //
@@ -96,6 +101,37 @@ type Client struct {
 // AuthenticatorMiddleware provides middleware to the authenticator
 type AuthenticatorMiddleware func(context.Context, Authenticator) Authenticator
 
+// Option is an option to configure the client.
+// Option can be used as an Action, typically within the Uses or Before pipeline.
+type Option interface {
+	cli.Action
+	apply(*Client)
+}
+
+type option[T any] struct {
+	val T
+	fn  func(*Client, T) error
+}
+
+func (o option[_]) Execute(ctx context.Context) error {
+	o.apply(FromContext(ctx))
+	return nil
+}
+
+func (o option[_]) apply(c *Client) {
+	o.fn(c, o.val)
+}
+
+type optionFunc func(*Client) error
+
+func (f optionFunc) Execute(ctx context.Context) error {
+	return f(FromContext(ctx))
+}
+
+func (f optionFunc) apply(c *Client) {
+	f(c)
+}
+
 type cacheable[T comparable] = pattern.Cacheable[T]
 
 type exprHandling struct {
@@ -129,9 +165,6 @@ var (
 	}))
 )
 
-// Option is an option to configure the client
-type Option func(*Client)
-
 // New creates a new client with the given option.
 func New(options ...Option) *Client {
 	h := &Client{
@@ -151,10 +184,10 @@ func New(options ...Option) *Client {
 	return h
 }
 
-// Apply applies the given option to the client
+// Apply applies the given options to the client
 func (c *Client) Apply(opts ...Option) {
 	for _, o := range opts {
-		o(c)
+		o.apply(c)
 	}
 }
 
@@ -162,14 +195,15 @@ func (c *Client) Pipeline() cli.Action {
 	return c.Action
 }
 
+// WithAction sets the action
 func WithAction(a cli.Action) Option {
-	return func(c *Client) {
-		c.Action = a
-	}
+	return withAdapter((*Client).setAction, a)
 }
 
+// WithDefaultAction sets the action to the default.  This option is applied
+// automatically by New.
 func WithDefaultAction() Option {
-	return func(c *Client) {
+	return optionFunc(func(c *Client) error {
 		c.Action = cli.Pipeline(
 			FlagsAndArgs(),
 			cli.Before(cli.Pipeline(
@@ -183,60 +217,50 @@ func WithDefaultAction() Option {
 			joetls.New(),
 			WithDefaultTLSConfigFactory(),
 		)
-	}
+		return nil
+	})
 }
 
+// WithUserAgent sets the User-Agent header on the request
 func WithUserAgent(s string) Option {
-	return func(c *Client) {
-		ensureHeader(c.Request).Set("User-Agent", s)
-	}
+	return withAdapter((*Client).setUserAgent, s)
 }
 
+// WithLocationResolver sets the resolver which obtains the request locations
 func WithLocationResolver(r LocationResolver) Option {
-	return func(c *Client) {
-		c.LocationResolver = r
-	}
+	return withAdapter((*Client).setLocationResolver, r)
 }
 
 // WithTLSConfig sets the TLS config for use on the client
 func WithTLSConfig(t *gotls.Config) Option {
-	return func(c *Client) {
-		c.tls.SetDiscrete(t)
-	}
+	return withAdapter((*Client).setTLSConfig, t)
 }
 
 // WithTLSConfigFactory provides a factory for obtaining TLS config
 func WithTLSConfigFactory(fn func(context.Context) (*gotls.Config, error)) Option {
-	return func(c *Client) {
-		c.tls.SetFactory(fn)
-	}
+	return withAdapter((*Client).setTLSConfigFactory, fn)
 }
 
 // WithDefaultTLSConfigFactory provides the default factory, which provides
 // TLS from the context
 func WithDefaultTLSConfigFactory() Option {
-	return func(c *Client) {
-		c.tls.SetFactory(func(ctx context.Context) (*gotls.Config, error) {
-			return tls.FromContext(ctx).Config, nil
-		})
-	}
+	return WithTLSConfigFactory(func(ctx context.Context) (*gotls.Config, error) {
+		return tls.FromContext(ctx).Config, nil
+	})
 }
 
 // WithInterfaceResolver sets the interface resolver for use on the client
 func WithInterfaceResolver(r InterfaceResolver) Option {
-	return func(c *Client) {
-		c.interfaceResolver.SetDiscrete(r)
-	}
+	return withAdapter((*Client).setInterfaceResolver, r)
 }
 
 // WithInterfaceResolverFactory provides a factory for obtaining the interface resolver
 func WithInterfaceResolverFactory(fn func(context.Context) (InterfaceResolver, error)) Option {
-	return func(c *Client) {
-		c.interfaceResolver.SetFactory(fn)
-	}
+	return withAdapter((*Client).setInterfaceResolverFactory, fn)
 }
 
-// WithDefaultInterfaceResolver sets up the default interface resolver
+// WithDefaultInterfaceResolver sets up the default interface resolver.  This
+// option is applied automatically by New.
 func WithDefaultInterfaceResolver() Option {
 	return WithInterfaceResolver(DefaultInterfaceResolver)
 }
@@ -244,23 +268,22 @@ func WithDefaultInterfaceResolver() Option {
 // WithMiddleware adds a middleware function that will execute before
 // the client request
 func WithMiddleware(m Middleware) Option {
-	return func(c *Client) {
-		c.AddMiddleware(m)
-	}
+	return withAdapter((*Client).addMiddleware, m)
 }
 
 // WithTransportMiddleware adds middleware to the transport
 func WithTransportMiddleware(m TransportMiddleware) Option {
-	return func(c *Client) {
-		c.AddTransportMiddleware(m)
-	}
+	return withAdapter((*Client).addTransportMiddleware, m)
 }
 
 // WithDownloaderMiddleware adds downloader middleware
 func WithDownloaderMiddleware(d DownloaderMiddleware) Option {
-	return func(c *Client) {
-		c.AddDownloaderMiddleware(d)
-	}
+	return withAdapter((*Client).addDownloaderMiddleware, d)
+}
+
+// WithAuthenticatorMiddleware adds middleware for the authenticator
+func WithAuthenticatorMiddleware(fn AuthenticatorMiddleware) Option {
+	return withAdapter((*Client).addAuthenticatorMiddleware, fn)
 }
 
 // WithRequestID provides middleware to the client that adds a header
@@ -278,10 +301,21 @@ func WithRequestID(v ...any) Option {
 	return WithMiddleware(mw)
 }
 
-func requestOption(fn func(r *http.Request)) Option {
-	return func(c *Client) {
-		fn(c.Request)
-	}
+// WithRequestMethod sets the method of the request
+func WithRequestMethod(s string) Option {
+	return withAdapter((*Client).setMethod, s)
+}
+
+// AddRequestHeader appends the given header name and value to the request
+func AddRequestHeader(v *HeaderValue) Option {
+	return withAdapter((*Client).addHeader, v)
+}
+
+// WithFollowRedirects sets whether redirects in the Location header are
+// followed.  When enabled, the default policy of following up to 10 redirects
+// applies unless CheckRedirect is set explicitly.
+func WithFollowRedirects(v bool) Option {
+	return withAdapter((*Client).setFollowRedirects, v)
 }
 
 // WithBodyString sets up the body on the request to the given string
@@ -291,15 +325,188 @@ func WithBodyString(s string) Option {
 
 // WithBody sets up the body on the request to the given reader
 func WithBody(b io.ReadCloser) Option {
-	return requestOption(func(r *http.Request) {
+	return requestOption(func(r *http.Request) error {
 		r.Body = b
+		return nil
 	})
 }
 
+// WithBodyContent sets the content of the body of the request
+func WithBodyContent(bodyContent Content) Option {
+	return withAdapter((*Client).setBodyContent, bodyContent)
+}
+
+// WithBodyContentString sets the raw content of the body of the request
+func WithBodyContentString(s string) Option {
+	return withAdapter((*Client).setBodyContentString, s)
+}
+
+// WithFillValue adds a value which fills the body of the request or the
+// query string
+func WithFillValue(v *cli.NameValue) Option {
+	return withAdapter((*Client).addFillValue, v)
+}
+
+// WithQueryString adds a name and value to the query string
+func WithQueryString(v *cli.NameValue) Option {
+	return withAdapter((*Client).addQueryString, v)
+}
+
+// WithBaseURL sets the base URL used to resolve relative request locations
+func WithBaseURL(u *URLValue) Option {
+	return withAdapter((*Client).setBaseURL, u)
+}
+
+// WithURL adds the given URL to the request locations
+func WithURL(u *url.URL) Option {
+	return withAdapter((*Client).addURL, u)
+}
+
+// WithURLValue adds the given URL to the request locations
+func WithURLValue(u *URLValue) Option {
+	return withAdapter((*Client).addURLValue, u)
+}
+
+// WithURITemplateVar adds a value used to fill an RFC 6570 URI template
+func WithURITemplateVar(v *uritemplates.Var) Option {
+	return withAdapter((*Client).addURITemplateVar, v)
+}
+
+// WithURITemplateVars adds values used to fill an RFC 6570 URI template
+func WithURITemplateVars(v *uritemplates.Vars) Option {
+	return withAdapter((*Client).addURITemplateVars, v)
+}
+
+// WithIncludeResponseHeaders sets whether response headers are copied to
+// the output
+func WithIncludeResponseHeaders(v bool) Option {
+	return withAdapter((*Client).setIncludeResponseHeaders, v)
+}
+
+// WithOutputFile downloads the response to the given file instead of
+// writing it to stdout
+func WithOutputFile(f string) Option {
+	return withAdapter((*Client).setOutputFile, f)
+}
+
+// WithNoOutput sets whether the response output is discarded
+func WithNoOutput(v bool) Option {
+	return withAdapter((*Client).setNoOutput, v)
+}
+
+// WithDownloadFile sets the downloader which handles the response
+func WithDownloadFile(d Downloader) Option {
+	return withAdapter((*Client).setDownloadFile, d)
+}
+
+// WithIntegrity validates the integrity of the download
+func WithIntegrity(i Integrity) Option {
+	return withAdapter((*Client).setIntegrity, i)
+}
+
+// WithStripComponents removes the specified number of leading path elements
+// when downloading files
+func WithStripComponents(count int) Option {
+	return withAdapter((*Client).setStripComponents, count)
+}
+
+// WithFailFast sets whether to fail with no output on HTTP errors
+func WithFailFast(v bool) Option {
+	return withAdapter((*Client).setFailFast, v)
+}
+
+// WithPreferGoDialer sets whether Go's built-in DNS resolver is preferred
+func WithPreferGoDialer(v bool) Option {
+	return withAdapter((*Client).setPreferGoDialer, v)
+}
+
+// WithStrictErrorsDNS sets whether the Go built-in DNS resolver returns
+// errors instead of partial results
+func WithStrictErrorsDNS(v bool) Option {
+	return withAdapter((*Client).setStrictErrorsDNS, v)
+}
+
+// WithDisableDialKeepAlive disables dialer keep-alive probes
+func WithDisableDialKeepAlive(v bool) Option {
+	return withAdapter((*Client).setDisableDialKeepAlive, v)
+}
+
+// WithDialKeepAlive sets the interval between keep-alive probes for an
+// active network connection
+func WithDialKeepAlive(v time.Duration) Option {
+	return withAdapter((*Client).setDialKeepAlive, v)
+}
+
+// WithDialTimeout sets the maximum amount of time a dial waits for a
+// connect to complete
+func WithDialTimeout(v time.Duration) Option {
+	return withAdapter((*Client).setDialTimeout, v)
+}
+
+// WithBindAddress binds client TCP/IP connections to the given address on
+// the local machine
+func WithBindAddress(v string) Option {
+	return withAdapter((*Client).setBindAddress, v)
+}
+
+// WithInterface uses the network interface, named by name or address, to connect
+func WithInterface(v string) Option {
+	return withAdapter((*Client).setInterface, v)
+}
+
+// WithDNSInterface uses the network interface, named by name or address, for
+// DNS requests
+func WithDNSInterface(v string) Option {
+	return withAdapter((*Client).setDNSInterface, v)
+}
+
+// WithAuth sets the authenticator used on the request
+func WithAuth(auth Authenticator) Option {
+	return withAdapter((*Client).setAuth, auth)
+}
+
+// WithUser sets the user and password used in authentication
+func WithUser(user *UserInfo) Option {
+	return withAdapter((*Client).setUser, user)
+}
+
+// WithTraceLevel sets which client operations are traced
 func WithTraceLevel(v TraceLevel) Option {
-	return func(c *Client) {
-		c.SetTraceLevel(v)
+	return withAdapter((*Client).setTraceLevel, v)
+}
+
+// WithWriteOut sets the expression which is evaluated and printed to stdout
+func WithWriteOut(w Expr) Option {
+	return withAdapter((*Client).setWriteOut, w)
+}
+
+// WithWriteErr sets the expression which is evaluated and printed to stderr
+func WithWriteErr(w Expr) Option {
+	return withAdapter((*Client).setWriteErr, w)
+}
+
+// withBodyContentType sets or converts the body content to the given content type
+func withBodyContentType(name *ContentType) Option {
+	return withAdapter((*Client).setBodyContentType, name)
+}
+
+// withRequestID sets or generates the X-Request-ID header.  An empty value
+// causes the ID to be generated.
+func withRequestID(s string) Option {
+	if s == "" {
+		return WithRequestID()
 	}
+	return WithRequestID(s)
+}
+
+func requestOption(fn func(r *http.Request) error) Option {
+	return optionFunc(func(c *Client) error {
+		return fn(c.Request)
+	})
+}
+
+func withAdapter[T any](fn func(*Client, T) error, value T) Option {
+	return option[T]{value, fn}
 }
 
 // Do invokes the context client to generate corresponding responses
@@ -310,15 +517,6 @@ func Do(c context.Context) ([]*Response, error) {
 // FromContext obtains the client stored in the context
 func FromContext(c context.Context) *Client {
 	return c.Value(servicesKey).(*Client)
-}
-
-func (c *Client) AddMiddleware(m Middleware) {
-	c.middleware = append(c.middleware, m)
-}
-
-func (c *Client) SetTraceLevel(v TraceLevel) error {
-	c.traceLevel = v
-	return nil
 }
 
 func wrapReader(r io.Reader) io.ReadCloser {
@@ -487,12 +685,25 @@ func (c *Client) NewTLSConfig(ctx context.Context) (*gotls.Config, error) {
 	return c.tls.New(ctx)
 }
 
-func (c *Client) SetMethod(s string) error {
+// Authenticator obtains the authenticator which has been configured
+func (c *Client) Authenticator() Authenticator {
+	if c.auth == nil {
+		return NoAuth
+	}
+	return c.auth
+}
+
+func (c *Client) setAction(value cli.Action) error {
+	c.Action = value
+	return nil
+}
+
+func (c *Client) setMethod(s string) error {
 	c.Request.Method = strings.ToUpper(s)
 	return nil
 }
 
-func (c *Client) SetFollowRedirects(value bool) error {
+func (c *Client) setFollowRedirects(value bool) error {
 	if value {
 		c.CheckRedirect = nil // default policy to follow 10 times
 		return nil
@@ -505,12 +716,37 @@ func (c *Client) SetFollowRedirects(value bool) error {
 	return nil
 }
 
-func (c *Client) SetUserAgent(value string) error {
-	c.Request.Header.Set("User-Agent", value)
+func (c *Client) setUserAgent(value string) error {
+	ensureHeader(c.Request).Set("User-Agent", value)
 	return nil
 }
 
-func (c *Client) SetBaseURL(u *URLValue) error {
+func (c *Client) setLocationResolver(r LocationResolver) error {
+	c.LocationResolver = r
+	return nil
+}
+
+func (c *Client) setTLSConfig(t *gotls.Config) error {
+	c.tls.SetDiscrete(t)
+	return nil
+}
+
+func (c *Client) setTLSConfigFactory(fn func(context.Context) (*gotls.Config, error)) error {
+	c.tls.SetFactory(fn)
+	return nil
+}
+
+func (c *Client) setInterfaceResolver(r InterfaceResolver) error {
+	c.interfaceResolver.SetDiscrete(r)
+	return nil
+}
+
+func (c *Client) setInterfaceResolverFactory(fn func(context.Context) (InterfaceResolver, error)) error {
+	c.interfaceResolver.SetFactory(fn)
+	return nil
+}
+
+func (c *Client) setBaseURL(u *URLValue) error {
 	uu, err := u.URL()
 	if err != nil {
 		return err
@@ -518,19 +754,19 @@ func (c *Client) SetBaseURL(u *URLValue) error {
 	return c.ensureLocationResolver().SetBaseURL(uu)
 }
 
-func (c *Client) SetURL(u *url.URL) error {
+func (c *Client) addURL(u *url.URL) error {
 	return c.ensureLocationResolver().Add(u.String())
 }
 
-func (c *Client) SetURLValue(u *URLValue) error {
+func (c *Client) addURLValue(u *URLValue) error {
 	return c.ensureLocationResolver().Add(u.String())
 }
 
-func (c *Client) SetURITemplateVar(v *uritemplates.Var) error {
+func (c *Client) addURITemplateVar(v *uritemplates.Var) error {
 	return c.ensureLocationResolver().AddVar(v.Name, v.Value)
 }
 
-func (c *Client) SetURITemplateVars(v *uritemplates.Vars) error {
+func (c *Client) addURITemplateVars(v *uritemplates.Vars) error {
 	for _, item := range v.Items() {
 		err := c.ensureLocationResolver().AddVar(item.Name, item.Value)
 		if err != nil {
@@ -547,16 +783,16 @@ func (c *Client) ensureLocationResolver() LocationResolver {
 	return c.LocationResolver
 }
 
-func (c *Client) SetIncludeResponseHeaders(v bool) error {
+func (c *Client) setIncludeResponseHeaders(v bool) error {
 	c.IncludeResponseHeaders = v
 	return nil
 }
 
-func (c *Client) SetOutputFile(f string) error {
-	return c.SetDownloadFile(NewFileDownloader(f, nil))
+func (c *Client) setOutputFile(f string) error {
+	return c.setDownloadFile(NewFileDownloader(f, nil))
 }
 
-func (c *Client) SetNoOutput(b bool) error {
+func (c *Client) setNoOutput(b bool) error {
 	if b {
 		c.downloader = NewDownloaderTo(io.Discard)
 		return nil
@@ -565,36 +801,35 @@ func (c *Client) SetNoOutput(b bool) error {
 	return nil
 }
 
-func (c *Client) SetIntegrity(i Integrity) error {
-	c.AddDownloaderMiddleware(func(_ context.Context, downloader Downloader) Downloader {
+func (c *Client) setIntegrity(i Integrity) error {
+	return c.addDownloaderMiddleware(func(_ context.Context, downloader Downloader) Downloader {
 		return NewIntegrityDownloader(i, downloader)
 	})
-	return nil
 }
 
-func (c *Client) SetPreferGoDialer(v bool) error {
+func (c *Client) setPreferGoDialer(v bool) error {
 	c.Dialer().Resolver.PreferGo = v
 	return nil
 }
 
-func (c *Client) SetStrictErrorsDNS(v bool) error {
+func (c *Client) setStrictErrorsDNS(v bool) error {
 	c.Dialer().Resolver.StrictErrors = v
 	return nil
 }
 
-func (c *Client) SetDisableDialKeepAlive(v bool) error {
+func (c *Client) setDisableDialKeepAlive(v bool) error {
 	if v {
 		c.Dialer().KeepAlive = time.Duration(-1)
 	}
 	return nil
 }
 
-func (c *Client) SetHeader(n *HeaderValue) error {
-	c.Request.Header.Add(n.Name, n.Value)
+func (c *Client) addHeader(n *HeaderValue) error {
+	ensureHeader(c.Request).Add(n.Name, n.Value)
 	return nil
 }
 
-func (c *Client) SetBindAddress(value string) error {
+func (c *Client) setBindAddress(value string) error {
 	addr, err := net.ResolveTCPAddr("tcp", value)
 	if err != nil {
 		return err
@@ -603,7 +838,7 @@ func (c *Client) SetBindAddress(value string) error {
 	return nil
 }
 
-func (c *Client) SetInterface(value string) error {
+func (c *Client) setInterface(value string) error {
 	addr, err := c.resolveInterface(value)
 	if err != nil {
 		return err
@@ -612,7 +847,7 @@ func (c *Client) SetInterface(value string) error {
 	return nil
 }
 
-func (c *Client) SetDNSInterface(value string) error {
+func (c *Client) setDNSInterface(value string) error {
 	if value == "" {
 		return nil
 	}
@@ -624,27 +859,27 @@ func (c *Client) SetDNSInterface(value string) error {
 	return nil
 }
 
-func (c *Client) SetDialTimeout(v time.Duration) error {
+func (c *Client) setDialTimeout(v time.Duration) error {
 	c.Dialer().Timeout = v
 	return nil
 }
 
-func (c *Client) SetDialKeepAlive(v time.Duration) error {
+func (c *Client) setDialKeepAlive(v time.Duration) error {
 	c.Dialer().KeepAlive = v
 	return nil
 }
 
-func (c *Client) SetDownloadFile(v Downloader) error {
+func (c *Client) setDownloadFile(v Downloader) error {
 	c.downloader = v
 	return nil
 }
 
-func (c *Client) SetBody(body string) error {
+func (c *Client) setBodyContentString(body string) error {
 	c.BodyContent = NewRawContent([]byte(body))
 	return nil
 }
 
-func (c *Client) setBodyContentHelper(name *ContentType) error {
+func (c *Client) setBodyContentType(name *ContentType) error {
 	if c.BodyContent == nil {
 		c.BodyContent = NewContent(*name)
 
@@ -666,12 +901,12 @@ func (c *Client) ensureBodyContent() Content {
 	return c.BodyContent
 }
 
-func (c *Client) SetBodyContent(bodyContent Content) error {
+func (c *Client) setBodyContent(bodyContent Content) error {
 	c.BodyContent = bodyContent
 	return nil
 }
 
-func (c *Client) SetFillValue(v *cli.NameValue) error {
+func (c *Client) addFillValue(v *cli.NameValue) error {
 	c.bodyForm = append(c.bodyForm, v)
 	return nil
 }
@@ -700,66 +935,61 @@ func (c *Client) actualDownloader(ctx context.Context) Downloader {
 	return downloader
 }
 
-func (c *Client) SetAuth(auth Authenticator) error {
+func (c *Client) setAuth(auth Authenticator) error {
 	c.auth = auth
 	return nil
 }
 
-func (c *Client) SetUser(user *UserInfo) error {
+func (c *Client) setUser(user *UserInfo) error {
 	c.UserInfo = user
 	return nil
 }
 
-func (c *Client) Authenticator() Authenticator {
-	if c.auth == nil {
-		c.auth = NoAuth
-	}
-	return c.auth
-}
-
-// AddAuthenticatorMiddleware adds middleware for the authenticator
-func (c *Client) AddAuthenticatorMiddleware(fn AuthenticatorMiddleware) {
-	c.authMiddleware = append(c.authMiddleware, fn)
-}
-
-func (c *Client) SetRequestID(s string) error {
-	if s == "" {
-		WithRequestID()(c)
-		return nil
-	}
-	WithRequestID(s)(c)
+func (c *Client) addMiddleware(m Middleware) error {
+	c.middleware = append(c.middleware, m)
 	return nil
 }
 
-func (c *Client) SetQueryString(n *cli.NameValue) error {
+func (c *Client) addAuthenticatorMiddleware(fn AuthenticatorMiddleware) error {
+	c.authMiddleware = append(c.authMiddleware, fn)
+	return nil
+}
+
+func (c *Client) addDownloaderMiddleware(fn DownloaderMiddleware) error {
+	c.downloaderMiddleware = append(c.downloaderMiddleware, fn)
+	return nil
+}
+
+func (c *Client) addQueryString(n *cli.NameValue) error {
 	c.queryString.Add(n.Name, n.Value)
 	return nil
 }
 
-func (c *Client) SetWriteOut(w Expr) error {
+func (c *Client) setTraceLevel(v TraceLevel) error {
+	c.traceLevel = v
+	return nil
+}
+
+func (c *Client) setWriteOut(w Expr) error {
 	c.writeOutExpr = w
 	return nil
 }
 
-func (c *Client) SetWriteErr(w Expr) error {
+func (c *Client) setWriteErr(w Expr) error {
 	c.writeErrExpr = w
 	return nil
 }
 
-// AddDownloadMiddleware adds download middleware
-func (c *Client) AddDownloaderMiddleware(fn DownloaderMiddleware) {
-	c.downloaderMiddleware = append(c.downloaderMiddleware, fn)
-}
-
-func (c *Client) SetStripComponents(count int) error {
-	c.SetDownloadFile(PreserveRequestPath)
-	c.AddDownloaderMiddleware(func(_ context.Context, d Downloader) Downloader {
+func (c *Client) setStripComponents(count int) error {
+	if err := c.setDownloadFile(PreserveRequestPath); err != nil {
+		return err
+	}
+	return c.addDownloaderMiddleware(func(_ context.Context, d Downloader) Downloader {
 		return d.(DownloadMode).WithStripComponents(count)
 	})
-	return nil
 }
 
-func (c *Client) SetFailFast(v bool) error {
+func (c *Client) setFailFast(v bool) error {
 	c.FailFast = v
 	return nil
 }
@@ -782,11 +1012,6 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 
 	e.outExpr.Fprint(e.outRender, exp)
 	e.errExpr.Fprint(e.errRender, exp)
-}
-
-func (o Option) Execute(c context.Context) error {
-	o(FromContext(c))
-	return nil
 }
 
 func defaultUserAgent() string {

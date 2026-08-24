@@ -235,11 +235,7 @@ func SetTraceLevel(s ...TraceLevel) Action {
 			UsageText: "LEVEL",
 			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
 		},
-		bind.Call2(
-			(*Client).SetTraceLevel,
-			bind.FromContext(FromContext),
-			bind.Exact(s...),
-		),
+		bind.Action(WithTraceLevel, bind.Exact(s...)),
 		tagged,
 	)
 }
