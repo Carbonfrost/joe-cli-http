@@ -39,6 +39,10 @@ func SourceAnnotation() (string, string) {
 	return "Source", pkgPath
 }
 
+//go:generate go tool counterfeiter -generate
+
+//counterfeiter:generate -o ../internal/joe-clifakes . Action
+
 // Action provides a context action that affects the client
 type Action = cli.Action
 
