@@ -333,11 +333,6 @@ func WithAccessLog(s string) Option {
 	return withAdapter((*Server).setAccessLog, s)
 }
 
-// WithNoAccessLog disables the access log
-func WithNoAccessLog() Option {
-	return WithAccessLog("")
-}
-
 // WithStaticDirectory hosts a static directory
 func WithStaticDirectory(path string) Option {
 	return withAdapter((*Server).setStaticDirectory, path)

@@ -48,8 +48,8 @@ var _ = Describe("Set actions", func() {
 			"app --flag x",
 			OnServer, Fields{"AccessLog": Equal("x")},
 		),
-		XEntry( // TODO Requires joe-cli@futures where No/OptionalValue is viable
-			"SetNoAccessLog",
+		Entry(
+			"SetAccessLog (disable access log)",
 			httpserver.SetAccessLog(),
 			"app --no-flag",
 			OnServer, Fields{"AccessLog": Equal("")},

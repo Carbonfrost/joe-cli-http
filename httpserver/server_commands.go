@@ -58,7 +58,6 @@ func FlagsAndArgs() Action {
 			{Uses: SetHideDirectoryListings()},
 			{Uses: SetOpenInBrowser()},
 			{Uses: SetAccessLog()},
-			{Uses: SetNoAccessLog()},
 			{Uses: SetServerHeader()},
 			{Uses: SetTLSCertFile()},
 			{Uses: SetTLSKeyFile()},
@@ -318,21 +317,9 @@ func SetAccessLog(v ...string) Action {
 			Aliases:  []string{"a"},
 			HelpText: "Set access log format",
 			Category: advancedCategory,
+			Options:  cli.No,
 		},
 		bind.Action(WithAccessLog, bind.Exact(v...)),
-		tagged,
-	)
-}
-
-func SetNoAccessLog() Action {
-	return cli.Pipeline(
-		&cli.Prototype{
-			Name:     "no-access-log",
-			HelpText: "Disable the access log",
-			Category: advancedCategory,
-			Value:    new(bool),
-		},
-		cli.At(cli.ActionTiming, WithNoAccessLog()),
 		tagged,
 	)
 }
