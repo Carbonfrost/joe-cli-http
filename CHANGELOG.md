@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.12.0 (August 30, 2026)
+
+### New Features
+
+* Introduce websocket client; mop (60b8c86)
+* Add random uuid generator to global expander (d2d2a10)
+
+### Bug fixes and improvements
+
+* Rework `--no-access-log` to use `cli.No` (3131994)
+* Breaking change: Remove Action implementation from ReadyFunc (0f63561)
+* API consistency and cleanup:
+    * Refactor Client (41bc070)
+    * Update Client to use option/apply pattern only (3ac9fd7)
+    * Push `Handle`, `HandleFunc` up as Option type (753747b)
+    * Encapsulate HTTP server via cacheable pattern (f2b39cd)
+    * Remove server handler to cacheable pattern (1b537b7)
+    * Alias `Action` within packages; remove exported template helper API (db078ed)
+    * Move `client.ExpandRequest` into API; documentation (80cf313)
+* Chores:
+    * Documentation improvements (f848efa)
+    * Update dependent versions (02b0e6d)
+    * Modernize for go1.27 (68a5d01)
+    * Upgrade to go1.27 (6ddde26)
+    * Update revive configuration (47de13c)
+    * Improve tests:
+        * Introduce httpserver unit tests (386b490)
+
+
 ## v0.11.1 (August 9, 2026)
 
 ### Bug fixes and improvements
