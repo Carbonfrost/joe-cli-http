@@ -10,6 +10,7 @@ import (
 	gotls "crypto/tls"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
@@ -54,6 +55,12 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // likewise be used within the Uses or Before pipeline, where they apply to the
 // client which is in the context.
 //
+// The underlying request is created on demand the first time that it is
+// needed, which is available from NewRequest.  How it gets created can be
+// customized with WithRequest or WithRequestFactory.  Likewise, the middleware
+// which processes each request is available from NewMiddleware and can be
+// customized with WithMiddleware or WithMiddlewareFactory.
+//
 // The cmd/wig package provides wig, which is a command line utility
 // very similar to this.
 //
@@ -65,7 +72,6 @@ type Client struct {
 	cli.Action
 
 	CheckRedirect          func(*http.Request, []*http.Request) error
-	Request                *http.Request
 	IncludeResponseHeaders bool
 	BodyContent            Content
 	UserInfo               *UserInfo
@@ -87,9 +93,15 @@ type Client struct {
 	auth              Authenticator
 	authMiddleware    []AuthenticatorMiddleware
 
+	request    cacheable[*http.Request]
+	middleware cacheable[Middleware]
+
+	method string
+	header http.Header
+	body   io.ReadCloser
+
 	bodyForm     []*cli.NameValue
 	queryString  url.Values
-	middleware   []Middleware
 	writeOutExpr Expr
 	writeErrExpr Expr
 
@@ -144,6 +156,8 @@ type exprHandling struct {
 var (
 	impliedOptions = []Option{
 		WithDefaultAction(),
+		WithDefaultRequestFactory(),
+		WithDefaultMiddlewareFactory(),
 		WithUserAgent(defaultUserAgent()),
 		WithDefaultInterfaceResolver(),
 		WithDefaultTransportFactory(),
@@ -170,9 +184,6 @@ func New(options ...Option) *Client {
 	h := &Client{
 		dnsDialer:   &net.Dialer{},
 		queryString: url.Values{},
-		Request: &http.Request{
-			Method: "GET",
-		},
 	}
 	h.dialer = &net.Dialer{
 		Resolver: &net.Resolver{
@@ -217,6 +228,51 @@ func WithDefaultAction() Option {
 			joetls.New(),
 			WithDefaultTLSConfigFactory(),
 		)
+		return nil
+	})
+}
+
+// WithRequest sets the request to use directly, bypassing the default factory.
+// The method, headers, and body which have been configured with the other
+// options are still applied to it.
+func WithRequest(r *http.Request) Option {
+	return withAdapter((*Client).setRequest, r)
+}
+
+// WithRequestFactory provides a factory for obtaining the request
+func WithRequestFactory(fn func(context.Context) (*http.Request, error)) Option {
+	return withAdapter((*Client).setRequestFactory, fn)
+}
+
+// WithDefaultRequestFactory sets up the default request factory and the
+// built-in request middleware (method, headers, and body).  This option is
+// applied automatically by New.
+func WithDefaultRequestFactory() Option {
+	return optionFunc(func(c *Client) error {
+		c.request.SetFactory(defaultRequestFactory)
+		c.request.AddMiddleware(
+			c.setupRequestMethod,
+			c.setupRequestHeader,
+			c.setupRequestBody,
+		)
+		return nil
+	})
+}
+
+// WithMiddlewareFactory provides a factory for obtaining the middleware which
+// processes each request.  Middleware which is added with WithMiddleware is
+// still appended to it.
+func WithMiddlewareFactory(fn func(context.Context) (Middleware, error)) Option {
+	return withAdapter((*Client).setMiddlewareFactory, fn)
+}
+
+// WithDefaultMiddlewareFactory sets up the default middleware factory, which
+// provides the built-in middleware that sets up the body content, query
+// string, and authentication of each request.  This option is applied
+// automatically by New.
+func WithDefaultMiddlewareFactory() Option {
+	return optionFunc(func(c *Client) error {
+		c.middleware.SetFactory(c.defaultMiddlewareFactory)
 		return nil
 	})
 }
@@ -266,7 +322,8 @@ func WithDefaultInterfaceResolver() Option {
 }
 
 // WithMiddleware adds a middleware function that will execute before
-// the client request
+// the client request.  Middleware is appended to the middleware which is
+// obtained from the factory, so it executes after the built-in middleware.
 func WithMiddleware(m Middleware) Option {
 	return withAdapter((*Client).addMiddleware, m)
 }
@@ -325,10 +382,7 @@ func WithBodyString(s string) Option {
 
 // WithBody sets up the body on the request to the given reader
 func WithBody(b io.ReadCloser) Option {
-	return requestOption(func(r *http.Request) error {
-		r.Body = b
-		return nil
-	})
+	return withAdapter((*Client).setBody, b)
 }
 
 // WithBodyContent sets the content of the body of the request
@@ -499,10 +553,9 @@ func withRequestID(s string) Option {
 	return WithRequestID(s)
 }
 
-func requestOption(fn func(r *http.Request) error) Option {
-	return optionFunc(func(c *Client) error {
-		return fn(c.Request)
-	})
+// withRequestHeader sets (rather than appends) the given header on the request
+func withRequestHeader(name, value string) Option {
+	return withAdapter((*Client).setHeader, &HeaderValue{Name: name, Value: value})
 }
 
 func withAdapter[T any](fn func(*Client, T) error, value T) Option {
@@ -588,14 +641,23 @@ func defaultCheckRedirect(_ *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func (c *Client) generateMiddleware(l Location) Middleware {
-	mw, _ := l.(Middleware)
-	return ComposeMiddleware(append([]Middleware{
-		mw,
+func (c *Client) defaultMiddlewareFactory(context.Context) (Middleware, error) {
+	return ComposeMiddleware(
 		setupBodyContent(c),
 		setupQueryString(c),
 		processAuth(c),
-	}, c.middleware...)...)
+	), nil
+}
+
+// generateMiddleware obtains the middleware for the given location, which is
+// itself allowed to contribute middleware that runs before any other
+func (c *Client) generateMiddleware(ctx context.Context, l Location) (Middleware, error) {
+	mw, err := c.NewMiddleware(ctx)
+	if err != nil {
+		return nil, err
+	}
+	locationMW, _ := l.(Middleware)
+	return ComposeMiddleware(locationMW, mw), nil
 }
 
 func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
@@ -606,12 +668,27 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.Request.URL = u
-	c.Request.Host = u.Host
-	c.Request = c.Request.WithContext(rctx)
-	c.generateMiddleware(l).Handle(c.Request, nil)
 
-	netResp, err := client.Do(c.Request)
+	mw, err := c.generateMiddleware(ctx, l)
+	if err != nil {
+		return nil, err
+	}
+
+	// Each location processes its own copy of the request so that the
+	// middleware always observes the request as it was configured
+	base, err := c.NewRequest(rctx)
+	if err != nil {
+		return nil, err
+	}
+	req := base.Clone(rctx)
+	req.URL = u
+	req.Host = u.Host
+
+	if err := mw.Handle(req, nil); err != nil {
+		return nil, err
+	}
+
+	netResp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +696,7 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 		Response: netResp,
 	}
 
-	c.exprHandlingCache.eval(c.Request, nil, netResp)
+	c.exprHandlingCache.eval(req, nil, netResp)
 	err = c.handleDownload(ctx, resp)
 	if err != nil {
 		return nil, err
@@ -659,12 +736,13 @@ func (c *Client) handleDownload(ctx context.Context, response *Response) error {
 	return nil
 }
 
-func (c *Client) applyAuth(ctx context.Context) error {
+func (c *Client) applyAuth(r *http.Request) error {
+	ctx := r.Context()
 	auth := c.Authenticator()
 	for _, a := range c.authMiddleware {
 		auth = a(ctx, auth)
 	}
-	return auth.Authenticate(c.Request, c.UserInfo)
+	return auth.Authenticate(r, c.UserInfo)
 }
 
 func (c *Client) Dialer() *net.Dialer {
@@ -673,6 +751,20 @@ func (c *Client) Dialer() *net.Dialer {
 
 func (c *Client) DNSDialer() *net.Dialer {
 	return c.dnsDialer
+}
+
+// NewRequest creates (or returns the cached) request for the client.  The
+// request is created the first time that it is needed, which is either from
+// Do or from calling this method.  It is the template which each location
+// copies, so its URL is only set on the copy that the location processes.
+func (c *Client) NewRequest(ctx context.Context) (*http.Request, error) {
+	return c.request.New(ctx)
+}
+
+// NewMiddleware creates (or returns the cached) middleware which processes
+// each request that the client sends
+func (c *Client) NewMiddleware(ctx context.Context) (Middleware, error) {
+	return c.middleware.New(ctx)
 }
 
 // NewInterfaceResolver creates the interface resolver
@@ -698,8 +790,28 @@ func (c *Client) setAction(value cli.Action) error {
 	return nil
 }
 
+func (c *Client) setRequest(r *http.Request) error {
+	c.request.SetDiscrete(r)
+	return nil
+}
+
+func (c *Client) setRequestFactory(fn func(context.Context) (*http.Request, error)) error {
+	c.request.SetFactory(fn)
+	return nil
+}
+
+func (c *Client) setMiddlewareFactory(fn func(context.Context) (Middleware, error)) error {
+	c.middleware.SetFactory(fn)
+	return nil
+}
+
 func (c *Client) setMethod(s string) error {
-	c.Request.Method = strings.ToUpper(s)
+	c.method = strings.ToUpper(s)
+	return nil
+}
+
+func (c *Client) setBody(b io.ReadCloser) error {
+	c.body = b
 	return nil
 }
 
@@ -717,7 +829,7 @@ func (c *Client) setFollowRedirects(value bool) error {
 }
 
 func (c *Client) setUserAgent(value string) error {
-	ensureHeader(c.Request).Set("User-Agent", value)
+	c.ensureHeader().Set("User-Agent", value)
 	return nil
 }
 
@@ -825,8 +937,20 @@ func (c *Client) setDisableDialKeepAlive(v bool) error {
 }
 
 func (c *Client) addHeader(n *HeaderValue) error {
-	ensureHeader(c.Request).Add(n.Name, n.Value)
+	c.ensureHeader().Add(n.Name, n.Value)
 	return nil
+}
+
+func (c *Client) setHeader(n *HeaderValue) error {
+	c.ensureHeader().Set(n.Name, n.Value)
+	return nil
+}
+
+func (c *Client) ensureHeader() http.Header {
+	if c.header == nil {
+		c.header = http.Header{}
+	}
+	return c.header
 }
 
 func (c *Client) setBindAddress(value string) error {
@@ -946,7 +1070,9 @@ func (c *Client) setUser(user *UserInfo) error {
 }
 
 func (c *Client) addMiddleware(m Middleware) error {
-	c.middleware = append(c.middleware, m)
+	c.middleware.AddMiddleware(func(_ context.Context, existing Middleware) Middleware {
+		return ComposeMiddleware(existing, m)
+	})
 	return nil
 }
 
@@ -1012,6 +1138,35 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 
 	e.outExpr.Fprint(e.outRender, exp)
 	e.errExpr.Fprint(e.errRender, exp)
+}
+
+func defaultRequestFactory(_ context.Context) (*http.Request, error) {
+	return &http.Request{
+		Method: http.MethodGet,
+	}, nil
+}
+
+// setupRequestMethod, setupRequestHeader, and setupRequestBody copy the values
+// which have been configured onto the request.  Only values which were
+// actually set are copied so that a request provided by WithRequest retains
+// its own values.
+func (c *Client) setupRequestMethod(_ context.Context, r *http.Request) *http.Request {
+	if c.method != "" {
+		r.Method = c.method
+	}
+	return r
+}
+
+func (c *Client) setupRequestHeader(_ context.Context, r *http.Request) *http.Request {
+	maps.Copy(ensureHeader(r), c.header)
+	return r
+}
+
+func (c *Client) setupRequestBody(_ context.Context, r *http.Request) *http.Request {
+	if c.body != nil {
+		r.Body = c.body
+	}
+	return r
 }
 
 func defaultUserAgent() string {

@@ -117,7 +117,7 @@ func WithHeaders(headers http.Header) Middleware {
 }
 
 func setupBodyContent(c *Client) MiddlewareFunc {
-	return func(*http.Request) error {
+	return func(r *http.Request) error {
 		if len(c.bodyForm) > 0 {
 			c.ensureBodyContent()
 		}
@@ -128,32 +128,32 @@ func setupBodyContent(c *Client) MiddlewareFunc {
 					return err
 				}
 			}
-			if c.Request.Header.Get("Content-Type") == "" {
+			if ensureHeader(r).Get("Content-Type") == "" {
 				if ct := c.BodyContent.ContentType(); ct != "" {
-					c.Request.Header.Set("Content-Type", ct)
+					r.Header.Set("Content-Type", ct)
 				}
 			}
-			c.Request.Body = wrapReader(c.BodyContent.Read())
+			r.Body = wrapReader(c.BodyContent.Read())
 		}
 		return nil
 	}
 }
 
 func setupQueryString(c *Client) MiddlewareFunc {
-	return func(*http.Request) error {
-		query := c.Request.URL.Query()
+	return func(r *http.Request) error {
+		query := r.URL.Query()
 		for k, v := range c.queryString {
 			query[k] = append(query[k], v...)
 		}
 
-		c.Request.URL.RawQuery = query.Encode()
+		r.URL.RawQuery = query.Encode()
 		return nil
 	}
 }
 
 func processAuth(c *Client) MiddlewareFunc {
 	return func(r *http.Request) error {
-		return c.applyAuth(r.Context())
+		return c.applyAuth(r)
 	}
 }
 
@@ -172,10 +172,16 @@ func (f MiddlewareFunc) Handle(req *http.Request, next func(*http.Request) error
 }
 
 func (c compositeMiddleware) Handle(req *http.Request, next func(*http.Request) error) error {
+	if next == nil {
+		next = emptyMiddlewareImpl
+	}
+
+	// Once each middleware in the composite has been processed, the pipeline
+	// continues with next so that composites can nest within each other
 	yielders := make([]func(*http.Request) error, len(c))
 	yielderThunk := func(i int) func(*http.Request) error {
 		if i >= len(yielders) || yielders[i] == nil {
-			return emptyMiddlewareImpl
+			return next
 		}
 		return yielders[i]
 	}

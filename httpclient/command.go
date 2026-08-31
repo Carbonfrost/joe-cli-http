@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
-	"net/http"
 	"reflect"
 	"time"
 
@@ -588,10 +587,7 @@ func SetWriteErr(w ...Expr) Action {
 }
 
 func setHTTPHeaderStatic(name, value string) Action {
-	return cli.At(cli.ActionTiming, requestOption(func(r *http.Request) error {
-		ensureHeader(r).Set(name, value)
-		return nil
-	}))
+	return cli.At(cli.ActionTiming, withRequestHeader(name, value))
 }
 
 func listInterfaces() Action {

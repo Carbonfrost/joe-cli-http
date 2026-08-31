@@ -115,6 +115,27 @@ var _ = Describe("ComposeMiddleware", func() {
 		Expect(bCalled).To(BeFalse())
 	})
 
+	It("continues the pipeline when composites nest", func() {
+		var (
+			calls []string
+
+			mark = func(name string) httpclient.MiddlewareFunc {
+				return func(*http.Request) error {
+					calls = append(calls, name)
+					return nil
+				}
+			}
+		)
+
+		mw := httpclient.ComposeMiddleware(
+			httpclient.ComposeMiddleware(mark("a"), mark("b")),
+			mark("c"),
+		)
+		mw.Handle(nil, nil)
+
+		Expect(calls).To(Equal([]string{"a", "b", "c"}))
+	})
+
 	It("ignores nils", func() {
 		mw := httpclient.ComposeMiddleware(nil, nil)
 		Expect(func() {

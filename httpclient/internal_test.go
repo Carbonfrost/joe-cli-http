@@ -6,6 +6,7 @@ package httpclient // intentional
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net"
 	"net/http"
@@ -68,12 +69,20 @@ func Attributes(c *Client) *ClientAttributes {
 		IncludeResponseHeaders: c.IncludeResponseHeaders,
 		CheckRedirect:          c.CheckRedirect,
 		Transport:              c.transport.Discrete(),
-		Request:                newRequestAttributes(c.Request),
+		Request:                newRequestAttributes(mustNewRequest(c)),
 		Downloader:             c.downloader,
 		DownloaderWithMiddleware: c.actualDownloader(&cli.Context{
 			Stdout: cli.NewWriter(new(bytes.Buffer)),
 		}),
 	}
+}
+
+func mustNewRequest(c *Client) *http.Request {
+	r, err := c.NewRequest(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 func newRequestAttributes(r *http.Request) *RequestAttributes {
