@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.12.1 (September 4, 2026)
+
+### Bug fixes and improvements
+
+* Improve expander tests in server; export `Expander` alias (cb7ffa6)
+* Replace all aliases with optional aliases (4378625)
+* Chores: Update dependent versions (8aad8e6)
+
+
 ## v0.12.0 (August 30, 2026)
 
 ### New Features
