@@ -11,9 +11,12 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
+// Expander converts the given string key into its variable expansion
+type Expander = expander.Interface
+
 // ExpandRequest provides an expander that provides variables from a request
 // in the context of a server.
-func ExpandRequest(r *http.Request, ww wrapResponseWriter) expander.Interface {
+func ExpandRequest(r *http.Request, ww wrapResponseWriter) Expander {
 	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "bytesWritten":

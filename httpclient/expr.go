@@ -27,9 +27,12 @@ func (e *Expr) UnmarshalText(b []byte) error {
 	return nil
 }
 
+// Expander converts the given string key into its variable expansion
+type Expander = expander.Interface
+
 // ExpandRequest provides an expander that provides variables from a request
 // in the context of a client.
-func ExpandRequest(r *http.Request) expander.Interface {
+func ExpandRequest(r *http.Request) Expander {
 	if r == nil {
 		return expander.Func(func(s string) any {
 			if s == "method" || s == "protocol" || s == "location" || s == "url" || s == "header" {
@@ -65,7 +68,7 @@ func ExpandRequest(r *http.Request) expander.Interface {
 		expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
-func ExpandResponse(r *http.Response) expander.Interface {
+func ExpandResponse(r *http.Response) Expander {
 	return expander.Compose(expander.Func(func(s string) any {
 		switch s {
 		case "status":
@@ -97,7 +100,7 @@ func ExpandResponse(r *http.Response) expander.Interface {
 	}), expander.Prefix("header", ExpandHeader(r.Header)))
 }
 
-func ExpandHeader(h http.Header) expander.Interface {
+func ExpandHeader(h http.Header) Expander {
 	return expander.Func(func(s string) any {
 		return h.Get(headerCanonicalName(s))
 	})
