@@ -287,8 +287,7 @@
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
             },
             "value": {
-                "type": "bool",
-                "string": "false"
+                "type": "string"
             }
         },
         {
@@ -299,8 +298,7 @@
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
             },
             "value": {
-                "type": "bool",
-                "string": "false"
+                "type": "string"
             }
         },
         {
@@ -323,8 +321,7 @@
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
             },
             "value": {
-                "type": "bool",
-                "string": "false"
+                "type": "string"
             }
         },
         {
@@ -856,5 +853,5 @@
     ],
     "helpText": "Provides access to the Go HTTP client with some cURL compatibility",
     "version": "(devel)",
-    "buildDate": "2026-08-09T18:01:59.009438701-07:00"
+    "buildDate": "2026-09-04T16:20:15.230866-07:00"
 }

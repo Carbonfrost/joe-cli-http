@@ -235,7 +235,7 @@ func SetURITemplateVar(v ...*Var) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "param",
-			Aliases:  []string{"T"},
+			Uses:     cli.OptionalAlias("T"),
 			HelpText: "Specify a value used to fill the template",
 			Value:    new(Var),
 			Options:  cli.EachOccurrence,
@@ -250,7 +250,7 @@ func SetURITemplateVars(v ...*Vars) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "params",
-			Aliases:   []string{"t"},
+			Uses:      cli.OptionalAlias("t"),
 			UsageText: "expr|@file",
 			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
 			Value:     value.JSON(&Vars{}),
@@ -266,7 +266,7 @@ func SetPartialExpand(b ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "partial",
-			Aliases:  []string{"P"},
+			Uses:     cli.OptionalAlias("P"),
 			Value:    cli.Bool(),
 			HelpText: "When set, partially expand the template by preserving missing variables",
 		},

@@ -102,7 +102,7 @@ func SetHeader(v ...*httpclient.HeaderValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "header",
-			Aliases:  []string{"H"},
+			Uses:     cli.OptionalAlias("H"),
 			HelpText: "Sets header to {NAME} and {VALUE}",
 			Value:    new(httpclient.HeaderValue),
 			Options:  cli.EachOccurrence,
@@ -120,7 +120,7 @@ func SetSubprotocol(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "protocol",
-			Aliases:  []string{"P"},
+			Uses:     cli.OptionalAlias("P"),
 			HelpText: "Requests the subprotocol {NAME} in the handshake.  Can be used multiple times",
 			Options:  cli.EachOccurrence,
 			Category: handshakeOptions,
@@ -167,7 +167,7 @@ func SetMessage(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "message",
-			Aliases:  []string{"m"},
+			Uses:     cli.OptionalAlias("m"),
 			HelpText: "Sends the {MESSAGE} once connected.  Can be used multiple times",
 			Options:  cli.EachOccurrence | cli.AllowFileReference,
 			Category: messageOptions,
@@ -184,7 +184,7 @@ func SetInput(v ...*cli.FileSet) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "file",
-			Aliases:  []string{"f"},
+			Uses:     cli.OptionalAlias("f"),
 			HelpText: "Sends a message for each line read from {FILE}",
 			Value:    new(cli.FileSet),
 			Options:  cli.MustExist,
@@ -333,7 +333,7 @@ func SetVerbose() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "verbose",
-			Aliases:  []string{"v"},
+			Uses:     cli.OptionalAlias("v"),
 			Value:    new(bool),
 			HelpText: "Display the messages which are sent",
 		},

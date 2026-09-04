@@ -119,7 +119,7 @@ func SetMethod(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:       "method",
-			Aliases:    []string{"X", "request"},
+			Uses:       cli.OptionalAlias("X", "request"),
 			UsageText:  "NAME",
 			HelpText:   "Sets the request method to {NAME}",
 			Options:    cli.ImpliedAction,
@@ -135,7 +135,7 @@ func SetHeader(s ...*HeaderValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "header",
-			Aliases:  []string{"H"},
+			Uses:     cli.OptionalAlias("H"),
 			HelpText: "Sets header to {NAME} and {VALUE}",
 			Options:  cli.EachOccurrence,
 			Category: requestOptions,
@@ -150,10 +150,10 @@ func SetBody(s ...string) Action {
 		&cli.Prototype{
 			Name:     "body",
 			HelpText: "Sets the raw content of the body of the request",
-			Aliases:  []string{"data-raw", "d"},
 			Category: requestOptions,
 			Options:  cli.AllowFileReference,
 			Uses: cli.Pipeline(
+				cli.OptionalAlias("data-raw", "d"),
 				cli.Implies("method", "POST"),
 				cli.Implies("body-content", ContentTypeRaw.String()),
 			),
@@ -182,7 +182,7 @@ func SetFillValue(s ...*cli.NameValue) Action {
 		&cli.Prototype{
 			Name:     "fill",
 			HelpText: "Fills a value in the body of the request or the query string",
-			Aliases:  []string{"F"},
+			Uses:     cli.OptionalAlias("F"),
 			Category: requestOptions,
 			Options:  cli.EachOccurrence,
 		},
@@ -225,7 +225,7 @@ func SetFollowRedirects(s ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "follow-redirects",
-			Aliases:  []string{"L", "location"},
+			Uses:     cli.OptionalAlias("L", "location"),
 			Options:  cli.No,
 			HelpText: "Follow redirects in the Location header",
 			Category: requestOptions,
@@ -239,7 +239,7 @@ func SetUserAgent(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "user-agent",
-			Aliases:  []string{"A"},
+			Uses:     cli.OptionalAlias("A"),
 			HelpText: "Send the specified user-agent {NAME} to server",
 			Category: requestOptions,
 		},
@@ -264,7 +264,7 @@ func SetIncludeResponseHeaders(s ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "include",
-			Aliases:  []string{"i"},
+			Uses:     cli.OptionalAlias("i"),
 			HelpText: "Include response headers in the output",
 			Category: responseOptions,
 		},
@@ -278,7 +278,7 @@ func SetOutputFile(f ...string) Action {
 		&cli.Prototype{
 			Name:     "output",
 			HelpText: "Download file to {FILE} instead of writing to stdout",
-			Aliases:  []string{"o"},
+			Uses:     cli.OptionalAlias("o"),
 			Category: responseOptions,
 		},
 		bind.Action(WithOutputFile, bind.Exact(f...)),
@@ -316,7 +316,7 @@ func SetDownload() Action {
 		&cli.Prototype{
 			Name:     "download",
 			HelpText: "Download file using the same name as the request path.  If specified a second time, also preserves the path structure",
-			Aliases:  []string{"O", "remote-name"},
+			Uses:     cli.OptionalAlias("O", "remote-name"),
 			Value:    new(bool),
 			Category: responseOptions,
 		},
@@ -351,7 +351,7 @@ func SetFailFast(i ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "fail",
-			Aliases:  []string{"f"},
+			Uses:     cli.OptionalAlias("f"),
 			HelpText: "Fail fast with no output on HTTP errors",
 			Category: responseOptions,
 			Options:  cli.No,
@@ -480,7 +480,7 @@ func SetVerbose() Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "verbose",
-			Aliases:  []string{"v"},
+			Uses:     cli.OptionalAlias("v"),
 			Value:    new(bool),
 			HelpText: "Display verbose output; can be used multiple times to increase detail",
 		},
@@ -493,7 +493,7 @@ func SetBaseURL(name ...*URLValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "base",
-			Aliases:  []string{"a"},
+			Uses:     cli.OptionalAlias("a"),
 			HelpText: "Specify a base URL.  Can be used multiple times",
 			Category: requestOptions,
 		},
@@ -506,12 +506,14 @@ func SetURITemplateVar(v ...*uritemplates.Var) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "param",
-			Aliases:  []string{"T"},
 			HelpText: "Specify a value used to fill an RFC 6570 Level 4 URI template and parse the input URL as having template expressions",
 			Value:    new(uritemplates.Var),
 			Category: requestOptions,
 			Options:  cli.EachOccurrence,
-			Uses:     cli.ValueTransform(cli.TransformOptionalFileReference()),
+			Uses: cli.Pipeline(
+				cli.OptionalAlias("T"),
+				cli.ValueTransform(cli.TransformOptionalFileReference()),
+			),
 		},
 		bind.Action(WithURITemplateVar, bind.Exact(v...)),
 		tagged,
@@ -522,7 +524,7 @@ func SetURITemplateVars(v ...*uritemplates.Vars) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "params",
-			Aliases:   []string{"t"},
+			Uses:      cli.OptionalAlias("t"),
 			UsageText: "expr|@file",
 			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
 			Value:     value.JSON(&uritemplates.Vars{}),
@@ -550,7 +552,7 @@ func SetQueryString(s ...*cli.NameValue) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "query",
-			Aliases:  []string{"Q"},
+			Uses:     cli.OptionalAlias("Q"),
 			HelpText: "Specify a {NAME} and {VALUE} to add to the query string",
 			Category: requestOptions,
 			Options:  cli.EachOccurrence,
@@ -565,7 +567,7 @@ func SetWriteOut(w ...Expr) Action {
 		&cli.Prototype{
 			Name:     "write-out",
 			HelpText: "Evaluate the expression and print out the result",
-			Aliases:  []string{"w"},
+			Uses:     cli.OptionalAlias("w"),
 			Category: requestOptions,
 		},
 		bind.Action(WithWriteOut, bind.Exact(w...)),
@@ -578,7 +580,7 @@ func SetWriteErr(w ...Expr) Action {
 		&cli.Prototype{
 			Name:     "write-err",
 			HelpText: "Evaluate the expression and print out the result to stderr",
-			Aliases:  []string{"W"},
+			Uses:     cli.OptionalAlias("W"),
 			Category: requestOptions,
 		},
 		bind.Action(WithWriteErr, bind.Exact(w...)),

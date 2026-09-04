@@ -84,11 +84,12 @@ func SetClientCertFile(path ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "cert",
-			Aliases:   []string{"E"},
 			HelpText:  "Client certificate file (PEM format)",
 			UsageText: "PATH",
 			Category:  tlsOptions,
-			Uses:      cli.Requires("key"),
+			Uses: cli.Pipeline(
+				cli.Requires("key"), cli.OptionalAlias("E"),
+			),
 		},
 		bind.Action2(
 			AddX509KeyPair, bind.File("cert").Name(), bind.File("key").Name(),
@@ -206,7 +207,7 @@ func SetInsecureSkipVerify(v ...bool) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "insecure-skip-verify",
-			Aliases:  []string{"k", "insecure"},
+			Uses:     cli.OptionalAlias("k", "insecure"),
 			HelpText: "Whether to verify the server's certificate chain and host name.",
 			Category: tlsOptions,
 			EnvVars:  []string{"INSECURE_SKIP_VERIFY"},

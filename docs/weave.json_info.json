@@ -178,23 +178,12 @@
             ],
             "helpText": "Set access log format",
             "category": "Advanced options",
+            "options": "NO",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
                 "type": "string"
-            }
-        },
-        {
-            "name": "no-access-log",
-            "helpText": "Disable the access log",
-            "category": "Advanced options",
-            "data": {
-                "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
-            },
-            "value": {
-                "type": "bool",
-                "string": "false"
             }
         },
         {
@@ -288,6 +277,16 @@
                 "type": "bool",
                 "string": "false"
             }
+        },
+        {
+            "name": "no-access-log",
+            "helpText": "Set access log format",
+            "category": "Advanced options",
+            "options": "HIDDEN",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
         }
     ],
     "args": [
@@ -304,5 +303,5 @@
     ],
     "helpText": "Provides access to a simple Go HTTP server for files and proxy handling",
     "version": "(devel)",
-    "buildDate": "2026-08-09T18:01:58.33974865-07:00"
+    "buildDate": "2026-09-04T16:20:14.481632-07:00"
 }

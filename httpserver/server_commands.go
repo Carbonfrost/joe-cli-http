@@ -75,7 +75,7 @@ func SetHostname(s ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "host",
-			Aliases:  []string{"h"},
+			Uses:     cli.OptionalAlias("h"),
 			HelpText: "Sets the server {HOST} name to use",
 			Category: listenerCategory,
 		},
@@ -90,7 +90,7 @@ func SetPort(s ...int) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "port",
-			Aliases:  []string{"p"},
+			Uses:     cli.OptionalAlias("p"),
 			HelpText: "Sets the server {PORT} that will be used",
 			Category: listenerCategory,
 		},
@@ -211,7 +211,7 @@ func SetStaticDirectory(f ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "directory",
-			Aliases:  []string{"d"},
+			Uses:     cli.OptionalAlias("d"),
 			Value:    new(cli.File),
 			Options:  cli.MustExist,
 			HelpText: "Serve static files from the specified directory",
@@ -259,7 +259,7 @@ func SetHandler(v ...httpclient.VirtualPath) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:      "handler",
-			Aliases:   []string{"H"},
+			Uses:      cli.OptionalAlias("H"),
 			UsageText: "route:handler[,options]",
 			HelpText:  "Binds a handler to the given route",
 			Value:     new(httpclient.VirtualPath),
@@ -314,7 +314,7 @@ func SetAccessLog(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "access-log",
-			Aliases:  []string{"a"},
+			Uses:     cli.OptionalAlias("a"),
 			HelpText: "Set access log format",
 			Category: advancedCategory,
 			Options:  cli.No,
@@ -328,7 +328,7 @@ func SetServerHeader(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "server",
-			Aliases:  []string{"S"},
+			Uses:     cli.OptionalAlias("S"),
 			HelpText: "Set value of the Server response header",
 			Category: advancedCategory,
 		},

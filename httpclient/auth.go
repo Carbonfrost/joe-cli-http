@@ -239,8 +239,10 @@ func SetUser(s ...*UserInfo) Action {
 			Name:     "user",
 			HelpText: "Set the user and password",
 			Category: requestOptions,
-			Aliases:  []string{"u"},
-			Uses:     cli.Implies("auth", BasicAuth.String()),
+			Uses: cli.Pipeline(
+				cli.OptionalAlias("u"),
+				cli.Implies("auth", BasicAuth.String()),
+			),
 		},
 		bind.Action(WithUser, bind.Exact(s...)),
 		tagged,
