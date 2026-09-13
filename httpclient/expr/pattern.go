@@ -17,27 +17,53 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/expr/expander"
 )
 
+// ExpandGlobals provides an exander for global variables:
+//
+//   - go.version
+//   - wig.version
+//   - time, time.now, time.now.utc (and what expander.Time provides)
+//   - random (or random.int)
+//   - random.float
+//   - random.uuid (or random.uuidv4)
+//   - random.uuidv7
 func ExpandGlobals() expander.Interface {
-	return expander.Func(func(k string) any {
-		switch k {
-		case "go.version":
-			return runtime.Version()
-		case "wig.version":
-			return build.Version
-		case "time", "time.now":
-			return time.Now()
-		case "time.now.utc":
-			return time.Now().UTC()
-		case "random":
-			return rand.Int()
-		case "random.float":
-			return rand.Float64()
-		case "random.uuid":
-			return uuid.NewV4()
-		}
-		return nil
-	})
+	return expander.Compose(
+		globals,
+		expander.Prefix("time.utc", expandTimeNowUTC),
+		expander.Prefix("time", expandTimeNow),
+		expander.Prefix("time.now", expandTimeNow),
+
+		expander.Func(func(k string) any {
+			switch k {
+			case "time", "time.now":
+				return time.Now()
+			case "time.now.utc":
+				return time.Now().UTC()
+			case "random", "random.int":
+				return rand.Int()
+			case "random.float":
+				return rand.Float64()
+			case "random.uuid", "random.uuidv4":
+				return uuid.NewV4()
+			case "random.uuidv7":
+				return uuid.NewV7()
+			}
+			return nil
+		}))
 }
+
+var (
+	globals = expander.Map{
+		"go.version":  runtime.Version(),
+		"wig.version": build.Version,
+	}
+	expandTimeNow expander.Func = func(k string) any {
+		return expander.Time(time.Now()).Expand(k)
+	}
+	expandTimeNowUTC expander.Func = func(k string) any {
+		return expander.Time(time.Now().UTC()).Expand(k)
+	}
+)
 
 // ExpandURLValues provides an expander for [url.Values]
 func ExpandURLValues(v url.Values) expander.Interface {

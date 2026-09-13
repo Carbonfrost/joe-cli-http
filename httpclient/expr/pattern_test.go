@@ -64,7 +64,12 @@ var _ = Describe("ExpandGlobals", func() {
 		Entry("time", "%(time.now)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
 		Entry("time (alias)", "%(time)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)),
 		Entry("time UTC", "%(time.now.utc)", MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)), // ends with Z
+		Entry("time UTC hour", "%(time.now.utc.hour:02d)", MatchRegexp(`[01]\d`)),
 		Entry("random", "%(random)", MatchRegexp(`\d+`)),
+		Entry("random.int", "%(random.int)", MatchRegexp(`\d+`)),
 		Entry("random.float", "%(random.float)", MatchRegexp(`\d(\.\d+)`)),
+		Entry("random.uuid", "%(random.uuid)", MatchRegexp(`[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}`)),
+		Entry("random.uuidv4", "%(random.uuidv4)", MatchRegexp(`[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}`)),
+		Entry("random.uuidv7", "%(random.uuidv7)", MatchRegexp(`[a-f0-9]{8}-[a-f0-9]{4}-7[a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}`)),
 	)
 })
