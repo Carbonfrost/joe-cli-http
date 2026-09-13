@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package mop provides the mop app, which is a WebSocket client
 package mop
 
 import (
@@ -23,10 +24,12 @@ func defaultUserAgent() string {
 	return fmt.Sprintf("Go-http-client/1.1 (mop/%s, +%s)", version, mopURL)
 }
 
+// Run runs the mop app
 func Run(args []string) {
 	NewApp().Run(args)
 }
 
+// NewApp creates the app for mop
 func NewApp() *cli.App {
 	return &cli.App{
 		Name:     "mop",

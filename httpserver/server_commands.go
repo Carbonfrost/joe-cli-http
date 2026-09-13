@@ -65,6 +65,7 @@ func FlagsAndArgs() Action {
 	)
 }
 
+// ContextValue adds the server to the context
 func ContextValue(s *Server) Action {
 	return cli.WithContextValue(servicesKey, s)
 }
@@ -310,6 +311,7 @@ func SetFileServerHandler(v ...httpclient.VirtualPath) Action {
 	)
 }
 
+// SetAccessLog sets the access log used by the server.
 func SetAccessLog(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -324,6 +326,7 @@ func SetAccessLog(v ...string) Action {
 	)
 }
 
+// SetServerHeader sets the contents of the Server header in the response
 func SetServerHeader(v ...string) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -337,6 +340,7 @@ func SetServerHeader(v ...string) Action {
 	)
 }
 
+// SetTLSKeyFile applies the given TLS key file to the server.
 func SetTLSKeyFile(v ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
@@ -351,6 +355,7 @@ func SetTLSKeyFile(v ...*cli.File) Action {
 	)
 }
 
+// SetTLSCertFile applies the given TLS cert file to the server.
 func SetTLSCertFile(v ...*cli.File) Action {
 	return cli.Pipeline(
 		&cli.Prototype{

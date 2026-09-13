@@ -29,6 +29,7 @@ type Options struct {
 	MaxHeaderBytes        *int           `toml:"max-header-bytes"        json:"maxHeaderBytes,omitempty"`
 }
 
+// Execute implements the Action.Execute method
 func (o *Options) Execute(ctx context.Context) error {
 	o.apply(FromContext(ctx))
 	return nil

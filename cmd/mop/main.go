@@ -4,6 +4,7 @@
 
 //go:build !json_info
 
+// Package main provides the entry point for mop
 package main
 
 import (

@@ -24,6 +24,7 @@ type HTTPStatus int
 // method that supports terminal formatting
 type HTTPMethod string
 
+// Color gets the color string that applies to the status
 func (s HTTPStatus) Color() string {
 	switch 100 * (s / 100) {
 	case 100:
@@ -39,14 +40,17 @@ func (s HTTPStatus) Color() string {
 	}
 }
 
+// Message converts the status in to the canonical status text message
 func (s HTTPStatus) Message() string {
 	return http.StatusText(int(s))
 }
 
+// Code converts the value into a value
 func (s HTTPStatus) Code() int {
 	return int(s)
 }
 
+// Format implements [fmt.Formatter]
 func (s HTTPStatus) Format(f fmt.State, verb rune) {
 	if verb == 'C' {
 		writeFormatted(f, s)
@@ -55,10 +59,12 @@ func (s HTTPStatus) Format(f fmt.State, verb rune) {
 	fmt.Fprintf(f, fmt.FormatString(f, verb), int(s))
 }
 
+// String provides the string representation of the status
 func (s HTTPStatus) String() string {
 	return strconv.Itoa(int(s)) + " " + s.Message()
 }
 
+// Color gets the color string that applies to the method
 func (m HTTPMethod) Color() string {
 	switch m {
 	case "DELETE":
@@ -70,6 +76,7 @@ func (m HTTPMethod) Color() string {
 	}
 }
 
+// Format implements [fmt.Formatter]
 func (m HTTPMethod) Format(f fmt.State, verb rune) {
 	if verb == 'C' {
 		writeFormatted(f, m)
@@ -78,6 +85,7 @@ func (m HTTPMethod) Format(f fmt.State, verb rune) {
 	fmt.Fprintf(f, fmt.FormatString(f, verb), string(m))
 }
 
+// String provides the string representation of the method
 func (m HTTPMethod) String() string {
 	return string(m)
 }
@@ -95,5 +103,11 @@ func writeFormatted(f io.Writer, a formattable) {
 
 type formattable interface {
 	fmt.Stringer
+	fmt.Formatter
 	Color() string
 }
+
+var (
+	_ formattable = HTTPStatus(0)
+	_ formattable = HTTPMethod("")
+)

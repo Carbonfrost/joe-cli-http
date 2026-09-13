@@ -1,7 +1,9 @@
-// Copyright 2022 The Joe-cli Authors. All rights reserved.
+// Copyright 2022, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package rug introduces the app for rug, which expands and prints
+// URI templates
 package rug
 
 import (
@@ -11,10 +13,12 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/color"
 )
 
+// Run runs the rug app
 func Run(args []string) {
 	NewApp().Run(args)
 }
 
+// NewApp creates the app for rug
 func NewApp() *cli.App {
 	return &cli.App{
 		Name:     "rug",

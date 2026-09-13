@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// RedactHeader returns a copy of the header with the values
+// RedactHeaderField returns a copy of the header with the values
 // redacted
 func RedactHeaderField(key string, value []string, redactoropt ...HeaderFieldRedactor) []string {
 	var redactor HeaderFieldRedactor = redactHeaderField

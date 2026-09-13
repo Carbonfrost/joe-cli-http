@@ -169,16 +169,19 @@ func defaultOptions(s *Server) []Option {
 	}
 }
 
+// Pipeline retrieves the pipeline that runs when the server is added to a pipeline.
 func (s *Server) Pipeline() cli.Action {
 	return s.Action
 }
 
+// Apply will apply the specified options to the server
 func (s *Server) Apply(opts ...Option) {
 	for _, o := range opts {
 		o.apply(s)
 	}
 }
 
+// NewDefault creates the default server which supports static serving from the file directory
 func NewDefault() *Server {
 	return New(
 		WithHandlerFactory(func(s *Server) (http.Handler, error) {

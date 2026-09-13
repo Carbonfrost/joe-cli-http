@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package weave provides the weave app to run a simple HTTP server
 package weave
 
 import (
@@ -11,10 +12,12 @@ import (
 	"github.com/Carbonfrost/joe-cli/extensions/color"
 )
 
+// Run runs the weave app
 func Run(args []string) {
 	NewApp().Run(args)
 }
 
+// NewApp creates the app for weave
 func NewApp() *cli.App {
 	return &cli.App{
 		Name:     "weave",
