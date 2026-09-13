@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/Carbonfrost/joe-cli-http/httpserver"
-	"github.com/Carbonfrost/joe-cli-http/httpserver/httpserverfakes"
+	"github.com/Carbonfrost/joe-cli-http/internal/httpserverfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

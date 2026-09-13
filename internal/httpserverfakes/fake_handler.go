@@ -71,3 +71,5 @@ func (fake *FakeHandler) recordInvocation(key string, args []interface{}) {
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ http.Handler = new(FakeHandler)

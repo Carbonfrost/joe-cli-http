@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -47,7 +47,7 @@ func newWrapResponseWriter(w http.ResponseWriter, protoMajor int) wrapResponseWr
 	return &bw
 }
 
-//counterfeiter:generate . wrapResponseWriter
+//counterfeiter:generate -o ../internal/httpserverfakes . wrapResponseWriter
 
 // wrapResponseWriter is a proxy around an http.ResponseWriter that allows you to hook
 // into various parts of the response process.

@@ -10,9 +10,7 @@ import (
 	"sync"
 )
 
-//counterfeiter:generate . handler
-
-type handler = http.Handler
+//counterfeiter:generate -o ../internal/httpserverfakes net/http.Handler
 
 type reloadableMux interface {
 	ReloadAll()
