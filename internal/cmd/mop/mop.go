@@ -25,8 +25,8 @@ func defaultUserAgent() string {
 }
 
 // Run runs the mop app
-func Run(args []string) {
-	NewApp().Run(args)
+func Run(args ...string) {
+	NewApp().Run(args...)
 }
 
 // NewApp creates the app for mop

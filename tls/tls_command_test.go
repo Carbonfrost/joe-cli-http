@@ -46,7 +46,7 @@ var _ = Describe("Set actions", func() {
 		}
 		args, _ := cli.Split(command)
 
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(config.Config).To(PointTo(MatchFields(IgnoreExtras, expected)))
 	},

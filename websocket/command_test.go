@@ -79,7 +79,7 @@ var _ = Describe("ConnectAndPrint", func() {
 		}
 
 		args, _ := cli.Split("_ " + server.URL + " --read-timeout 150ms")
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(messages()).To(Equal([]string{"hello", "world"}))
@@ -98,7 +98,7 @@ var _ = Describe("ConnectAndPrint", func() {
 		}
 
 		args, _ := cli.Split("_ " + server.URL + " -m ping -m pong --read-timeout 150ms")
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(messages()).To(Equal([]string{"ping", "pong"}))
@@ -116,7 +116,7 @@ var _ = Describe("ConnectAndPrint", func() {
 		}
 
 		args, _ := cli.Split("_ " + server.URL + " -m ping --verbose --read-timeout 150ms")
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(errOut.String()).To(ContainSubstring("→ ping"))
@@ -132,7 +132,7 @@ var _ = Describe("ConnectAndPrint", func() {
 		}
 
 		args, _ := cli.Split("_ ws://localhost:1/nope --handshake-timeout 1s")
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 
 		Expect(err).To(MatchError(ContainSubstring("connect ws://localhost:1/nope")))
 	})

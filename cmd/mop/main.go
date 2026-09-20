@@ -14,5 +14,5 @@ import (
 )
 
 func main() {
-	mop.Run(os.Args)
+	mop.Run(os.Args...)
 }

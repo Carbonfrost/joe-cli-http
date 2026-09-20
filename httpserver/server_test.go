@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -63,7 +63,7 @@ var _ = Describe("Server", func() {
 				),
 			}
 
-			_ = app.RunContext(context.Background(), nil)
+			_ = app.RunContext(context.Background())
 			Expect(fakeAct.ExecuteCallCount()).To(Equal(1))
 		})
 	})

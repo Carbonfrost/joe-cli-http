@@ -14,5 +14,5 @@ import (
 )
 
 func main() {
-	rug.Run(os.Args)
+	rug.Run(os.Args...)
 }

@@ -36,7 +36,7 @@ var _ = Describe("Mop", func() {
 		args, _ := cli.Split("mop")
 
 		// The help screen exits with the usage status
-		_ = app.RunContext(context.Background(), args)
+		_ = app.RunContext(context.Background(), args...)
 		Expect(out.String()).To(ContainSubstring("usage: mop"))
 	})
 })

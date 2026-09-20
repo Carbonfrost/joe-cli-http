@@ -38,7 +38,7 @@ var _ = Describe("Set actions", func() {
 		}
 		args, _ := cli.Split(command)
 
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(httpserver.Attributes(server)).To(WithTransform(transform, PointTo(MatchFields(IgnoreExtras, expected))))
 	},

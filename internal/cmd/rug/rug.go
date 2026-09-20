@@ -14,8 +14,8 @@ import (
 )
 
 // Run runs the rug app
-func Run(args []string) {
-	NewApp().Run(args)
+func Run(args ...string) {
+	NewApp().Run(args...)
 }
 
 // NewApp creates the app for rug

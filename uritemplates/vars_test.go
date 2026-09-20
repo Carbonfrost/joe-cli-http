@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -46,7 +46,7 @@ var _ = Describe("Vars", func() {
 			}
 
 			args, _ := cli.Split("app -V @vars.json")
-			err := app.RunContext(context.Background(), args)
+			err := app.RunContext(context.Background(), args...)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(*actual).To(HaveKeyWithValue("id", float64(420)))
 			Expect(*actual).To(HaveKeyWithValue("terms", []any{"asdf", "jkl;"}))

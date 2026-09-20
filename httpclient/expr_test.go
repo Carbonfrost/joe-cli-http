@@ -105,7 +105,7 @@ var _ = Describe("Expr", func() {
 			}
 			args, _ := cli.Split(fmt.Sprintf(`app --write-out="%v" "%v"`, expr, start))
 
-			err := app.RunContext(context.Background(), args)
+			err := app.RunContext(context.Background(), args...)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actual.String()).To(Equal(expected))
 		},

@@ -40,7 +40,7 @@ var _ = Describe("FetchAndPrint", func() {
 		}
 		args, _ := cli.Split(command)
 
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(actual).To(PointTo(MatchFields(IgnoreExtras, expected)))
 	},
@@ -70,7 +70,7 @@ var _ = Describe("FetchAndPrint", func() {
 		}
 
 		args, _ := cli.Split("_ https://example.com")
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out.String()).To(Equal(someJSON))
 	})
@@ -114,7 +114,7 @@ var _ = Describe("Set actions", func() {
 		}
 		args, _ := cli.Split(command)
 
-		err := app.RunContext(context.Background(), args)
+		err := app.RunContext(context.Background(), args...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(httpclient.Attributes(client)).To(WithTransform(transform, PointTo(MatchFields(IgnoreExtras, expected))))
 	},

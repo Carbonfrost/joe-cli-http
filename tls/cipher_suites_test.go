@@ -65,7 +65,7 @@ var _ = Describe("ListCiphers", func() {
 			Stdout: &buf,
 			Action: tls.ListCiphers(),
 		}
-		app.RunContext(context.Background(), []string{"app"})
+		app.RunContext(context.Background(), "app")
 		Expect(buf.String()).To(ContainSubstring("TLS_RSA_WITH_AES_128_CBC_SHA\tTLS 1.0, TLS 1.1, TLS 1.2"))
 	})
 
@@ -79,7 +79,7 @@ var _ = Describe("ListCurves", func() {
 			Stdout: &buf,
 			Action: tls.ListCurves(),
 		}
-		app.RunContext(context.Background(), []string{"app"})
+		app.RunContext(context.Background(), "app")
 		Expect(buf.String()).To(ContainSubstring("P521"))
 	})
 

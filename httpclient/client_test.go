@@ -1,4 +1,4 @@
-// Copyright 2023 The Joe-cli Authors. All rights reserved.
+// Copyright 2023, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -103,7 +103,7 @@ var _ = Describe("Do", func() {
 			Stdout: io.Discard,
 		}
 
-		err := app.RunContext(context.Background(), []string{"_"})
+		err := app.RunContext(context.Background(), "_")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(actual).To(HaveLen(2))
 

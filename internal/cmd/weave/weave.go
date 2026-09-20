@@ -13,8 +13,8 @@ import (
 )
 
 // Run runs the weave app
-func Run(args []string) {
-	NewApp().Run(args)
+func Run(args ...string) {
+	NewApp().Run(args...)
 }
 
 // NewApp creates the app for weave

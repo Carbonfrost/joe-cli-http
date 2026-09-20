@@ -1,4 +1,4 @@
-// Copyright 2025 The Joe-cli Authors. All rights reserved.
+// Copyright 2025, 2026 The Joe-cli Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -31,7 +31,7 @@ var _ = Describe("ExpandAndPrint", func() {
 			)})
 
 		arguments, _ := cli.Split(args)
-		err := app.RunContext(context.Background(), arguments)
+		err := app.RunContext(context.Background(), arguments...)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(strings.TrimSpace(capture.String())).To(Equal(expected))
 	},

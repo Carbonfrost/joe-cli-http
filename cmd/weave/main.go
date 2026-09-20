@@ -14,5 +14,5 @@ import (
 )
 
 func main() {
-	weave.Run(os.Args)
+	weave.Run(os.Args...)
 }

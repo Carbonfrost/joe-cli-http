@@ -14,5 +14,5 @@ import (
 )
 
 func main() {
-	wig.Run(os.Args)
+	wig.Run(os.Args...)
 }
