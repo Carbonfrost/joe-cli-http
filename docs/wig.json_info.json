@@ -87,6 +87,7 @@
                 "t"
             ],
             "helpText": "Specify a template parameters using abbreviated syntax or from a JSON file",
+            "category": "Request options",
             "usageText": "expr|@file",
             "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
             "data": {
@@ -366,6 +367,7 @@
                 "v"
             ],
             "helpText": "Display verbose output; can be used multiple times to increase detail",
+            "category": "Tracing and debugging options",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
             },
@@ -380,6 +382,7 @@
                 "HTTP_CLIENT_TRACE_LEVEL"
             ],
             "helpText": "Set which client operations are traced",
+            "category": "Tracing and debugging options",
             "usageText": "LEVEL",
             "data": {
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
@@ -853,5 +856,5 @@
     ],
     "helpText": "Provides access to the Go HTTP client with some cURL compatibility",
     "version": "(devel)",
-    "buildDate": "2026-09-04T16:20:15.230866-07:00"
+    "buildDate": "2026-09-20T19:55:51.099045918-07:00"
 }

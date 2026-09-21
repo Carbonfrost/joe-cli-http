@@ -25,6 +25,7 @@ const (
 	networkOptions  = "Network interface options"
 	requestOptions  = "Request options"
 	responseOptions = "Response options"
+	traceOptions    = "Tracing and debugging options"
 )
 
 var (
@@ -483,6 +484,7 @@ func SetVerbose() Action {
 			Uses:     cli.OptionalAlias("v"),
 			Value:    new(bool),
 			HelpText: "Display verbose output; can be used multiple times to increase detail",
+			Category: traceOptions,
 		},
 		bind.Action(WithTraceLevel, bind.Occurrences("", TraceOff, TraceOn, TraceVerbose, TraceVerbose, TraceDebug)),
 		tagged,
@@ -528,6 +530,7 @@ func SetURITemplateVars(v ...*uritemplates.Vars) Action {
 			UsageText: "expr|@file",
 			HelpText:  "Specify a template parameters using abbreviated syntax or from a JSON file",
 			Value:     value.JSON(&uritemplates.Vars{}),
+			Category:  requestOptions,
 			Options:   cli.EachOccurrence | cli.AllowFileReference,
 		},
 		bind.Action(WithURITemplateVars, bind.Exact(v...)),

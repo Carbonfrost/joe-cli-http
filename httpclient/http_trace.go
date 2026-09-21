@@ -233,6 +233,7 @@ func SetTraceLevel(s ...TraceLevel) Action {
 			Name:      "trace",
 			HelpText:  "Set which client operations are traced",
 			UsageText: "LEVEL",
+			Category:  traceOptions,
 			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
 		},
 		bind.Action(WithTraceLevel, bind.Exact(s...)),
