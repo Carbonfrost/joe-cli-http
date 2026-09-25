@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -62,6 +63,102 @@ const (
 	PreserveRequestFile DownloadMode = iota
 	PreserveRequestPath
 )
+
+// WithDownloadFile sets the downloader which handles the response, bypassing
+// the default factory
+func WithDownloadFile(d Downloader) Option {
+	return withAdapter((*Client).setDownloadFile, d)
+}
+
+// WithDownloaderFactory provides a factory for obtaining the downloader which
+// handles each response
+func WithDownloaderFactory(fn func(context.Context) (Downloader, error)) Option {
+	return withAdapter((*Client).setDownloaderFactory, fn)
+}
+
+// WithDefaultDownloaderFactory sets up the default downloader factory, which
+// provides a downloader that copies the response to stdout.  This option is
+// applied automatically by New.
+func WithDefaultDownloaderFactory() Option {
+	return optionFunc(func(c *Client) error {
+		c.downloader.SetFactory(defaultDownloaderFactory)
+		return nil
+	})
+}
+
+// WithDownloaderMiddleware adds downloader middleware.  Middleware is applied
+// to the downloader which is obtained from the factory (or which was set
+// directly), so it wraps the built-in behavior.
+func WithDownloaderMiddleware(d DownloaderMiddleware) Option {
+	return withAdapter((*Client).addDownloaderMiddleware, d)
+}
+
+// WithOutputFile downloads the response to the given file instead of
+// writing it to stdout
+func WithOutputFile(f string) Option {
+	return withAdapter((*Client).setOutputFile, f)
+}
+
+// WithNoOutput sets whether the response output is discarded
+func WithNoOutput(v bool) Option {
+	return withAdapter((*Client).setNoOutput, v)
+}
+
+// WithStripComponents removes the specified number of leading path elements
+// when downloading files
+func WithStripComponents(count int) Option {
+	return withAdapter((*Client).setStripComponents, count)
+}
+
+// NewDownloader creates (or returns the cached) downloader which handles each
+// response that the client obtains
+func (c *Client) NewDownloader(ctx context.Context) (Downloader, error) {
+	return c.downloader.New(ctx)
+}
+
+func (c *Client) setDownloadFile(v Downloader) error {
+	c.downloader.SetDiscrete(v)
+	return nil
+}
+
+func (c *Client) setDownloaderFactory(fn func(context.Context) (Downloader, error)) error {
+	c.downloader.SetFactory(fn)
+	return nil
+}
+
+func (c *Client) addDownloaderMiddleware(fn DownloaderMiddleware) error {
+	c.downloader.AddMiddleware(fn)
+	return nil
+}
+
+func (c *Client) setOutputFile(f string) error {
+	return c.setDownloadFile(NewFileDownloader(f, nil))
+}
+
+func (c *Client) setNoOutput(b bool) error {
+	if b {
+		return c.setDownloadFile(NewDownloaderTo(io.Discard))
+	}
+
+	// Revert to the downloader obtained from the factory
+	return c.setDownloadFile(nil)
+}
+
+func (c *Client) setStripComponents(count int) error {
+	if err := c.setDownloadFile(PreserveRequestPath); err != nil {
+		return err
+	}
+	return c.addDownloaderMiddleware(func(_ context.Context, d Downloader) Downloader {
+		return d.(DownloadMode).WithStripComponents(count)
+	})
+}
+
+func defaultDownloaderFactory(ctx context.Context) (Downloader, error) {
+	if c, ok := cli.TryFromContext(ctx); ok {
+		return NewDownloaderTo(c.Stdout), nil
+	}
+	return NewDownloaderTo(os.Stdout), nil
+}
 
 // WithStripComponents returns a Downloader which strips the specified
 // number of leading path elements from the resulting file name.  This

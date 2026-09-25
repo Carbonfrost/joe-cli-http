@@ -59,7 +59,9 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // needed, which is available from NewRequest.  How it gets created can be
 // customized with WithRequest or WithRequestFactory.  Likewise, the middleware
 // which processes each request is available from NewMiddleware and can be
-// customized with WithMiddleware or WithMiddlewareFactory.
+// customized with WithMiddleware or WithMiddlewareFactory.  The downloader
+// which handles each response is likewise available from NewDownloader and can
+// be customized with WithDownloadFile or WithDownloaderFactory.
 //
 // The cmd/wig package provides wig, which is a command line utility
 // very similar to this.
@@ -80,8 +82,7 @@ type Client struct {
 	// FailFast causes no response output in the case of a failure
 	FailFast bool
 
-	downloader           Downloader
-	downloaderMiddleware []DownloaderMiddleware
+	downloader cacheable[Downloader]
 
 	transport  cacheable[http.RoundTripper]
 	traceLevel TraceLevel
@@ -161,6 +162,7 @@ var (
 		WithUserAgent(defaultUserAgent()),
 		WithDefaultInterfaceResolver(),
 		WithDefaultTransportFactory(),
+		WithDefaultDownloaderFactory(),
 	}
 
 	// These don't have values within redirects
@@ -333,11 +335,6 @@ func WithTransportMiddleware(m TransportMiddleware) Option {
 	return withAdapter((*Client).addTransportMiddleware, m)
 }
 
-// WithDownloaderMiddleware adds downloader middleware
-func WithDownloaderMiddleware(d DownloaderMiddleware) Option {
-	return withAdapter((*Client).addDownloaderMiddleware, d)
-}
-
 // WithAuthenticatorMiddleware adds middleware for the authenticator
 func WithAuthenticatorMiddleware(fn AuthenticatorMiddleware) Option {
 	return withAdapter((*Client).addAuthenticatorMiddleware, fn)
@@ -437,31 +434,9 @@ func WithIncludeResponseHeaders(v bool) Option {
 	return withAdapter((*Client).setIncludeResponseHeaders, v)
 }
 
-// WithOutputFile downloads the response to the given file instead of
-// writing it to stdout
-func WithOutputFile(f string) Option {
-	return withAdapter((*Client).setOutputFile, f)
-}
-
-// WithNoOutput sets whether the response output is discarded
-func WithNoOutput(v bool) Option {
-	return withAdapter((*Client).setNoOutput, v)
-}
-
-// WithDownloadFile sets the downloader which handles the response
-func WithDownloadFile(d Downloader) Option {
-	return withAdapter((*Client).setDownloadFile, d)
-}
-
 // WithIntegrity validates the integrity of the download
 func WithIntegrity(i Integrity) Option {
 	return withAdapter((*Client).setIntegrity, i)
-}
-
-// WithStripComponents removes the specified number of leading path elements
-// when downloading files
-func WithStripComponents(count int) Option {
-	return withAdapter((*Client).setStripComponents, count)
 }
 
 // WithFailFast sets whether to fail with no output on HTTP errors
@@ -710,7 +685,12 @@ func (c *Client) handleDownload(ctx context.Context, response *Response) error {
 		return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
 	}
 
-	output, err := c.openDownload(ctx, response)
+	downloader, err := c.NewDownloader(ctx)
+	if err != nil {
+		return err
+	}
+
+	output, err := downloader.OpenDownload(ctx, response)
 	if err != nil {
 		return err
 	}
@@ -900,23 +880,8 @@ func (c *Client) setIncludeResponseHeaders(v bool) error {
 	return nil
 }
 
-func (c *Client) setOutputFile(f string) error {
-	return c.setDownloadFile(NewFileDownloader(f, nil))
-}
-
-func (c *Client) setNoOutput(b bool) error {
-	if b {
-		c.downloader = NewDownloaderTo(io.Discard)
-		return nil
-	}
-	c.downloader = nil
-	return nil
-}
-
 func (c *Client) setIntegrity(i Integrity) error {
-	return c.addDownloaderMiddleware(func(_ context.Context, downloader Downloader) Downloader {
-		return NewIntegrityDownloader(i, downloader)
-	})
+	return c.addDownloaderMiddleware(NewIntegrityDownloaderMiddleware(i))
 }
 
 func (c *Client) setPreferGoDialer(v bool) error {
@@ -993,11 +958,6 @@ func (c *Client) setDialKeepAlive(v time.Duration) error {
 	return nil
 }
 
-func (c *Client) setDownloadFile(v Downloader) error {
-	c.downloader = v
-	return nil
-}
-
 func (c *Client) setBodyContentString(body string) error {
 	c.BodyContent = NewRawContent([]byte(body))
 	return nil
@@ -1043,22 +1003,6 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 	return resolver.Resolve(context.Background(), v)
 }
 
-func (c *Client) openDownload(ctx context.Context, resp *Response) (io.WriteCloser, error) {
-	downloader := c.actualDownloader(ctx)
-	return downloader.OpenDownload(ctx, resp)
-}
-
-func (c *Client) actualDownloader(ctx context.Context) Downloader {
-	downloader := c.downloader
-	if c.downloader == nil {
-		downloader = NewDownloaderTo(cli.FromContext(ctx).Stdout)
-	}
-	for _, d := range c.downloaderMiddleware {
-		downloader = d(ctx, downloader)
-	}
-	return downloader
-}
-
 func (c *Client) setAuth(auth Authenticator) error {
 	c.auth = auth
 	return nil
@@ -1081,11 +1025,6 @@ func (c *Client) addAuthenticatorMiddleware(fn AuthenticatorMiddleware) error {
 	return nil
 }
 
-func (c *Client) addDownloaderMiddleware(fn DownloaderMiddleware) error {
-	c.downloaderMiddleware = append(c.downloaderMiddleware, fn)
-	return nil
-}
-
 func (c *Client) addQueryString(n *cli.NameValue) error {
 	c.queryString.Add(n.Name, n.Value)
 	return nil
@@ -1104,15 +1043,6 @@ func (c *Client) setWriteOut(w Expr) error {
 func (c *Client) setWriteErr(w Expr) error {
 	c.writeErrExpr = w
 	return nil
-}
-
-func (c *Client) setStripComponents(count int) error {
-	if err := c.setDownloadFile(PreserveRequestPath); err != nil {
-		return err
-	}
-	return c.addDownloaderMiddleware(func(_ context.Context, d Downloader) Downloader {
-		return d.(DownloadMode).WithStripComponents(count)
-	})
 }
 
 func (c *Client) setFailFast(v bool) error {

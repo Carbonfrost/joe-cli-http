@@ -66,15 +66,23 @@ func Attributes(c *Client) *ClientAttributes {
 			}
 			return m
 		}(),
-		IncludeResponseHeaders: c.IncludeResponseHeaders,
-		CheckRedirect:          c.CheckRedirect,
-		Transport:              c.transport.Discrete(),
-		Request:                newRequestAttributes(mustNewRequest(c)),
-		Downloader:             c.downloader,
-		DownloaderWithMiddleware: c.actualDownloader(&cli.Context{
-			Stdout: cli.NewWriter(new(bytes.Buffer)),
-		}),
+		IncludeResponseHeaders:   c.IncludeResponseHeaders,
+		CheckRedirect:            c.CheckRedirect,
+		Transport:                c.transport.Discrete(),
+		Request:                  newRequestAttributes(mustNewRequest(c)),
+		Downloader:               c.downloader.Discrete(),
+		DownloaderWithMiddleware: mustNewDownloader(c),
 	}
+}
+
+func mustNewDownloader(c *Client) Downloader {
+	d, err := c.NewDownloader(&cli.Context{
+		Stdout: cli.NewWriter(new(bytes.Buffer)),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 func mustNewRequest(c *Client) *http.Request {

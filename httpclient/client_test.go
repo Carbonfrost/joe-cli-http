@@ -5,7 +5,10 @@
 package httpclient_test
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -74,6 +77,78 @@ var _ = Describe("Client", func() {
 			Expect(newRequest(s).Header).To(HaveKeyWithValue("Link", []string{"Something"}))
 		})
 	})
+
+	Describe("NewDownloader", func() {
+		It("downloads to the context stdout by default", func() {
+			var buf bytes.Buffer
+			s := httpclient.New()
+
+			output, err := newDownloader(s, &buf).OpenDownload(context.Background(), nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			fmt.Fprint(output, "hello")
+			Expect(buf.String()).To(Equal("hello"))
+		})
+
+		It("caches the downloader", func() {
+			var buf bytes.Buffer
+			s := httpclient.New()
+
+			Expect(newDownloader(s, &buf)).To(BeIdenticalTo(newDownloader(s, &buf)))
+		})
+
+		It("uses the downloader from WithDownloaderFactory", func() {
+			var buf bytes.Buffer
+			expected := httpclient.NewDownloaderTo(io.Discard)
+			s := httpclient.New(httpclient.WithDownloaderFactory(
+				func(context.Context) (httpclient.Downloader, error) {
+					return expected, nil
+				}))
+
+			Expect(newDownloader(s, &buf)).To(BeIdenticalTo(expected))
+		})
+
+		It("prefers the downloader from WithDownloadFile over the factory", func() {
+			var buf bytes.Buffer
+			expected := httpclient.NewDownloaderTo(io.Discard)
+			s := httpclient.New(
+				httpclient.WithDownloaderFactory(func(context.Context) (httpclient.Downloader, error) {
+					return httpclient.NewDownloaderTo(&buf), nil
+				}),
+				httpclient.WithDownloadFile(expected),
+			)
+
+			Expect(newDownloader(s, &buf)).To(BeIdenticalTo(expected))
+		})
+
+		It("applies middleware to the downloader", func() {
+			var actual httpclient.Downloader
+			expected := httpclient.NewDownloaderTo(io.Discard)
+			var buf bytes.Buffer
+
+			s := httpclient.New(
+				httpclient.WithDownloadFile(expected),
+				httpclient.WithDownloaderMiddleware(func(_ context.Context, d httpclient.Downloader) httpclient.Downloader {
+					actual = d
+					return httpclient.NewDownloaderTo(&buf)
+				}),
+			)
+
+			Expect(newDownloader(s, &buf)).NotTo(BeIdenticalTo(expected))
+			Expect(actual).To(BeIdenticalTo(expected))
+		})
+
+		It("reports the error from the factory", func() {
+			var buf bytes.Buffer
+			s := httpclient.New(httpclient.WithDownloaderFactory(
+				func(context.Context) (httpclient.Downloader, error) {
+					return nil, errors.New("not today")
+				}))
+
+			_, err := s.NewDownloader(&cli.Context{Stdout: cli.NewWriter(&buf)})
+			Expect(err).To(MatchError("not today"))
+		})
+	})
 })
 
 var _ = Describe("Do", func() {
@@ -122,4 +197,12 @@ func newRequest(c *httpclient.Client) *http.Request {
 	r, err := c.NewRequest(context.Background())
 	Expect(err).NotTo(HaveOccurred())
 	return r
+}
+
+// newDownloader obtains the downloader, using a context whose stdout is the
+// given buffer so that the default downloader is observable
+func newDownloader(c *httpclient.Client, out io.Writer) httpclient.Downloader {
+	d, err := c.NewDownloader(&cli.Context{Stdout: cli.NewWriter(out)})
+	Expect(err).NotTo(HaveOccurred())
+	return d
 }
