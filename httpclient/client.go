@@ -61,7 +61,9 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 // which processes each request is available from NewMiddleware and can be
 // customized with WithMiddleware or WithMiddlewareFactory.  The downloader
 // which handles each response is likewise available from NewDownloader and can
-// be customized with WithDownloadFile or WithDownloaderFactory.
+// be customized with WithDownloadFile or WithDownloaderFactory. The authenticator
+// is available from NewAuthenticator and can be customized with WithAuth,
+// WithAuthenticatorFactory, or WithAuthenticatorMiddleware.
 //
 // The cmd/wig package provides wig, which is a command line utility
 // very similar to this.
@@ -91,8 +93,7 @@ type Client struct {
 	interfaceResolver cacheable[InterfaceResolver]
 	dialer            *net.Dialer
 	dnsDialer         *net.Dialer
-	auth              Authenticator
-	authMiddleware    []AuthenticatorMiddleware
+	auth              cacheable[Authenticator]
 
 	request    cacheable[*http.Request]
 	middleware cacheable[Middleware]
@@ -159,6 +160,7 @@ var (
 		WithDefaultAction(),
 		WithDefaultRequestFactory(),
 		WithDefaultMiddlewareFactory(),
+		WithDefaultAuthenticatorFactory(),
 		WithUserAgent(defaultUserAgent()),
 		WithDefaultInterfaceResolver(),
 		WithDefaultTransportFactory(),
@@ -219,19 +221,38 @@ func WithDefaultAction() Option {
 	return optionFunc(func(c *Client) error {
 		c.Action = cli.Pipeline(
 			FlagsAndArgs(),
-			cli.Before(cli.Pipeline(
-				cli.RegisterTemplateFunc("RedactHeader", c.redactHeader),
-				registerFallbackFuncs(),
-				cli.RegisterTemplate("HTTPTrace", outputTemplateText),
-			)),
+			TemplateFuncs(),
+			Templates(),
 			ContextValue(c),
-			Authenticators,
+			AuthenticatorRegistry,
 			PromptForCredentials(),
 			joetls.New(),
 			WithDefaultTLSConfigFactory(),
 		)
 		return nil
 	})
+}
+
+// TemplateFuncs provides access to the template functions
+// used by the client. This provides:
+//   - RedactHeader
+func TemplateFuncs() Action {
+	return cli.Pipeline(
+		cli.Before(cli.ActionOf(func(ctx *cli.Context) error {
+			c := FromContext(ctx)
+			return ctx.RegisterTemplateFunc("RedactHeader", c.redactHeader)
+		})),
+		cli.Before(registerFallbackFuncs()),
+	)
+}
+
+// Templates provides access to the templates used by the client.
+// This provides:
+//   - HTTPTrace
+func Templates() Action {
+	return cli.Before(cli.Pipeline(
+		cli.RegisterTemplate("HTTPTrace", outputTemplateText),
+	))
 }
 
 // WithRequest sets the request to use directly, bypassing the default factory.
@@ -494,6 +515,19 @@ func WithAuth(auth Authenticator) Option {
 	return withAdapter((*Client).setAuth, auth)
 }
 
+// WithAuthenticatorFactory provides a factory for obtaining the authenticator
+// used on the request.  Middleware which is added with
+// WithAuthenticatorMiddleware is still applied to it.
+func WithAuthenticatorFactory(fn func(context.Context) (Authenticator, error)) Option {
+	return withAdapter((*Client).setAuthFactory, fn)
+}
+
+// WithDefaultAuthenticatorFactory sets up the default authenticator factory,
+// which provides NoAuth.  This option is applied automatically by New.
+func WithDefaultAuthenticatorFactory() Option {
+	return WithAuthenticatorFactory(defaultAuthenticatorFactory)
+}
+
 // WithUser sets the user and password used in authentication
 func WithUser(user *UserInfo) Option {
 	return withAdapter((*Client).setUser, user)
@@ -717,10 +751,9 @@ func (c *Client) handleDownload(ctx context.Context, response *Response) error {
 }
 
 func (c *Client) applyAuth(r *http.Request) error {
-	ctx := r.Context()
-	auth := c.Authenticator()
-	for _, a := range c.authMiddleware {
-		auth = a(ctx, auth)
+	auth, err := c.NewAuthenticator(r.Context())
+	if err != nil {
+		return err
 	}
 	return auth.Authenticate(r, c.UserInfo)
 }
@@ -757,12 +790,10 @@ func (c *Client) NewTLSConfig(ctx context.Context) (*gotls.Config, error) {
 	return c.tls.New(ctx)
 }
 
-// Authenticator obtains the authenticator which has been configured
-func (c *Client) Authenticator() Authenticator {
-	if c.auth == nil {
-		return NoAuth
-	}
-	return c.auth
+// NewAuthenticator creates (or returns the cached) authenticator for the
+// client, which has the authenticator middleware applied to it
+func (c *Client) NewAuthenticator(ctx context.Context) (Authenticator, error) {
+	return c.auth.New(ctx)
 }
 
 func (c *Client) setAction(value cli.Action) error {
@@ -1004,7 +1035,12 @@ func (c *Client) resolveInterface(v string) (*net.TCPAddr, error) {
 }
 
 func (c *Client) setAuth(auth Authenticator) error {
-	c.auth = auth
+	c.auth.SetDiscrete(auth)
+	return nil
+}
+
+func (c *Client) setAuthFactory(fn func(context.Context) (Authenticator, error)) error {
+	c.auth.SetFactory(fn)
 	return nil
 }
 
@@ -1021,7 +1057,7 @@ func (c *Client) addMiddleware(m Middleware) error {
 }
 
 func (c *Client) addAuthenticatorMiddleware(fn AuthenticatorMiddleware) error {
-	c.authMiddleware = append(c.authMiddleware, fn)
+	c.auth.AddMiddleware(fn)
 	return nil
 }
 
@@ -1068,6 +1104,10 @@ func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
 
 	e.outExpr.Fprint(e.outRender, exp)
 	e.errExpr.Fprint(e.errRender, exp)
+}
+
+func defaultAuthenticatorFactory(_ context.Context) (Authenticator, error) {
+	return NoAuth, nil
 }
 
 func defaultRequestFactory(_ context.Context) (*http.Request, error) {

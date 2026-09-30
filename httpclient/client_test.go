@@ -149,6 +149,50 @@ var _ = Describe("Client", func() {
 			Expect(err).To(MatchError("not today"))
 		})
 	})
+
+	Describe("NewAuthenticator", func() {
+		It("defaults to NoAuth", func() {
+			s := httpclient.New()
+			auth, err := s.NewAuthenticator(context.Background())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(auth).To(Equal(httpclient.NoAuth))
+		})
+
+		It("uses the authenticator from WithAuth", func() {
+			s := httpclient.New(httpclient.WithAuth(httpclient.BasicAuth))
+			auth, _ := s.NewAuthenticator(context.Background())
+
+			Expect(auth).To(Equal(httpclient.BasicAuth))
+		})
+
+		It("uses the authenticator from WithAuthenticatorFactory", func() {
+			expected := httpclient.NewBearerTokenAuthenticator("TOKEN")
+			s := httpclient.New(httpclient.WithAuthenticatorFactory(func(context.Context) (httpclient.Authenticator, error) {
+				return expected, nil
+			}))
+			auth, _ := s.NewAuthenticator(context.Background())
+
+			Expect(auth).To(BeIdenticalTo(expected))
+		})
+
+		It("applies the authenticator middleware and caches the result", func() {
+			var calls int
+			s := httpclient.New(
+				httpclient.WithAuth(httpclient.BasicAuth),
+				httpclient.WithAuthenticatorMiddleware(func(ctx context.Context, a httpclient.Authenticator) httpclient.Authenticator {
+					calls++
+					return httpclient.WithPromptForCredentials(ctx, a)
+				}),
+			)
+			first, _ := s.NewAuthenticator(context.Background())
+			second, _ := s.NewAuthenticator(context.Background())
+
+			Expect(first).NotTo(Equal(httpclient.BasicAuth))
+			Expect(first).To(BeIdenticalTo(second))
+			Expect(calls).To(Equal(1))
+		})
+	})
 })
 
 var _ = Describe("Do", func() {

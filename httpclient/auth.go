@@ -49,21 +49,24 @@ var (
 		"BASIC",
 	}
 
-	// Authenticators provides the default authenticator registry.
-	Authenticators = &provider.Registry{
+	// AuthenticatorRegistry provides the default authenticator registry.
+	AuthenticatorRegistry = &provider.Registry{
 		Name: "authenticators",
 		Providers: provider.Details{
 			"none": {
-				Value: NoAuth,
+				Value:    NoAuth,
+				HelpText: "Disable authentication",
 			},
 			"basic": {
-				Value: BasicAuth,
+				Value:    BasicAuth,
+				HelpText: "Use basic auth",
 			},
 			"bearer": {
 				Factory: provider.FactoryOf(newBearerAuthOpts),
 				Defaults: map[string]any{
 					"header": "Authentication",
 				},
+				HelpText: "Use bearer token auth",
 			},
 		},
 	}
@@ -74,7 +77,7 @@ func NewAuthenticator(name string, opts map[string]string) (Authenticator, error
 		return NoAuth, nil
 	}
 
-	a1, err := Authenticators.New(name, opts)
+	a1, err := AuthenticatorRegistry.New(name, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -212,10 +215,20 @@ func SetAuth(v ...*provider.Value) Action {
 				Registry: "authenticators",
 			},
 		},
+		authProviderHelpText(),
 		bind.Action(WithAuth, provider.Bind[Authenticator]()),
 		cli.Accessory("-", taggedProviderArgumentFlag),
 		tagged,
 	)
+}
+
+func authProviderHelpText() Action {
+	var result []any
+	for _, auth := range AuthenticatorRegistry.ProviderNames() {
+		detail, _ := AuthenticatorRegistry.LookupProvider(auth)
+		result = append(result, cli.ValueHelpText(auth, detail.HelpText))
+	}
+	return cli.Pipeline(result...)
 }
 
 func taggedProviderArgumentFlag(v *provider.Value) cli.Prototype {
