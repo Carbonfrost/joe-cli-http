@@ -234,11 +234,30 @@ func SetTraceLevel(s ...TraceLevel) Action {
 			HelpText:  "Set which client operations are traced",
 			UsageText: "LEVEL",
 			Category:  traceOptions,
-			EnvVars:   []string{"HTTP_CLIENT_TRACE_LEVEL"},
+			Uses: cli.Pipeline(
+				cli.Enum(untyped(traceString[:])...),
+				cli.ValueHelpText("debug, verbose, on, off", "Activate built-in trace level"),
+				cli.ValueHelpText("connections", "Trace network connections"),
+				cli.ValueHelpText("requestHeaders, requestBody", "Print request headers and body"),
+				cli.ValueHelpText("responseHeaders", "Print response headers"),
+				cli.ValueHelpText("dns", "Report name resolution activity"),
+				cli.ValueHelpText("tls", "Print information about certs and TLS"),
+				cli.ValueHelpText("http1xx, responseStatus", "Print HTTP status codes"),
+				cli.ValueHelpText("redirects", "Track each request redirect"),
+			),
+			EnvVars: []string{"HTTP_CLIENT_TRACE_LEVEL"},
 		},
 		bind.Action(WithTraceLevel, bind.Exact(s...)),
 		tagged,
 	)
+}
+
+func untyped[T any](items []T) []any {
+	result := make([]any, len(items))
+	for i := range items {
+		result[i] = items[i]
+	}
+	return result
 }
 
 func (l *TraceLevel) Set(arg string) error {
