@@ -9,25 +9,26 @@ import (
 type FakeHandler struct {
 	ServeHTTPStub        func(http.ResponseWriter, *http.Request)
 	serveHTTPMutex       sync.RWMutex
-	serveHTTPArgsForCall []struct {
-		arg1 http.ResponseWriter
-		arg2 *http.Request
-	}
-	invocations      map[string][][]interface{}
-	invocationsMutex sync.RWMutex
+	serveHTTPArgsForCall []FakeHandlerServeHTTPArgs
+	invocations          map[string][][]interface{}
+	callOrder            []string
+	invocationsMutex     sync.RWMutex
+}
+
+// FakeHandlerServeHTTPArgs holds the arguments of one call to ServeHTTP.
+type FakeHandlerServeHTTPArgs struct {
+	Arg1 http.ResponseWriter
+	Arg2 *http.Request
 }
 
 func (fake *FakeHandler) ServeHTTP(arg1 http.ResponseWriter, arg2 *http.Request) {
 	fake.serveHTTPMutex.Lock()
-	fake.serveHTTPArgsForCall = append(fake.serveHTTPArgsForCall, struct {
-		arg1 http.ResponseWriter
-		arg2 *http.Request
-	}{arg1, arg2})
+	fake.serveHTTPArgsForCall = append(fake.serveHTTPArgsForCall, FakeHandlerServeHTTPArgs{arg1, arg2})
 	stub := fake.ServeHTTPStub
 	fake.recordInvocation("ServeHTTP", []interface{}{arg1, arg2})
 	fake.serveHTTPMutex.Unlock()
 	if stub != nil {
-		fake.ServeHTTPStub(arg1, arg2)
+		stub(arg1, arg2)
 	}
 }
 
@@ -47,7 +48,15 @@ func (fake *FakeHandler) ServeHTTPArgsForCall(i int) (http.ResponseWriter, *http
 	fake.serveHTTPMutex.RLock()
 	defer fake.serveHTTPMutex.RUnlock()
 	argsForCall := fake.serveHTTPArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.Arg1, argsForCall.Arg2
+}
+
+func (fake *FakeHandler) ServeHTTPArgs() []FakeHandlerServeHTTPArgs {
+	fake.serveHTTPMutex.RLock()
+	defer fake.serveHTTPMutex.RUnlock()
+	args := make([]FakeHandlerServeHTTPArgs, len(fake.serveHTTPArgsForCall))
+	copy(args, fake.serveHTTPArgsForCall)
+	return args
 }
 
 func (fake *FakeHandler) Invocations() map[string][][]interface{} {
@@ -60,9 +69,18 @@ func (fake *FakeHandler) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *FakeHandler) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *FakeHandler) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

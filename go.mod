@@ -7,7 +7,7 @@ module github.com/Carbonfrost/joe-cli-http
 go 1.27.0
 
 require (
-	github.com/Carbonfrost/joe-cli v0.22.0
+	github.com/Carbonfrost/joe-cli v0.24.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.43.1
@@ -32,16 +32,16 @@ require (
 	github.com/go-toolsmith/strparse v1.1.0 // indirect
 	github.com/go-toolsmith/typep v1.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260906184651-6331bc6350fe // indirect
+	github.com/google/pprof v0.0.0-20261003200830-ebaad5f31b4d // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/juju/ansiterm v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.13.0 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.14.0 // indirect
 	github.com/mgechev/dots v1.0.0 // indirect
-	github.com/mgechev/revive v1.16.0 // indirect
+	github.com/mgechev/revive v1.17.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.5 // indirect
@@ -57,7 +57,7 @@ require (
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.50.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	honnef.co/go/tools v0.8.1 // indirect
 )
 

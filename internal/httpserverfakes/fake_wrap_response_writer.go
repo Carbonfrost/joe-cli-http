@@ -10,9 +10,8 @@ import (
 type FakeWrapResponseWriter struct {
 	BytesWrittenStub        func() int
 	bytesWrittenMutex       sync.RWMutex
-	bytesWrittenArgsForCall []struct {
-	}
-	bytesWrittenReturns struct {
+	bytesWrittenArgsForCall []struct{}
+	bytesWrittenReturns     struct {
 		result1 int
 	}
 	bytesWrittenReturnsOnCall map[int]struct {
@@ -20,9 +19,8 @@ type FakeWrapResponseWriter struct {
 	}
 	HeaderStub        func() http.Header
 	headerMutex       sync.RWMutex
-	headerArgsForCall []struct {
-	}
-	headerReturns struct {
+	headerArgsForCall []struct{}
+	headerReturns     struct {
 		result1 http.Header
 	}
 	headerReturnsOnCall map[int]struct {
@@ -30,24 +28,20 @@ type FakeWrapResponseWriter struct {
 	}
 	StatusStub        func() int
 	statusMutex       sync.RWMutex
-	statusArgsForCall []struct {
-	}
-	statusReturns struct {
+	statusArgsForCall []struct{}
+	statusReturns     struct {
 		result1 int
 	}
 	statusReturnsOnCall map[int]struct {
 		result1 int
 	}
-	TeeStub        func(io.Writer)
-	teeMutex       sync.RWMutex
-	teeArgsForCall []struct {
-		arg1 io.Writer
-	}
+	TeeStub           func(io.Writer)
+	teeMutex          sync.RWMutex
+	teeArgsForCall    []FakeWrapResponseWriterTeeArgs
 	UnwrapStub        func() http.ResponseWriter
 	unwrapMutex       sync.RWMutex
-	unwrapArgsForCall []struct {
-	}
-	unwrapReturns struct {
+	unwrapArgsForCall []struct{}
+	unwrapReturns     struct {
 		result1 http.ResponseWriter
 	}
 	unwrapReturnsOnCall map[int]struct {
@@ -55,10 +49,8 @@ type FakeWrapResponseWriter struct {
 	}
 	WriteStub        func([]byte) (int, error)
 	writeMutex       sync.RWMutex
-	writeArgsForCall []struct {
-		arg1 []byte
-	}
-	writeReturns struct {
+	writeArgsForCall []FakeWrapResponseWriterWriteArgs
+	writeReturns     struct {
 		result1 int
 		result2 error
 	}
@@ -68,18 +60,31 @@ type FakeWrapResponseWriter struct {
 	}
 	WriteHeaderStub        func(int)
 	writeHeaderMutex       sync.RWMutex
-	writeHeaderArgsForCall []struct {
-		arg1 int
-	}
-	invocations      map[string][][]interface{}
-	invocationsMutex sync.RWMutex
+	writeHeaderArgsForCall []FakeWrapResponseWriterWriteHeaderArgs
+	invocations            map[string][][]interface{}
+	callOrder              []string
+	invocationsMutex       sync.RWMutex
+}
+
+// FakeWrapResponseWriterTeeArgs holds the arguments of one call to Tee.
+type FakeWrapResponseWriterTeeArgs struct {
+	Arg1 io.Writer
+}
+
+// FakeWrapResponseWriterWriteArgs holds the arguments of one call to Write.
+type FakeWrapResponseWriterWriteArgs struct {
+	Arg1 []byte
+}
+
+// FakeWrapResponseWriterWriteHeaderArgs holds the arguments of one call to WriteHeader.
+type FakeWrapResponseWriterWriteHeaderArgs struct {
+	Arg1 int
 }
 
 func (fake *FakeWrapResponseWriter) BytesWritten() int {
 	fake.bytesWrittenMutex.Lock()
 	ret, specificReturn := fake.bytesWrittenReturnsOnCall[len(fake.bytesWrittenArgsForCall)]
-	fake.bytesWrittenArgsForCall = append(fake.bytesWrittenArgsForCall, struct {
-	}{})
+	fake.bytesWrittenArgsForCall = append(fake.bytesWrittenArgsForCall, struct{}{})
 	stub := fake.BytesWrittenStub
 	fakeReturns := fake.bytesWrittenReturns
 	fake.recordInvocation("BytesWritten", []interface{}{})
@@ -131,8 +136,7 @@ func (fake *FakeWrapResponseWriter) BytesWrittenReturnsOnCall(i int, result1 int
 func (fake *FakeWrapResponseWriter) Header() http.Header {
 	fake.headerMutex.Lock()
 	ret, specificReturn := fake.headerReturnsOnCall[len(fake.headerArgsForCall)]
-	fake.headerArgsForCall = append(fake.headerArgsForCall, struct {
-	}{})
+	fake.headerArgsForCall = append(fake.headerArgsForCall, struct{}{})
 	stub := fake.HeaderStub
 	fakeReturns := fake.headerReturns
 	fake.recordInvocation("Header", []interface{}{})
@@ -184,8 +188,7 @@ func (fake *FakeWrapResponseWriter) HeaderReturnsOnCall(i int, result1 http.Head
 func (fake *FakeWrapResponseWriter) Status() int {
 	fake.statusMutex.Lock()
 	ret, specificReturn := fake.statusReturnsOnCall[len(fake.statusArgsForCall)]
-	fake.statusArgsForCall = append(fake.statusArgsForCall, struct {
-	}{})
+	fake.statusArgsForCall = append(fake.statusArgsForCall, struct{}{})
 	stub := fake.StatusStub
 	fakeReturns := fake.statusReturns
 	fake.recordInvocation("Status", []interface{}{})
@@ -236,14 +239,12 @@ func (fake *FakeWrapResponseWriter) StatusReturnsOnCall(i int, result1 int) {
 
 func (fake *FakeWrapResponseWriter) Tee(arg1 io.Writer) {
 	fake.teeMutex.Lock()
-	fake.teeArgsForCall = append(fake.teeArgsForCall, struct {
-		arg1 io.Writer
-	}{arg1})
+	fake.teeArgsForCall = append(fake.teeArgsForCall, FakeWrapResponseWriterTeeArgs{arg1})
 	stub := fake.TeeStub
 	fake.recordInvocation("Tee", []interface{}{arg1})
 	fake.teeMutex.Unlock()
 	if stub != nil {
-		fake.TeeStub(arg1)
+		stub(arg1)
 	}
 }
 
@@ -263,14 +264,21 @@ func (fake *FakeWrapResponseWriter) TeeArgsForCall(i int) io.Writer {
 	fake.teeMutex.RLock()
 	defer fake.teeMutex.RUnlock()
 	argsForCall := fake.teeArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *FakeWrapResponseWriter) TeeArgs() []FakeWrapResponseWriterTeeArgs {
+	fake.teeMutex.RLock()
+	defer fake.teeMutex.RUnlock()
+	args := make([]FakeWrapResponseWriterTeeArgs, len(fake.teeArgsForCall))
+	copy(args, fake.teeArgsForCall)
+	return args
 }
 
 func (fake *FakeWrapResponseWriter) Unwrap() http.ResponseWriter {
 	fake.unwrapMutex.Lock()
 	ret, specificReturn := fake.unwrapReturnsOnCall[len(fake.unwrapArgsForCall)]
-	fake.unwrapArgsForCall = append(fake.unwrapArgsForCall, struct {
-	}{})
+	fake.unwrapArgsForCall = append(fake.unwrapArgsForCall, struct{}{})
 	stub := fake.UnwrapStub
 	fakeReturns := fake.unwrapReturns
 	fake.recordInvocation("Unwrap", []interface{}{})
@@ -327,9 +335,7 @@ func (fake *FakeWrapResponseWriter) Write(arg1 []byte) (int, error) {
 	}
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
-	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
-		arg1 []byte
-	}{arg1Copy})
+	fake.writeArgsForCall = append(fake.writeArgsForCall, FakeWrapResponseWriterWriteArgs{arg1Copy})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
 	fake.recordInvocation("Write", []interface{}{arg1Copy})
@@ -359,7 +365,15 @@ func (fake *FakeWrapResponseWriter) WriteArgsForCall(i int) []byte {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *FakeWrapResponseWriter) WriteArgs() []FakeWrapResponseWriterWriteArgs {
+	fake.writeMutex.RLock()
+	defer fake.writeMutex.RUnlock()
+	args := make([]FakeWrapResponseWriterWriteArgs, len(fake.writeArgsForCall))
+	copy(args, fake.writeArgsForCall)
+	return args
 }
 
 func (fake *FakeWrapResponseWriter) WriteReturns(result1 int, result2 error) {
@@ -390,14 +404,12 @@ func (fake *FakeWrapResponseWriter) WriteReturnsOnCall(i int, result1 int, resul
 
 func (fake *FakeWrapResponseWriter) WriteHeader(arg1 int) {
 	fake.writeHeaderMutex.Lock()
-	fake.writeHeaderArgsForCall = append(fake.writeHeaderArgsForCall, struct {
-		arg1 int
-	}{arg1})
+	fake.writeHeaderArgsForCall = append(fake.writeHeaderArgsForCall, FakeWrapResponseWriterWriteHeaderArgs{arg1})
 	stub := fake.WriteHeaderStub
 	fake.recordInvocation("WriteHeader", []interface{}{arg1})
 	fake.writeHeaderMutex.Unlock()
 	if stub != nil {
-		fake.WriteHeaderStub(arg1)
+		stub(arg1)
 	}
 }
 
@@ -417,7 +429,15 @@ func (fake *FakeWrapResponseWriter) WriteHeaderArgsForCall(i int) int {
 	fake.writeHeaderMutex.RLock()
 	defer fake.writeHeaderMutex.RUnlock()
 	argsForCall := fake.writeHeaderArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *FakeWrapResponseWriter) WriteHeaderArgs() []FakeWrapResponseWriterWriteHeaderArgs {
+	fake.writeHeaderMutex.RLock()
+	defer fake.writeHeaderMutex.RUnlock()
+	args := make([]FakeWrapResponseWriterWriteHeaderArgs, len(fake.writeHeaderArgsForCall))
+	copy(args, fake.writeHeaderArgsForCall)
+	return args
 }
 
 func (fake *FakeWrapResponseWriter) Invocations() map[string][][]interface{} {
@@ -430,9 +450,18 @@ func (fake *FakeWrapResponseWriter) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *FakeWrapResponseWriter) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *FakeWrapResponseWriter) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}
