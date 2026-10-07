@@ -209,12 +209,12 @@ func ExpandAndPrint() Action {
 func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
-			{Uses: SetURITemplateVar()},
-			{Uses: SetURITemplateVars()},
-			{Uses: SetPartialExpand()},
+			idFlag(IDURITemplateVar, SetURITemplateVar()),
+			idFlag(IDURITemplateVars, SetURITemplateVars()),
+			idFlag(IDPartialExpand, SetPartialExpand()),
 		}...),
 
-		cli.AddArg(nil, SetTemplate()),
+		cli.AddArg(nil, cli.Pipeline(SetTemplate(), IDAnnotation(IDTemplate))),
 	)
 }
 

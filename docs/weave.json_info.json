@@ -41,6 +41,7 @@
             "helpText": "Sets the server {HOST} name to use",
             "category": "Listener options",
             "data": {
+                "ID": "Hostname",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -52,6 +53,7 @@
             "helpText": "Sets the server {ADDRESS} to use",
             "category": "Listener options",
             "data": {
+                "ID": "Addr",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -66,6 +68,7 @@
             "helpText": "Sets the server {PORT} that will be used",
             "category": "Listener options",
             "data": {
+                "ID": "Port",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -78,6 +81,7 @@
             "helpText": "Sets the maximum {DURATION} for reading the entire request",
             "category": "Advanced options",
             "data": {
+                "ID": "ReadTimeout",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -90,6 +94,7 @@
             "helpText": "Sets the amount of {TIME} allowed to read request headers",
             "category": "Advanced options",
             "data": {
+                "ID": "ReadHeaderTimeout",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -102,6 +107,7 @@
             "helpText": "Sets the amount of {TIME} allowed to write response",
             "category": "Advanced options",
             "data": {
+                "ID": "WriteTimeout",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -114,6 +120,7 @@
             "helpText": "Sets the amount of {TIME} allowed to read request headers",
             "category": "Advanced options",
             "data": {
+                "ID": "IdleTimeout",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -126,6 +133,7 @@
             "helpText": "Specify the maximum header bytes allowed for headers",
             "category": "Advanced options",
             "data": {
+                "ID": "MaxHeaderBytes",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -142,6 +150,7 @@
             "category": "Server options",
             "options": "MUST_EXIST",
             "data": {
+                "ID": "StaticDirectory",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -153,6 +162,7 @@
             "helpText": "When set, don't display directory listings",
             "category": "Server options",
             "data": {
+                "ID": "HideDirectoryListings",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -164,6 +174,7 @@
             "helpText": "When set, open the default Web browser when the server is ready",
             "category": "Server options",
             "data": {
+                "ID": "OpenInBrowser",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -180,6 +191,7 @@
             "category": "Advanced options",
             "options": "NO",
             "data": {
+                "ID": "AccessLog",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -194,6 +206,7 @@
             "helpText": "Set value of the Server response header",
             "category": "Advanced options",
             "data": {
+                "ID": "ServerHeader",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -206,6 +219,7 @@
             "category": "Listener options",
             "options": "MUST_EXIST",
             "data": {
+                "ID": "TLSCertFile",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -218,6 +232,7 @@
             "category": "Listener options",
             "options": "MUST_EXIST",
             "data": {
+                "ID": "TLSKeyFile",
                 "Source": "github.com/Carbonfrost/joe-cli-http/httpserver"
             },
             "value": {
@@ -303,5 +318,5 @@
     ],
     "helpText": "Provides access to a simple Go HTTP server for files and proxy handling",
     "version": "(devel)",
-    "buildDate": "2026-09-04T16:20:14.481632-07:00"
+    "buildDate": "2026-10-06T22:20:54.334816413-07:00"
 }

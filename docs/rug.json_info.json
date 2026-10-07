@@ -28,6 +28,7 @@
             "helpText": "Specify a value used to fill the template",
             "options": "EACH_OCCURRENCE",
             "data": {
+                "ID": "URITemplateVar",
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
             },
             "value": {}
@@ -41,6 +42,7 @@
             "usageText": "expr|@file",
             "options": "EACH_OCCURRENCE, ALLOW_FILE_REFERENCE",
             "data": {
+                "ID": "URITemplateVars",
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
             },
             "value": {}
@@ -52,6 +54,7 @@
             ],
             "helpText": "When set, partially expand the template by preserving missing variables",
             "data": {
+                "ID": "PartialExpand",
                 "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
             },
             "value": {
@@ -101,10 +104,13 @@
     "args": [
         {
             "name": "template",
+            "data": {
+                "ID": "Template"
+            },
             "value": {}
         }
     ],
     "helpText": "Expands RFC 6570 (level 4) URI templates",
     "version": "(devel)",
-    "buildDate": "2026-08-09T18:01:59.595303311-07:00"
+    "buildDate": "2026-10-06T22:20:55.475402938-07:00"
 }

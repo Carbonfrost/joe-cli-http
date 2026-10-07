@@ -50,31 +50,31 @@ func ConnectAndPrint() Action {
 func FlagsAndArgs() Action {
 	return cli.Pipeline(
 		cli.AddFlags([]*cli.Flag{
-			{Uses: SetHeader()},
-			{Uses: SetSubprotocol()},
-			{Uses: SetOrigin()},
-			{Uses: SetHandshakeTimeout()},
+			idFlag(IDHeader, SetHeader()),
+			idFlag(IDSubprotocol, SetSubprotocol()),
+			idFlag(IDOrigin, SetOrigin()),
+			idFlag(IDHandshakeTimeout, SetHandshakeTimeout()),
 
 			// Message options
-			{Uses: SetMessage()},
-			{Uses: SetInput()},
-			{Uses: SetMessageType()},
-			{Uses: SetBinary()},
-			{Uses: SetReadTimeout()},
-			{Uses: SetWriteTimeout()},
-			{Uses: SetCloseTimeout()},
+			idFlag(IDMessage, SetMessage()),
+			idFlag(IDInput, SetInput()),
+			idFlag(IDMessageType, SetMessageType()),
+			idFlag(IDBinary, SetBinary()),
+			idFlag(IDReadTimeout, SetReadTimeout()),
+			idFlag(IDWriteTimeout, SetWriteTimeout()),
+			idFlag(IDCloseTimeout, SetCloseTimeout()),
 
 			// Advanced options
-			{Uses: SetReadBufferSize()},
-			{Uses: SetWriteBufferSize()},
-			{Uses: SetReadLimit()},
-			{Uses: SetCompression()},
+			idFlag(IDReadBufferSize, SetReadBufferSize()),
+			idFlag(IDWriteBufferSize, SetWriteBufferSize()),
+			idFlag(IDReadLimit, SetReadLimit()),
+			idFlag(IDCompression, SetCompression()),
 
-			{Uses: SetVerbose()},
+			idFlag(IDVerbose, SetVerbose()),
 		}...),
 
 		cli.AddArg(&cli.Arg{
-			Uses: SetURLValue(),
+			Uses: cli.Pipeline(SetURLValue(), IDAnnotation(IDURLValue)),
 		}),
 	)
 }

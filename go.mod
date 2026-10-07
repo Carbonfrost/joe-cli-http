@@ -66,6 +66,7 @@ tool (
 	github.com/maxbrunsfeld/counterfeiter/v6
 	github.com/mgechev/revive
 	github.com/onsi/ginkgo/v2/ginkgo
+	golang.org/x/tools/cmd/stringer
 	honnef.co/go/tools/cmd/staticcheck
 )
 
