@@ -26,16 +26,21 @@ func IDAnnotation[T any](id T) cli.Action {
 // LookupID gets the identity annotation of a flag or arg, if present.
 func LookupID[T any](target any) (T, bool) {
 	var zero T
-	data, ok := target.(hasLookupData)
+	id, ok := lookupData(target, idDataKey)
 	if !ok {
 		return zero, false
 	}
-	v, ok := data.LookupData(idDataKey)
+	return id.(T), ok
+}
+
+func lookupData(target any, key string) (any, bool) {
+	data, ok := target.(interface {
+		LookupData(any) (any, bool)
+	})
 	if !ok {
-		return zero, false
+		return nil, false
 	}
-	id, ok := v.(T)
-	return id, ok
+	return data.LookupData(key)
 }
 
 // IdFlag creates a flag which uses the given action and carries the
