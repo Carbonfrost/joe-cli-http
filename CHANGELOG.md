@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.13.0 (October 8, 2026)
+
+### New features
+
+* Dialer (f3a89b5)
+* Introduce ID annotation on flags and args (c4ba38b)
+
+### Bug fixes and improvements
+
+* Bug fix: ensure no arg to bool flags (566820a)
+* ExpandGlobals: improve tests, random and time expansion support (187006d)
+* Add missing trace and request categories for some flags (2d1c715)
+* Trace level value help text (aabb7a8)
+* Refactoring:
+    * Authenticator refactor into cacheable pattern; Templates (dc6ee42)
+    * Apply cacheable pattern to Downloader (0824d72)
+    * Remove fake generation to an internal package (vanity) (011276f)
+* Chores:
+    * Update dependent versions (2fcaa71, ad016fd, 691f1c0)
+    * Update documentation (7f892bf)
+
+
 ## v0.12.1 (September 4, 2026)
 
 ### Bug fixes and improvements
