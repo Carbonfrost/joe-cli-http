@@ -21,6 +21,8 @@ const (
 	IDBindAddress
 	IDInterface
 	IDListInterfaces
+	IDDialFallbackDelay
+	IDDisableDialFallback
 )
 
 // IDAnnotation provides an action which annotates the identity of a flag or

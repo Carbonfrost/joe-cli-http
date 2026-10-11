@@ -16,6 +16,7 @@ import (
 
 const (
 	networkOptions = "Network interface options"
+	dnsOptions     = "DNS options"
 )
 
 var (
@@ -36,8 +37,8 @@ func SetDialTimeout(s ...time.Duration) Action {
 	return cli.Pipeline(
 		&cli.Prototype{
 			Name:     "dial-timeout",
-			HelpText: "maximum amount of time a dial will wait for a connect to complete",
-			Category: networkOptions,
+			HelpText: "Maximum amount of time a dial will wait for a connect to complete",
+			Category: dnsOptions,
 		},
 		bind.Action(WithDialTimeout, bind.Exact(s...)),
 		tagged,
@@ -49,7 +50,7 @@ func SetDialKeepAlive(v ...time.Duration) Action {
 		&cli.Prototype{
 			Name:     "dial-keep-alive",
 			HelpText: "Specifies the interval between keep-alive probes for an active network connection.",
-			Category: networkOptions,
+			Category: dnsOptions,
 		},
 		bind.Action(WithDialKeepAlive, bind.Exact(v...)),
 		tagged,
@@ -61,7 +62,7 @@ func SetDisableDialKeepAlive() Action {
 		&cli.Prototype{
 			Name:     "disable-dial-keep-alive",
 			HelpText: "Disable dialer keep-alive probes",
-			Category: networkOptions,
+			Category: dnsOptions,
 			Value:    new(bool),
 		},
 		cli.At(cli.ActionTiming, WithDisableDialKeepAlive(true)),
@@ -109,6 +110,30 @@ func ListInterfaces() Action {
 	)
 }
 
+func SetDialFallbackDelay(s ...time.Duration) Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "dial-fallback-delay",
+			HelpText: "Enable {DURATION} delay before RFC 6555 fast fallback between IPv4/v6 addresses",
+			Category: dnsOptions,
+		},
+		bind.Action(WithDialFallbackDelay, bind.Exact(s...)),
+		tagged,
+	)
+}
+
+func SetDisableDialFallback(s ...bool) Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "disable-dial-fallback",
+			HelpText: "Always connect to the resolved primary address without RFC 6555 fast fallback between IPv4/v6",
+			Category: dnsOptions,
+		},
+		bind.Action(WithDisableDialFallback, bind.Exact(s...)),
+		tagged,
+	)
+}
+
 // FlagsAndArgs provides the flags and args for configuring the dialer.  By
 // default, these configure the dialer registered under the default context
 // key.  To configure a dialer registered with WithContextKey, specify the
@@ -130,6 +155,8 @@ func FlagsAndArgs(contextKey ...any) Action {
 			flag(IDBindAddress, SetBindAddress()),
 			flag(IDInterface, SetInterface()),
 			flag(IDListInterfaces, ListInterfaces()),
+			flag(IDDialFallbackDelay, SetDialFallbackDelay()),
+			flag(IDDisableDialFallback, SetDisableDialFallback()),
 		}...))
 }
 

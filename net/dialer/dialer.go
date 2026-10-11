@@ -265,6 +265,24 @@ func WithInterface(v string) Option {
 	}
 }
 
+// WithDialFallbackDelay sets the fallback delay between IPv4/v6 connections
+func WithDialFallbackDelay(v time.Duration) Option {
+	return func(d *Dialer) error {
+		d.FallbackDelay = v
+		return nil
+	}
+}
+
+// WithDisableDialFallback disables fallback between IPv4/v6 connections
+func WithDisableDialFallback(v bool) Option {
+	return func(d *Dialer) error {
+		if v {
+			d.FallbackDelay = -1
+		}
+		return nil
+	}
+}
+
 // WithResolver sets the resolver to use directly, bypassing the default
 // factory.  Resolver middleware is still applied to it.
 func WithResolver(r *net.Resolver) Option {

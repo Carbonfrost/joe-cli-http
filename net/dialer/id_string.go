@@ -14,11 +14,13 @@ func _() {
 	_ = x[IDBindAddress-3]
 	_ = x[IDInterface-4]
 	_ = x[IDListInterfaces-5]
+	_ = x[IDDialFallbackDelay-6]
+	_ = x[IDDisableDialFallback-7]
 }
 
-const _ID_name = "DialTimeoutDialKeepAliveDisableDialKeepAliveBindAddressInterfaceListInterfaces"
+const _ID_name = "DialTimeoutDialKeepAliveDisableDialKeepAliveBindAddressInterfaceListInterfacesDialFallbackDelayDisableDialFallback"
 
-var _ID_index = [...]uint8{0, 11, 24, 44, 55, 64, 78}
+var _ID_index = [...]uint8{0, 11, 24, 44, 55, 64, 78, 95, 114}
 
 func (i ID) String() string {
 	idx := int(i) - 0
