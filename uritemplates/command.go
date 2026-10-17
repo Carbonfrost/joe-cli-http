@@ -227,6 +227,7 @@ func SetTemplate(v ...*URITemplate) Action {
 			Value: new(URITemplate),
 		},
 		bind.Call2((*Expander).SetTemplate, bind.FromContext(FromContext), bind.Exact(v...)),
+		tagged,
 	)
 }
 

@@ -105,12 +105,13 @@
         {
             "name": "template",
             "data": {
-                "ID": "Template"
+                "ID": "Template",
+                "Source": "github.com/Carbonfrost/joe-cli-http/uritemplates"
             },
             "value": {}
         }
     ],
     "helpText": "Expands RFC 6570 (level 4) URI templates",
     "version": "(devel)",
-    "buildDate": "2026-10-06T22:20:55.475402938-07:00"
+    "buildDate": "2026-10-18T14:16:13.739320974-07:00"
 }
