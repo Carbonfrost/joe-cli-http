@@ -19,6 +19,7 @@ type ClientAttributes struct {
 	Dialer                 *net.Dialer
 	DNSDialer              *net.Dialer
 	BaseURL                string
+	Secure                 bool
 	BodyContent            Content
 	BodyContentString      string
 	BodyForm               url.Values
@@ -57,7 +58,10 @@ func Attributes(c *Client) *ClientAttributes {
 			if c.LocationResolver == nil {
 				return ""
 			}
-			return c.LocationResolver.(*defaultLocationResolver).base.String()
+			return c.LocationResolver.BaseURL()
+		}(),
+		Secure: func() bool {
+			return c.LocationResolver != nil && c.LocationResolver.Secure()
 		}(),
 		BodyForm: func() url.Values {
 			m := url.Values{}

@@ -429,6 +429,13 @@ func WithBaseURL(u *URLValue) Option {
 	return withAdapter((*Client).setBaseURL, u)
 }
 
+// WithSecure sets whether request locations which don't specify a scheme are
+// assumed to be https instead of http.  Unless this option is specified, TLS
+// options that were specified from the command line imply it.
+func WithSecure(secure bool) Option {
+	return withAdapter((*Client).setSecure, secure)
+}
+
 // WithURL adds the given URL to the request locations
 func WithURL(u *url.URL) Option {
 	return withAdapter((*Client).addURL, u)
@@ -589,7 +596,14 @@ func wrapReader(r io.Reader) io.ReadCloser {
 }
 
 func (c *Client) Do(ctx context.Context) ([]*Response, error) {
-	urls, err := c.ensureLocationResolver().Resolve(ctx)
+	resolver := c.ensureLocationResolver()
+	if impliedSecure(ctx) {
+		if err := resolver.SetSecure(true); err != nil {
+			return nil, err
+		}
+	}
+
+	urls, err := resolver.Resolve(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -870,11 +884,26 @@ func (c *Client) setInterfaceResolverFactory(fn func(context.Context) (Interface
 }
 
 func (c *Client) setBaseURL(u *URLValue) error {
-	uu, err := u.URL()
-	if err != nil {
-		return err
+	return c.ensureLocationResolver().SetBaseURL(u.String())
+}
+
+func (c *Client) setSecure(secure bool) error {
+	return c.ensureLocationResolver().SetSecure(secure)
+}
+
+func impliedSecure(ctx context.Context) bool {
+	cc := cli.FromContext(ctx)
+	if cc == nil || cc.Seen("plaintext") {
+		return false
 	}
-	return c.ensureLocationResolver().SetBaseURL(uu)
+
+	key, source := joetls.SourceAnnotation()
+	for _, f := range cc.Flags() {
+		if v, ok := f.LookupData(key); ok && v == source && f.Seen() {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) addURL(u *url.URL) error {

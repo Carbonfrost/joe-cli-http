@@ -20,16 +20,25 @@ type LocationResolver interface {
 	Add(location string) error
 	// Add a variable that can be applied to templates.
 	AddVar(name string, value any) error
-	// Set the base URL used for resolving relative URLs.
-	SetBaseURL(base *url.URL) error
+	// Set the base URL used for resolving relative URLs.  The base is
+	// not interpreted until it is needed, so it can be in the same simplified
+	// syntax as locations that are added.  If a base has already been set, the
+	// given base is resolved relative to it.
+	SetBaseURL(base string) error
+	// SetSecure sets whether locations which don't specify a scheme
+	// are assumed to be https instead of http.
+	SetSecure(secure bool) error
 	// Resolve the list of locations. Each location is represented
 	// as a URL and the context the client should use to issue the
 	// request.
 	Resolve(context.Context) ([]Location, error)
 	// Vars gets the variables that were added.
 	Vars() map[string]any
-	// BaseURL retrievess the base URL.
-	BaseURL() *url.URL
+	// BaseURL retrieves the base URL.
+	BaseURL() string
+	// Secure retrieves whether locations which don't specify a scheme are
+	// assumed to be https.
+	Secure() bool
 }
 
 // Location specifies the request location.  A location comprises a URL that
@@ -55,14 +64,16 @@ type templateLocation struct {
 }
 
 type autoLocation struct {
-	url   string
-	varfn func(context.Context) any
+	url    string
+	varfn  func(context.Context) any
+	secure bool
 }
 
 type defaultLocationResolver struct {
-	urls []string
-	vars uritemplates.Vars
-	base *url.URL
+	urls   []string
+	vars   uritemplates.Vars
+	bases  []string
+	secure bool
 }
 
 // NewDefaultLocationResolver provides a location resolver that
@@ -87,11 +98,17 @@ func NewURLLocation(u *url.URL) Location {
 // interpreted as a URI template. Otherwise, it is interpreted as a typical
 // URL except as a special case the syntax :port can be used to refer to a port
 // listening to an address on localhost or if no scheme is present, http://
-// is implicitly prepended.
+// is implicitly prepended.  This interpretation is deferred until the URL
+// method of the location is called.
 func NewLocation(url string, varfn func(context.Context) any) Location {
+	return newLocation(url, varfn, false)
+}
+
+func newLocation(url string, varfn func(context.Context) any, secure bool) Location {
 	return autoLocation{
-		url:   fixupAddress(url),
-		varfn: varfn,
+		url:    url,
+		varfn:  varfn,
+		secure: secure,
 	}
 }
 
@@ -119,18 +136,47 @@ func (d *defaultLocationResolver) Vars() map[string]any {
 	return d.vars
 }
 
-func (d *defaultLocationResolver) BaseURL() *url.URL {
-	return d.base
+func (d *defaultLocationResolver) BaseURL() string {
+	base, _ := d.resolveBase()
+	return base
 }
 
-func (d *defaultLocationResolver) SetBaseURL(base *url.URL) error {
-	if d.base == nil {
-		d.base = base
-		return nil
-	}
-
-	d.base = d.base.ResolveReference(base)
+func (d *defaultLocationResolver) SetBaseURL(base string) error {
+	d.bases = append(d.bases, base)
 	return nil
+}
+
+func (d *defaultLocationResolver) Secure() bool {
+	return d.secure
+}
+
+func (d *defaultLocationResolver) SetSecure(secure bool) error {
+	d.secure = secure
+	return nil
+}
+
+func (d *defaultLocationResolver) resolveBase() (string, error) {
+	var base *url.URL
+	for i, b := range d.bases {
+		if i == 0 {
+			var err error
+			base, err = url.Parse(fixupAddress(b, d.secure))
+			if err != nil {
+				return "", err
+			}
+			continue
+		}
+
+		ref, err := url.Parse(b)
+		if err != nil {
+			return "", err
+		}
+		base = base.ResolveReference(ref)
+	}
+	if base == nil {
+		return "", nil
+	}
+	return base.String(), nil
 }
 
 func (d *defaultLocationResolver) Resolve(context.Context) ([]Location, error) {
@@ -145,10 +191,10 @@ func (d *defaultLocationResolver) Resolve(context.Context) ([]Location, error) {
 	var base string
 	for i := range d.urls {
 		u := resolveURL(base, d.urls[min(i, 1):i+1])
-		locations[i] = NewLocation(u, varfn)
+		locations[i] = newLocation(u, varfn, d.secure)
 
 		if i == 0 {
-			base = fixupAddress(d.urls[0])
+			base = d.urls[0]
 		}
 	}
 
@@ -183,8 +229,9 @@ func (l templateLocation) URL(ctx context.Context) (context.Context, *url.URL, e
 }
 
 func (a autoLocation) URL(ctx context.Context) (context.Context, *url.URL, error) {
+	address := fixupAddress(a.url, a.secure)
 	if a.varfn == nil {
-		u, err := url.Parse(a.url)
+		u, err := url.Parse(address)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -192,7 +239,7 @@ func (a autoLocation) URL(ctx context.Context) (context.Context, *url.URL, error
 		return NewURLLocation(u).URL(ctx)
 	}
 
-	return NewURITemplateLocation(a.url, a.varfn).URL(ctx)
+	return NewURITemplateLocation(address, a.varfn).URL(ctx)
 }
 
 func resolveURL(base string, prefix []string) string {

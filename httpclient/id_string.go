@@ -34,25 +34,26 @@ func _() {
 	_ = x[IDMethod-24]
 	_ = x[IDNoOutput-25]
 	_ = x[IDOutputFile-26]
-	_ = x[IDPreferGo-27]
-	_ = x[IDQueryString-28]
-	_ = x[IDRequestID-29]
-	_ = x[IDStrictErrorsDNS-30]
-	_ = x[IDStripComponents-31]
-	_ = x[IDTraceLevel-32]
-	_ = x[IDURITemplateVar-33]
-	_ = x[IDURITemplateVars-34]
-	_ = x[IDURLValue-35]
-	_ = x[IDUser-36]
-	_ = x[IDUserAgent-37]
-	_ = x[IDVerbose-38]
-	_ = x[IDWriteErr-39]
-	_ = x[IDWriteOut-40]
+	_ = x[IDPlaintext-27]
+	_ = x[IDPreferGo-28]
+	_ = x[IDQueryString-29]
+	_ = x[IDRequestID-30]
+	_ = x[IDStrictErrorsDNS-31]
+	_ = x[IDStripComponents-32]
+	_ = x[IDTraceLevel-33]
+	_ = x[IDURITemplateVar-34]
+	_ = x[IDURITemplateVars-35]
+	_ = x[IDURLValue-36]
+	_ = x[IDUser-37]
+	_ = x[IDUserAgent-38]
+	_ = x[IDVerbose-39]
+	_ = x[IDWriteErr-40]
+	_ = x[IDWriteOut-41]
 }
 
-const _ID_name = "AuthBaseURLBasicAuthBindAddressBodyBodyContentDialKeepAliveDialTimeoutDisableDialKeepAliveDNSInterfaceDownloadFailFastFillValueFollowRedirectsHeaderIncludeResponseHeadersIntegrityInterfaceJSONJSONContentListAuthenticatorsListIntegrityAlgorithmsListInterfacesMethodNoOutputOutputFilePreferGoQueryStringRequestIDStrictErrorsDNSStripComponentsTraceLevelURITemplateVarURITemplateVarsURLValueUserUserAgentVerboseWriteErrWriteOut"
+const _ID_name = "AuthBaseURLBasicAuthBindAddressBodyBodyContentDialKeepAliveDialTimeoutDisableDialKeepAliveDNSInterfaceDownloadFailFastFillValueFollowRedirectsHeaderIncludeResponseHeadersIntegrityInterfaceJSONJSONContentListAuthenticatorsListIntegrityAlgorithmsListInterfacesMethodNoOutputOutputFilePlaintextPreferGoQueryStringRequestIDStrictErrorsDNSStripComponentsTraceLevelURITemplateVarURITemplateVarsURLValueUserUserAgentVerboseWriteErrWriteOut"
 
-var _ID_index = [...]uint16{0, 4, 11, 20, 31, 35, 46, 59, 70, 90, 102, 110, 118, 127, 142, 148, 170, 179, 188, 192, 203, 221, 244, 258, 264, 272, 282, 290, 301, 310, 325, 340, 350, 364, 379, 387, 391, 400, 407, 415, 423}
+var _ID_index = [...]uint16{0, 4, 11, 20, 31, 35, 46, 59, 70, 90, 102, 110, 118, 127, 142, 148, 170, 179, 188, 192, 203, 221, 244, 258, 264, 272, 282, 291, 299, 310, 319, 334, 349, 359, 373, 388, 396, 400, 409, 416, 424, 432}
 
 func (i ID) String() string {
 	idx := int(i) - 1

@@ -65,6 +65,7 @@ func FlagsAndArgs() Action {
 			idFlag(IDHeader, SetHeader()),
 			idFlag(IDBody, SetBody()),
 			idFlag(IDBaseURL, SetBaseURL()),
+			idFlag(IDPlaintext, SetPlaintext()),
 			idFlag(IDURITemplateVar, SetURITemplateVar()),
 			idFlag(IDURITemplateVars, SetURITemplateVars()),
 			idFlag(IDBodyContent, SetBodyContent()),
@@ -503,6 +504,19 @@ func SetBaseURL(name ...*URLValue) Action {
 			Category: requestOptions,
 		},
 		bind.Action(WithBaseURL, bind.Exact(name...)),
+		tagged,
+	)
+}
+
+func SetPlaintext(s ...bool) Action {
+	return cli.Pipeline(
+		&cli.Prototype{
+			Name:     "plaintext",
+			HelpText: "Assume HTTP when otherwise not implied by TLS options",
+			Options:  cli.No,
+			Category: requestOptions,
+		},
+		bind.Action(WithSecure, bind.Exact(s...).(*bind.BoolBinder).Negated()),
 		tagged,
 	)
 }

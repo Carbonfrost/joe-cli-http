@@ -15,6 +15,54 @@ import (
 
 var _ = Describe("Resolver", func() {
 
+	DescribeTable("secure examples", func(locations []string, expected []string) {
+		r := httpclient.NewDefaultLocationResolver()
+		r.SetSecure(true)
+		Expect(r.Secure()).To(BeTrue())
+		for _, loc := range locations {
+			r.Add(loc)
+		}
+
+		actual, err := r.Resolve(context.Background())
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(urisToStrings(actual)).To(Equal(expected))
+	},
+		Entry(
+			"fixup host scheme",
+			[]string{"example.com"},
+			[]string{"https://example.com"},
+		),
+		Entry(
+			"fixup port",
+			[]string{":8080", "hello"},
+			[]string{"https://localhost:8080", "https://localhost:8080/hello"},
+		),
+		Entry(
+			"explicit scheme unaffected",
+			[]string{"http://example.com"},
+			[]string{"http://example.com"},
+		),
+	)
+
+	Describe("BaseURL", func() {
+		It("is deferred until needed", func() {
+			r := httpclient.NewDefaultLocationResolver()
+			r.SetBaseURL("example.com")
+			Expect(r.BaseURL()).To(Equal("http://example.com"))
+
+			r.SetSecure(true)
+			Expect(r.BaseURL()).To(Equal("https://example.com"))
+		})
+
+		It("resolves successive bases", func() {
+			r := httpclient.NewDefaultLocationResolver()
+			r.SetBaseURL("https://example.com/a/")
+			r.SetBaseURL("b")
+			Expect(r.BaseURL()).To(Equal("https://example.com/a/b"))
+		})
+	})
+
 	DescribeTable("examples", func(locations []string, expected []string) {
 		r := httpclient.NewDefaultLocationResolver()
 		for _, loc := range locations {

@@ -73,6 +73,20 @@
             "value": {}
         },
         {
+            "name": "plaintext",
+            "helpText": "Assume HTTP when otherwise not implied by TLS options",
+            "category": "Request options",
+            "options": "NO",
+            "data": {
+                "ID": "Plaintext",
+                "Source": "github.com/Carbonfrost/joe-cli-http/httpclient"
+            },
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
             "name": "param",
             "aliases": [
                 "T"
@@ -871,6 +885,16 @@
             }
         },
         {
+            "name": "no-plaintext",
+            "helpText": "Assume HTTP when otherwise not implied by TLS options",
+            "category": "Request options",
+            "options": "HIDDEN",
+            "value": {
+                "type": "bool",
+                "string": "false"
+            }
+        },
+        {
             "name": "no-follow-redirects",
             "helpText": "Follow redirects in the Location header",
             "category": "Request options",
@@ -918,5 +942,5 @@
     ],
     "helpText": "Provides access to the Go HTTP client with some cURL compatibility",
     "version": "(devel)",
-    "buildDate": "2026-10-06T22:20:54.966445163-07:00"
+    "buildDate": "2026-10-18T14:17:19.247475891-07:00"
 }

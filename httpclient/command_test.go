@@ -76,6 +76,39 @@ var _ = Describe("FetchAndPrint", func() {
 	})
 })
 
+var _ = Describe("Scheme fixup", func() {
+
+	DescribeTable("examples", func(command string, expected string) {
+		var requested string
+		app := &cli.App{
+			Uses: httpclient.New(
+				httpclient.WithTransport(httpclient.RoundTripperFunc(func(r *http.Request) *http.Response {
+					requested = r.URL.String()
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(strings.NewReader("")),
+					}
+				})),
+			),
+			Action: httpclient.FetchAndPrint(),
+			Stdout: io.Discard,
+		}
+
+		args, _ := cli.Split(command)
+		err := app.RunContext(context.Background(), args...)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(requested).To(Equal(expected))
+	},
+		Entry("default", "_ example.com", "http://example.com"),
+		Entry("plaintext", "_ --plaintext example.com", "http://example.com"),
+		Entry("no plaintext", "_ --no-plaintext example.com", "https://example.com"),
+		Entry("TLS flag", "_ --server-name x example.com", "https://example.com"),
+		Entry("TLS flag with port", "_ --server-name x :8080", "https://localhost:8080"),
+		Entry("explicit scheme", "_ --no-plaintext http://example.com", "http://example.com"),
+		Entry("explicit plaintext wins over TLS flag", "_ --plaintext --server-name x example.com", "http://example.com"),
+	)
+})
+
 var _ = Describe("Set actions", func() {
 
 	It("has Source annotation", func() {
@@ -123,6 +156,18 @@ var _ = Describe("Set actions", func() {
 			httpclient.SetBaseURL(),
 			"app -a https://example.com",
 			OnClient, Fields{"BaseURL": Equal("https://example.com")},
+		),
+		Entry(
+			"SetPlaintext",
+			httpclient.SetPlaintext(),
+			"app -a",
+			OnClient, Fields{"Secure": BeFalse()},
+		),
+		Entry(
+			"SetPlaintext no",
+			httpclient.SetPlaintext(),
+			"app --no-a",
+			OnClient, Fields{"Secure": BeTrue()},
 		),
 		Entry(
 			"SetBody",

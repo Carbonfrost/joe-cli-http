@@ -45,6 +45,7 @@ const (
 	IDMethod
 	IDNoOutput
 	IDOutputFile
+	IDPlaintext
 	IDPreferGo
 	IDQueryString
 	IDRequestID

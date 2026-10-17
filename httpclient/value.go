@@ -19,7 +19,9 @@ import (
 
 // URLValue provides ergonomics for entering URLs as values.  When the text looks like
 // a port (e.g. :8080), the URL is interpeted as localhost.  When the text looks like a
-// hostname, the prefix http:// is preprended.
+// hostname, the prefix http:// is preprended.  The URL method always applies
+// the default of http://; LocationResolver is responsible for the choice of
+// https:// when resolving locations.
 type URLValue struct {
 	loc string
 }
@@ -83,12 +85,12 @@ func (u *UserInfo) String() string {
 
 // URL interprets the value as a URL
 func (u *URLValue) URL() (*url.URL, error) {
-	return url.Parse(fixupAddress(u.loc))
+	return url.Parse(fixupAddress(u.loc, false))
 }
 
 // URITemplate interprets the value as a URI Template
 func (u *URLValue) URITemplate() (*uritemplates.URITemplate, error) {
-	return uritemplates.Parse(fixupAddress(u.loc))
+	return uritemplates.Parse(fixupAddress(u.loc, false))
 }
 
 func (u *URLValue) Set(arg string) error {
@@ -110,9 +112,15 @@ func (u *URLValue) Copy() *URLValue {
 	return &res
 }
 
-func fixupAddress(addr string) string {
+// fixupAddress applies the ergonomics described by URLValue.  When no scheme
+// is implied by the address, secure determines whether it is https or http.
+func fixupAddress(addr string, secure bool) string {
+	defaultScheme := "http://"
+	if secure {
+		defaultScheme = "https://"
+	}
 	if strings.HasPrefix(addr, ":") {
-		addr = "http://localhost" + addr
+		addr = defaultScheme + "localhost" + addr
 	}
 
 	if addr == "" || strings.HasPrefix(addr, "/") {
@@ -125,7 +133,7 @@ func fixupAddress(addr string) string {
 		}
 	}
 
-	return "http://" + addr
+	return defaultScheme + addr
 }
 
 func (v *VirtualPath) Set(arg string) error {
