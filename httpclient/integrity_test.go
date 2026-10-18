@@ -68,7 +68,7 @@ var _ = Describe("IntegrityDownloader", func() {
 
 	It("computes and compares the hash of the response body", func() {
 		testResponse := &httpclient.Response{
-			&http.Response{
+			Response: &http.Response{
 				Body: io.NopCloser(bytes.NewBufferString("this the response body")),
 			},
 		}
@@ -88,7 +88,7 @@ var _ = Describe("IntegrityDownloader", func() {
 
 	It("returns error if hash mismatch", func() {
 		testResponse := &httpclient.Response{
-			&http.Response{
+			Response: &http.Response{
 				Body: io.NopCloser(bytes.NewBufferString("this the response body")),
 			},
 		}
@@ -103,7 +103,7 @@ var _ = Describe("IntegrityDownloader", func() {
 
 	It("writes to the output of inner downloader", func() {
 		testResponse := &httpclient.Response{
-			&http.Response{
+			Response: &http.Response{
 				Body: io.NopCloser(bytes.NewBufferString("this the response body")),
 			},
 		}

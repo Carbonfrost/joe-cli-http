@@ -70,7 +70,7 @@ func Attributes(c *Client) *ClientAttributes {
 			}
 			return m
 		}(),
-		IncludeResponseHeaders:   c.IncludeResponseHeaders,
+		IncludeResponseHeaders:   c.includeResponseHeaders,
 		CheckRedirect:            c.CheckRedirect,
 		Transport:                c.transport.Discrete(),
 		Request:                  newRequestAttributes(mustNewRequest(c)),

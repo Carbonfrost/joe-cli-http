@@ -75,14 +75,13 @@ const joeURL = "https://github.com/Carbonfrost/joe-cli-http"
 type Client struct {
 	cli.Action
 
-	CheckRedirect          func(*http.Request, []*http.Request) error
-	IncludeResponseHeaders bool
-	BodyContent            Content
-	UserInfo               *UserInfo
-	LocationResolver       LocationResolver
+	CheckRedirect    func(*http.Request, []*http.Request) error
+	BodyContent      Content
+	UserInfo         *UserInfo
+	LocationResolver LocationResolver
 
-	// FailFast causes no response output in the case of a failure
-	FailFast bool
+	failFast               bool
+	includeResponseHeaders bool
 
 	downloader cacheable[Downloader]
 
@@ -729,39 +728,13 @@ func (c *Client) doOne(ctx context.Context, l Location) (*Response, error) {
 }
 
 func (c *Client) handleDownload(ctx context.Context, response *Response) error {
-	if c.FailFast && !response.Success() {
-		return fmt.Errorf("request failed (%s): %s %s", response.Status, response.Request.Method, response.Request.URL)
-	}
-
 	downloader, err := c.NewDownloader(ctx)
 	if err != nil {
 		return err
 	}
-
-	output, err := downloader.OpenDownload(ctx, response)
-	if err != nil {
-		return err
-	}
-
-	if c.IncludeResponseHeaders {
-		err = response.CopyHeadersTo(output)
-		fmt.Fprintln(output)
-	}
-	if err != nil {
-		return err
-	}
-
-	err = response.CopyTo(output)
-	if err != nil {
-		return err
-	}
-
-	err = output.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	response.FailFast = c.FailFast()
+	response.IncludeHeaders = c.IncludeResponseHeaders()
+	return response.Download(ctx, downloader)
 }
 
 func (c *Client) applyAuth(r *http.Request) error {
@@ -936,7 +909,7 @@ func (c *Client) ensureLocationResolver() LocationResolver {
 }
 
 func (c *Client) setIncludeResponseHeaders(v bool) error {
-	c.IncludeResponseHeaders = v
+	c.includeResponseHeaders = v
 	return nil
 }
 
@@ -1111,8 +1084,16 @@ func (c *Client) setWriteErr(w Expr) error {
 }
 
 func (c *Client) setFailFast(v bool) error {
-	c.FailFast = v
+	c.failFast = v
 	return nil
+}
+
+func (c *Client) FailFast() bool {
+	return c.failFast
+}
+
+func (c *Client) IncludeResponseHeaders() bool {
+	return c.includeResponseHeaders
 }
 
 func (e *exprHandling) eval(initial, req *http.Request, resp *http.Response) {
