@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.14.0 (October 18, 2026)
+
+### New features
+
+* `SetSecure`, `--plaintext` flag (aeb4ed9)
+* `Defines` context filters (9960150)
+* Dialer fallback delay (e85ea92)
+
+### Bug fixes and improvements
+
+* Breaking change: Remove download handling, `FailFast`, `IncludeResponseHeaders` to response (66d5040)
+* Bug fix: allow UTC hour 20-24 in ExpandGlobals test (1ed29f5)
+
+
 ## v0.13.0 (October 8, 2026)
 
 ### New features
