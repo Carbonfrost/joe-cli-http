@@ -9,7 +9,7 @@ go 1.27.3
 require (
 	github.com/Carbonfrost/joe-cli v0.25.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/onsi/ginkgo/v2 v2.33.1
+	github.com/onsi/ginkgo/v2 v2.34.0
 	github.com/onsi/gomega v1.44.0
 )
 
